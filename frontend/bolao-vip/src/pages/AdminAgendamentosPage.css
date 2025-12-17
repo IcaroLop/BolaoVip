@@ -1,0 +1,126 @@
+.admin-agendamentos-container {
+  background-color: #0d1117;
+  color: #ffffff;
+  padding: 2rem;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+h1, h2 {
+  color: #00ff88;
+  margin-bottom: 1rem;
+}
+
+.proximo-agendamento, .historico-agendamentos {
+  background-color: #161b22;
+  border: 1px solid #2d333b;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.proximo-agendamento p,
+.historico-agendamentos p,
+.historico-agendamentos td {
+  font-size: 1rem;
+  margin: 0.25rem 0;
+}
+
+button {
+  background-color: #00ff88;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.2rem;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #00cc6f;
+}
+
+.mensagem {
+  margin-top: 1rem;
+  font-weight: bold;
+  color: #00ff88;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+th, td {
+  border: 1px solid #30363d;
+  padding: 0.8rem;
+  text-align: center;
+}
+
+th {
+  background-color: #21262d;
+  font-weight: bold;
+  color: #c9d1d9;
+}
+
+td {
+  background-color: #0d1117;
+}
+
+.paginacao {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
+
+.paginacao button {
+  background-color: #30363d;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+}
+
+.paginacao button:hover {
+  background-color: #444c56;
+}
+
+.paginacao button:disabled {
+  background-color: #1f242a;
+  color: #888;
+  cursor: not-allowed;
+}
+.consulta-por-data {
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: #1e1e2f;
+  border-radius: 8px;
+}
+
+.consulta-por-data input[type="date"] {
+  margin-right: 0.5rem;
+  padding: 0.4rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: none;
+  color: white; /* ✅ Adicionado para tornar o texto visível */
+  background-color: #1e1e2f;
+}
+
+.consulta-por-data button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.consulta-por-data button:hover {
+  background-color: #0056b3;
+}

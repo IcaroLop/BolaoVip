@@ -1,0 +1,53 @@
+/* src/pages/RankingGeralPage.css */
+.ranking-geral-container {
+  padding: 2rem;
+  background-color: #0d1117;
+  color: white;
+  min-height: 100vh;
+}
+
+.ranking-tabela {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  border-collapse: collapse;
+  background-color: #161b22;
+}
+
+.ranking-tabela th,
+.ranking-tabela td {
+  padding: 0.75rem;
+  border: 1px solid #30363d;
+  text-align: center;
+}
+
+.ranking-tabela th {
+  background-color: #21262d;
+  color: #00ff88;
+}
+
+.erro {
+  color: #ff7373;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+  .ranking-geral-container {
+    padding: 0.5rem;
+  }
+
+  .ranking-tabela {
+    font-size: 0.85rem;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ranking-tabela th,
+  .ranking-tabela td {
+    padding: 0.5rem 0.3rem;
+    white-space: nowrap;
+  }
+}

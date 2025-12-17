@@ -1,0 +1,84 @@
+.jogo {
+  position: relative;
+  background-color: #161B22;
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Destaque animado suave para jogo em andamento */
+.andamento {
+  border: 2px solid #ffb703;
+  box-shadow: 0 0 16px rgba(255, 183, 3, 0.45), 0 0 28px rgba(255, 183, 3, 0.25);
+}
+
+.andamento::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(120deg, rgba(255, 183, 3, 0.08), rgba(255, 183, 3, 0.18), rgba(255, 183, 3, 0.08));
+  filter: blur(1px);
+  animation: andamentoGlow 2.8s ease-in-out infinite alternate;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+.andamento > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes andamentoGlow {
+  0% { opacity: 0.35; transform: scale(0.995); }
+  50% { opacity: 0.6; transform: scale(1.0); }
+  100% { opacity: 0.35; transform: scale(1.005); }
+}
+
+.borda-verde {
+  box-shadow: 0 0 12px #00FF88;
+}
+
+.borda-azul {
+  box-shadow: 0 0 12px #00BFFF;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-pill.andamento-pill {
+  background: rgba(255, 183, 3, 0.15);
+  color: #ffb703;
+  border: 1px solid rgba(255, 183, 3, 0.4);
+}
+
+.status-pill.finalizado-pill {
+  background: rgba(0, 255, 136, 0.12);
+  color: #00ff88;
+  border: 1px solid rgba(0, 255, 136, 0.35);
+}
+
+.status-pill.agendado-pill {
+  background: rgba(0, 191, 255, 0.12);
+  color: #00bfff;
+  border: 1px solid rgba(0, 191, 255, 0.35);
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+  .jogo {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .holograma::before {
+    animation-duration: 3s;
+  }
+}

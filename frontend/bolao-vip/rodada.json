@@ -1,0 +1,361 @@
+{
+    "nome": "10ª Rodada",
+    "slug": "10a-rodada",
+    "rodada": 10,
+    "status": "encerrada",
+    "proxima_rodada": {
+        "nome": "11ª Rodada",
+        "slug": "11a-rodada",
+        "rodada": 11,
+        "status": "encerrada"
+    },
+    "rodada_anterior": {
+        "nome": "9ª Rodada",
+        "slug": "9a-rodada",
+        "rodada": 9,
+        "status": "encerrada"
+    },
+    "partidas": [
+        {
+            "partida_id": 23849,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Ferroviária 1x1 Botafogo-SP",
+            "time_mandante": {
+                "time_id": 59,
+                "nome_popular": "Ferroviária",
+                "sigla": "FER",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc8c2b2bf5.svg"
+            },
+            "time_visitante": {
+                "time_id": 66,
+                "nome_popular": "Botafogo-SP",
+                "sigla": "BOT",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc7b916a14.svg"
+            },
+            "placar_mandante": 1,
+            "placar_visitante": 1,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "ferroviaria-botafogo-sp-23849",
+            "data_realizacao": "29/05/2025",
+            "hora_realizacao": "21:35",
+            "data_realizacao_iso": "2025-05-29T21:35:00-0300",
+            "estadio": {
+                "estadio_id": 64,
+                "nome_popular": "Fonte Luminosa"
+            },
+            "_link": "/v1/partidas/23849"
+        },
+        {
+            "partida_id": 23842,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Vila Nova 0x1 Novorizontino",
+            "time_mandante": {
+                "time_id": 110,
+                "nome_popular": "Vila Nova",
+                "sigla": "VIL",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc82f6d78e.svg"
+            },
+            "time_visitante": {
+                "time_id": 51,
+                "nome_popular": "Novorizontino",
+                "sigla": "NOV",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc8247dcb1.svg"
+            },
+            "placar_mandante": 0,
+            "placar_visitante": 1,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "vila-nova-novorizontino-23842",
+            "data_realizacao": "30/05/2025",
+            "hora_realizacao": "19:00",
+            "data_realizacao_iso": "2025-05-30T19:00:00-0300",
+            "estadio": {
+                "estadio_id": 405,
+                "nome_popular": "OBA"
+            },
+            "_link": "/v1/partidas/23842"
+        },
+        {
+            "partida_id": 23841,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Coritiba 2x1 Avaí",
+            "time_mandante": {
+                "time_id": 84,
+                "nome_popular": "Coritiba",
+                "sigla": "CFC",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc7a85d84c.svg"
+            },
+            "time_visitante": {
+                "time_id": 6,
+                "nome_popular": "Avaí",
+                "sigla": "AVA",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc826666e9.svg"
+            },
+            "placar_mandante": 2,
+            "placar_visitante": 1,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "coritiba-avai-23841",
+            "data_realizacao": "31/05/2025",
+            "hora_realizacao": "16:00",
+            "data_realizacao_iso": "2025-05-31T16:00:00-0300",
+            "estadio": {
+                "estadio_id": 317,
+                "nome_popular": "Couto Pereira"
+            },
+            "_link": "/v1/partidas/23841"
+        },
+        {
+            "partida_id": 23843,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Atlético-GO 1x2 Goiás",
+            "time_mandante": {
+                "time_id": 98,
+                "nome_popular": "Atlético-GO",
+                "sigla": "ACG",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc74172c94.svg"
+            },
+            "time_visitante": {
+                "time_id": 115,
+                "nome_popular": "Goiás",
+                "sigla": "GOI",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc7ca9dd9a.svg"
+            },
+            "placar_mandante": 1,
+            "placar_visitante": 2,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "atletico-go-goias-23843",
+            "data_realizacao": "31/05/2025",
+            "hora_realizacao": "18:30",
+            "data_realizacao_iso": "2025-05-31T18:30:00-0300",
+            "estadio": {
+                "estadio_id": 337,
+                "nome_popular": "Antônio Accioly"
+            },
+            "_link": "/v1/partidas/23843"
+        },
+        {
+            "partida_id": 23848,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Athletic Club 0x2 Cuiabá",
+            "time_mandante": {
+                "time_id": 214,
+                "nome_popular": "Athletic Club",
+                "sigla": "ATH",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc7a685fe2.svg"
+            },
+            "time_visitante": {
+                "time_id": 204,
+                "nome_popular": "Cuiabá",
+                "sigla": "CUI",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc73e0e8ea.svg"
+            },
+            "placar_mandante": 0,
+            "placar_visitante": 2,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "athletic-club-cuiaba-23848",
+            "data_realizacao": "31/05/2025",
+            "hora_realizacao": "20:30",
+            "data_realizacao_iso": "2025-05-31T20:30:00-0300",
+            "estadio": {
+                "estadio_id": 27,
+                "nome_popular": "Independência"
+            },
+            "_link": "/v1/partidas/23848"
+        },
+        {
+            "partida_id": 23846,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Operário-PR 2x2 Athletico-PR",
+            "time_mandante": {
+                "time_id": 117,
+                "nome_popular": "Operário-PR",
+                "sigla": "OPE",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc77f360cd.svg"
+            },
+            "time_visitante": {
+                "time_id": 185,
+                "nome_popular": "Athletico-PR",
+                "sigla": "CAP",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc73c0814b.svg"
+            },
+            "placar_mandante": 2,
+            "placar_visitante": 2,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "operario-pr-athletico-pr-23846",
+            "data_realizacao": "01/06/2025",
+            "hora_realizacao": "16:00",
+            "data_realizacao_iso": "2025-06-01T16:00:00-0300",
+            "estadio": {
+                "estadio_id": 111,
+                "nome_popular": "Germano Krüger"
+            },
+            "_link": "/v1/partidas/23846"
+        },
+        {
+            "partida_id": 23847,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "CRB 2x0 Remo",
+            "time_mandante": {
+                "time_id": 90,
+                "nome_popular": "CRB",
+                "sigla": "CRB",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc7a2a611f.svg"
+            },
+            "time_visitante": {
+                "time_id": 81,
+                "nome_popular": "Remo",
+                "sigla": "REM",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc7625e677.svg"
+            },
+            "placar_mandante": 2,
+            "placar_visitante": 0,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "crb-remo-23847",
+            "data_realizacao": "01/06/2025",
+            "hora_realizacao": "18:00",
+            "data_realizacao_iso": "2025-06-01T18:00:00-0300",
+            "estadio": {
+                "estadio_id": 326,
+                "nome_popular": "Rei Pelé"
+            },
+            "_link": "/v1/partidas/23847"
+        },
+        {
+            "partida_id": 23850,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Volta Redonda 1x0 América-MG",
+            "time_mandante": {
+                "time_id": 21,
+                "nome_popular": "Volta Redonda",
+                "sigla": "VRE",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc7a4add00.svg"
+            },
+            "time_visitante": {
+                "time_id": 33,
+                "nome_popular": "América-MG",
+                "sigla": "AMG",
+                "escudo": "https://cdn.api-futebol.com.br/escudos/6f290a3d1d3a1.png"
+            },
+            "placar_mandante": 1,
+            "placar_visitante": 0,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "volta-redonda-america-mg-23850",
+            "data_realizacao": "01/06/2025",
+            "hora_realizacao": "20:30",
+            "data_realizacao_iso": "2025-06-01T20:30:00-0300",
+            "estadio": {
+                "estadio_id": 21,
+                "nome_popular": "Raulino de Oliveira"
+            },
+            "_link": "/v1/partidas/23850"
+        },
+        {
+            "partida_id": 23845,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Chapecoense 4x0 Amazonas",
+            "time_mandante": {
+                "time_id": 5,
+                "nome_popular": "Chapecoense",
+                "sigla": "CHA",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc8287cf47.svg"
+            },
+            "time_visitante": {
+                "time_id": 445,
+                "nome_popular": "Amazonas",
+                "sigla": "AMA",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc777672f7.svg"
+            },
+            "placar_mandante": 4,
+            "placar_visitante": 0,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "chapecoense-amazonas-23845",
+            "data_realizacao": "02/06/2025",
+            "hora_realizacao": "19:00",
+            "data_realizacao_iso": "2025-06-02T19:00:00-0300",
+            "estadio": {
+                "estadio_id": 3,
+                "nome_popular": "Arena Condá"
+            },
+            "_link": "/v1/partidas/23845"
+        },
+        {
+            "partida_id": 23844,
+            "campeonato": {
+                "campeonato_id": 14,
+                "nome": "Campeonato Brasileiro Série B",
+                "slug": "campeonato-brasileiro-serie-b"
+            },
+            "placar": "Paysandu 0x1 Criciúma",
+            "time_mandante": {
+                "time_id": 88,
+                "nome_popular": "Paysandu",
+                "sigla": "PAY",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc7c4307e8.svg"
+            },
+            "time_visitante": {
+                "time_id": 1,
+                "nome_popular": "Criciúma",
+                "sigla": "CRI",
+                "escudo": "https://cdn.api-futebol.com.br/times/escudos/677fc74f3bca6.svg"
+            },
+            "placar_mandante": 0,
+            "placar_visitante": 1,
+            "disputa_penalti": false,
+            "status": "finalizado",
+            "slug": "paysandu-criciuma-23844",
+            "data_realizacao": "02/06/2025",
+            "hora_realizacao": "21:00",
+            "data_realizacao_iso": "2025-06-02T21:00:00-0300",
+            "estadio": {
+                "estadio_id": 108,
+                "nome_popular": "Curuzu"
+            },
+            "_link": "/v1/partidas/23844"
+        }
+    ],
+    "_link": "/v1/campeonatos/14/rodadas/10"
+}

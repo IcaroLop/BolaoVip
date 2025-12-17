@@ -1,0 +1,209 @@
+.nome-coluna {
+  min-width: 140px; /* reduz a largura mínima */
+  max-width: 180px; /* limita expansão */
+  text-align: center; /* centraliza conteúdo na célula */
+}
+
+.nome-coluna .nome-link {
+  display: inline-block;
+  text-align: center; /* centraliza o texto do nome */
+  white-space: normal; /* permite quebra em espaços */
+  word-break: normal;  /* evita quebra por caractere */
+  overflow-wrap: anywhere; /* em nomes muito longos, quebra em qualquer ponto seguro */
+  line-height: 1.2;
+  padding: 6px 8px; /* padding mais enxuto para reduzir largura visual */
+}
+
+/* Ajuste para evitar efeito de colunas muito estreitas no grid */
+.ranking-table td,
+.ranking-table th {
+  vertical-align: middle;
+}
+.ranking-container {
+  background-color: #0D1117;
+  color: white;
+  padding: clamp(0.5rem, 2vw, 1rem);
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.ranking-title {
+  color: #00FF88;
+  margin-bottom: 1rem;
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+}
+
+.ranking-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+  flex-wrap: nowrap;
+}
+
+.ranking-nav-btn {
+  padding: clamp(0.3rem, 1.5vw, 0.4rem) clamp(0.5rem, 2vw, 0.6rem);
+  background-color: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: clamp(0.7rem, 2vw, 0.85rem);
+  min-height: 32px;
+  min-width: 40px;
+  height: 32px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ranking-nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ranking-table {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto 1rem auto;
+  border-collapse: collapse;
+  font-size: clamp(0.7rem, 2vw, 0.9rem);
+  table-layout: auto;
+  word-wrap: break-word;
+  overflow-x: auto;
+}
+
+.ranking-table th,
+.ranking-table td {
+  padding: clamp(0.25rem, 1vw, 0.5rem);
+  border-bottom: 1px solid #333;
+  text-align: center;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.ranking-table th:nth-child(1),
+.ranking-table td:nth-child(1) {
+  width: 8%;
+}
+
+.ranking-table th:nth-child(2),
+.ranking-table td:nth-child(2) {
+  width: 15%;
+  word-break: break-word;
+}
+
+.ranking-table th:nth-child(3),
+.ranking-table td:nth-child(3) {
+  width: 10%;
+}
+
+.ranking-table th:nth-child(4),
+.ranking-table td:nth-child(4) {
+  width: 14%;
+}
+
+.ranking-table th:nth-child(5),
+.ranking-table td:nth-child(5) {
+  width: 10%;
+}
+
+.ranking-table th:nth-child(6),
+.ranking-table td:nth-child(6) {
+  width: 13%;
+}
+
+.ranking-table th:nth-child(7),
+.ranking-table td:nth-child(7) {
+  width: 12%;
+}
+@media (max-width: 768px) {
+  .ranking-container {
+    padding: 0.5rem;
+  }
+
+  .ranking-table {
+    font-size: 0.7rem;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .ranking-table th,
+  .ranking-table td {
+    padding: 0.5rem 0.3rem;
+    font-size: 0.7rem;
+  }
+}
+
+.ranking-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.ranking-item {
+  background-color: #161B22;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ranking-message {
+  margin-top: 1rem;
+  color: #FFA500;
+}
+
+@media (max-width: 600px) {
+  .ranking-table th,
+  .ranking-table td {
+    font-size: 0.7rem;
+    padding: 0.3rem;
+  }
+
+  .ranking-item {
+    font-size: 0.75rem;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+}
+
+.emoji {
+  margin-left: 4px;
+  font-size: 1rem;
+}
+
+.nome-link {
+  background: none;
+  border: none;
+  color: #1e90ff;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.acao-recebe {
+  color: #00FF88;
+  font-weight: bold;
+  background-color: rgba(0, 255, 136, 0.1);
+  padding: 0.4rem !important;
+  border-radius: 4px;
+}
+
+.acao-paga {
+  color: #FF6B6B;
+  font-weight: bold;
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 0.4rem !important;
+  border-radius: 4px;
+}
+
