@@ -1,0 +1,77 @@
+# Dependências
+node_modules/
+package-lock.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.tokenenv
+
+# Build e cache
+dist/
+build/
+.cache/
+.parcel-cache/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Certificados e chaves
+pix/certificados/*.pem
+pix/certificados/*.key
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Bancos de dados locais
+*.sqlite
+*.db
+
+# Backup
+*.bak
+*.backup
+*.old
+
+# Frontend específico
+frontend/bolao-vip/build/
+frontend/bolao-vip/.env
+frontend/bolao-vip/.env.local
+
+# Arquivos temporários
+tmp/
+temp/
+*.tmp
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Documentação gerada
+docs/_build/
