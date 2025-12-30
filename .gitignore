@@ -42,12 +42,12 @@ desktop.ini
 .settings/
 *.sublime-workspace
 
-# Certificados e chaves
-pix/certificados/*.pem
-pix/certificados/*.key
-*.pem
-*.key
-*.pfx
+# Certificados e chaves (apenas certificados reais, não os de exemplo)
+pix/certificados/*producao*.pem
+pix/certificados/*producao*.key
+pix/certificados/*chave_privada*.pem
+pix/certificados/*homologacao*.pem
+pix/certificados/*.pfx
 *.p12
 
 # Bancos de dados locais
