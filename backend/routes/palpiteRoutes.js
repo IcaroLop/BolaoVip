@@ -6,7 +6,8 @@ const {
   buscarPalpitesDoUsuario,
   listarHistorico,
   getPalpitesUsuarioRodadaVigente,
-  verificarPagamentoPix
+  verificarPagamentoPix,
+  verificarBloqueio
 } = require('../controllers/palpiteController');
 
 // Rota de envio de palpites
@@ -20,6 +21,9 @@ router.get('/historico/:rodada', autenticar, listarHistorico);
 
 // Rota para verificar status de pagamento PIX
 router.get('/verificar-pagamento/:rodada', autenticar, verificarPagamentoPix);
+
+// 🆕 Rota para verificar se usuário está bloqueado por pagamentos pendentes
+router.get('/verificar-bloqueio', autenticar, verificarBloqueio);
 
 router.get('/rodada/:rodada/usuario/:id_usuario', autenticar, getPalpitesUsuarioRodadaVigente);
 

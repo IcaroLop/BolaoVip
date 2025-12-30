@@ -679,3 +679,27 @@
     border-bottom-color: transparent;
   }
 }
+
+/* Ajustes para telas muito estreitas (ex: <375px) no filtro do Agendador */
+@media (max-width: 400px) {
+  .agendador-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .agendador-filtro-dia {
+    width: 100%;
+    margin-left: 0 !important;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .agendador-filtro-dia input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .agendador-filtro-dia button {
+    width: 100%;
+  }
+}

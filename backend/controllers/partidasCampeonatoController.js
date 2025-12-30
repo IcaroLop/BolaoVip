@@ -15,14 +15,31 @@ function extrairNumeroRodada(nomeRodada) {
 }
 
 /**
- * Converte data ISO da API para formato MySQL datetime
- * @param {string} dataISO - Data no formato ISO (ex: "2025-09-16T13:45:00-0300")
- * @returns {string} Data formatada para MySQL (ex: "2025-09-16 13:45:00")
+ * Converte data ISO para formato MySQL datetime
+ * @param {string} dataISO - Data no formato ISO (ex: "2025-09-16T16:45:00.000Z")
+ * @param {number|null} campeonatoId - ID do campeonato
+ * @returns {string|null} Data formatada para MySQL (ex: "2025-09-16 13:45:00") ou null se inválida
  */
-function converterParaDatetimeMySQL(dataISO) {
-  // Converte para timezone de Manaus (padrão do sistema)
-  const dt = DateTime.fromISO(dataISO, { zone: 'America/Manaus' });
-  return dt.toFormat('yyyy-MM-dd HH:mm:ss');
+function converterParaDatetimeMySQL(dataISO, campeonatoId = null) {
+  if (!dataISO) return null;
+
+  try {
+    // Respeita o timezone vindo da API e converte para Manaus
+    let dt = DateTime.fromISO(dataISO, { setZone: true });
+
+    // Fallback para formatos sem timezone explícito
+    if (!dt.isValid) {
+      dt = DateTime.fromFormat(dataISO, 'dd/LL/yyyy HH:mm', { zone: 'America/Sao_Paulo' });
+    }
+
+    if (!dt.isValid) return null;
+
+    dt = dt.setZone('America/Manaus');
+
+    return dt.toFormat('yyyy-LL-dd HH:mm:ss');
+  } catch (error) {
+    return null;
+  }
 }
 
 /**
@@ -397,7 +414,7 @@ exports.importarRodadasCampeonato = async (req, res) => {
  */
 async function inserirOuAtualizarPartida(conexao, partida, fase, rodada, campeonatoId) {
   try {
-    const dataHora = converterParaDatetimeMySQL(partida.data_realizacao_iso);
+    const dataHora = converterParaDatetimeMySQL(partida.data_realizacao_iso, campeonatoId);
 
     // Verificar se partida já existe
     const [existente] = await conexao.query(

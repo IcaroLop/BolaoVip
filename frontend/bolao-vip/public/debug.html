@@ -1,0 +1,133 @@
+<!-- Debug Page - Teste de Endpoints -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug - Gerar Pagamentos</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 8px 12px; margin: 5px; }
+        textarea { width: 100%; height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Gerar Pagamentos</h1>
+    
+    <div class="section">
+        <h3>📋 Token & Usuário</h3>
+        <p>Token: <code id="tokenStatus">-</code></p>
+        <p>Usuário: <code id="userStatus">-</code></p>
+        <p>Perfis: <code id="perfisStatus">-</code></p>
+        <button onclick="verificarToken()">Verificar Token</button>
+        <button onclick="carregarUsuario()">Carregar Usuário</button>
+    </div>
+    
+    <div class="section">
+        <h3>🏆 Status da Rodada</h3>
+        <label>Rodada: <input type="number" id="rodada" value="1" min="1" max="38"></label>
+        <button onclick="verificarStatusRodada()">Verificar Status</button>
+        <textarea id="statusOutput" readonly></textarea>
+    </div>
+    
+    <div class="section">
+        <h3>💳 Gerar Pagamentos</h3>
+        <label>Rodada: <input type="number" id="rodadaPag" value="1" min="1" max="38"></label>
+        <button onclick="gerarPagamentos()">Gerar Pagamentos</button>
+        <textarea id="pagOutput" readonly></textarea>
+    </div>
+
+    <script>
+        const API = 'http://localhost:3001';
+        
+        function verificarToken() {
+            const token = localStorage.getItem('token');
+            const elem = document.getElementById('tokenStatus');
+            if (token) {
+                elem.textContent = token.substring(0, 30) + '...';
+                elem.className = 'success';
+            } else {
+                elem.textContent = 'Nenhum token encontrado';
+                elem.className = 'error';
+            }
+        }
+        
+        async function carregarUsuario() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                document.getElementById('userStatus').textContent = 'Sem token';
+                document.getElementById('userStatus').className = 'error';
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API}/usuarios/me`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                console.log('Usuário:', data);
+                document.getElementById('userStatus').textContent = data.nome || 'Erro';
+                document.getElementById('userStatus').className = 'success';
+                
+                const perfis = data.perfis ? data.perfis.map(p => p.nome).join(', ') : 'Nenhum';
+                document.getElementById('perfisStatus').textContent = perfis;
+                document.getElementById('perfisStatus').className = 'success';
+            } catch (err) {
+                console.error('Erro:', err);
+                document.getElementById('userStatus').textContent = 'Erro ao carregar';
+                document.getElementById('userStatus').className = 'error';
+            }
+        }
+        
+        async function verificarStatusRodada() {
+            const rodada = document.getElementById('rodada').value;
+            const output = document.getElementById('statusOutput');
+            
+            try {
+                const res = await fetch(`${API}/ranking/rodada/${rodada}/status`);
+                const data = await res.json();
+                console.log('Status:', data);
+                output.value = JSON.stringify(data, null, 2);
+                output.style.color = 'green';
+            } catch (err) {
+                console.error('Erro:', err);
+                output.value = 'Erro: ' + err.message;
+                output.style.color = 'red';
+            }
+        }
+        
+        async function gerarPagamentos() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                document.getElementById('pagOutput').value = 'Sem token';
+                return;
+            }
+            
+            const rodada = document.getElementById('rodadaPag').value;
+            const output = document.getElementById('pagOutput');
+            
+            try {
+                const res = await fetch(`${API}/ranking/rodada/${rodada}/gerar-pagamentos`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                console.log('Resposta:', data);
+                output.value = JSON.stringify(data, null, 2);
+                output.style.color = res.ok ? 'green' : 'red';
+            } catch (err) {
+                console.error('Erro:', err);
+                output.value = 'Erro: ' + err.message;
+                output.style.color = 'red';
+            }
+        }
+        
+        // Auto-verificar token ao carregar
+        window.onload = () => {
+            verificarToken();
+            carregarUsuario();
+        };
+    </script>
+</body>
+</html>

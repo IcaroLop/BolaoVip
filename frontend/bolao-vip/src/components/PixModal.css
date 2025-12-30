@@ -86,12 +86,44 @@
 }
 
 @media (max-width: 400px) {
+  .pix-overlay {
+    padding: 0.5rem;
+  }
+
   .pix-qr {
-    width: 150px;
-    height: 150px;
+    width: 140px;
+    height: 140px;
+    padding: 6px;
+    margin: 1rem auto;
   }
 
   .pix-modal {
     padding: 1rem;
+    width: 95%;
+    max-width: 95vw;
+  }
+
+  .pix-input {
+    padding: 6px;
+    font-size: 12px;
+    margin: 8px 0;
+  }
+
+  .pix-btn-copy,
+  .pix-btn-close {
+    min-height: 40px;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .pix-titulo {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .pix-label {
+    font-size: 0.85rem;
   }
 }

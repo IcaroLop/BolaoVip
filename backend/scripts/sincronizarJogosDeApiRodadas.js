@@ -4,7 +4,7 @@
 const pool = require('../database/conexao');
 const { DateTime } = require('luxon');
 
-function normalizarDataIso(valor) {
+function normalizarDataIso(valor, campeonatoId) {
   if (!valor) return null;
   try {
     // Tenta ler ISO com timezone original e converter para America/Manaus
@@ -14,7 +14,11 @@ function normalizarDataIso(valor) {
       dt = DateTime.fromFormat(valor, 'dd/LL/yyyy HH:mm', { zone: 'America/Sao_Paulo' });
     }
     if (!dt.isValid) return null;
-    return dt.setZone('America/Manaus').toFormat('yyyy-LL-dd HH:mm:ss');
+
+    // Converte para timezone de Manaus
+    dt = dt.setZone('America/Manaus');
+
+    return dt.toFormat('yyyy-LL-dd HH:mm:ss');
   } catch (e) {
     return null;
   }
@@ -26,7 +30,7 @@ async function processarPartidas(conexao, campeonatoId, rodada, partidas) {
     const partidaId = p.partida_id;
     if (!partidaId) continue;
 
-    const dataIso = normalizarDataIso(p.data_realizacao_iso || p.data_realizacao || p.data);
+    const dataIso = normalizarDataIso(p.data_realizacao_iso || p.data_realizacao || p.data, campeonatoId);
     const estadio = p.estadio?.nome_popular || p.estadio?.nome || null;
     const timeMandante = p.time_mandante?.nome_popular || p.time_mandante?.nome || null;
     const timeVisitante = p.time_visitante?.nome_popular || p.time_visitante?.nome || null;

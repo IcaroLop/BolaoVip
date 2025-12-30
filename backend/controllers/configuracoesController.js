@@ -1,5 +1,6 @@
 const db = require('../database/conexao');
 const axios = require('axios');
+const { DateTime } = require('luxon');
 const tokenConfig = require('../config/tokenConfig');
 const classificacaoService = require('../services/classificacaoService');
 const { registrarRequisicaoApiFutebol } = require('../services/apiFutebolHelper');
@@ -65,14 +66,15 @@ async function consultarRodadaApiFutebol(req, res) {
   }
 }
 
-// Converte strings ISO (com ou sem timezone) para formato MySQL DATETIME (UTC)
-function normalizarDataIso(valor) {
+// Converte strings ISO para DATETIME ajustado ao fuso de Manaus
+// A API já retorna em UTC-3 (São Paulo), conversão para Manaus (UTC-4) é automática
+function normalizarDataIso(valor, campeonatoId = null) {
   if (!valor) return null;
   try {
-    const d = new Date(valor);
-    if (Number.isNaN(d.getTime())) return null;
-    // Armazena em UTC no formato YYYY-MM-DD HH:MM:SS
-    return d.toISOString().slice(0, 19).replace('T', ' ');
+    let dt = DateTime.fromISO(valor, { setZone: true });
+    if (!dt.isValid) return null;
+    dt = dt.setZone('America/Manaus');
+    return dt.toFormat('yyyy-LL-dd HH:mm:ss');
   } catch (e) {
     return null;
   }
@@ -135,7 +137,7 @@ async function salvarRodadaEJogos({ dados, partidas, campeonatoId, rodada }) {
     await conn.beginTransaction();
     for (const p of partidas) {
       const partida_id = p.partida_id;
-      const data_iso = normalizarDataIso(p.data_realizacao_iso || p.data_realizacao || p.data);
+      const data_iso = normalizarDataIso(p.data_realizacao_iso || p.data_realizacao || p.data, campeonatoId);
       const estadio = p.estadio?.nome_popular || p.estadio?.nome || null;
       const time_mandante = p.time_mandante?.nome_popular || p.time_mandante?.nome || null;
       const time_visitante = p.time_visitante?.nome_popular || p.time_visitante?.nome || null;

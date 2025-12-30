@@ -238,3 +238,44 @@
     padding: 3px 6px;
   }
 }
+
+/* Ultra-narrow screens: ensure columns don't get swallowed */
+@media (max-width: 375px) {
+  .extrato-table {
+    padding: 10px 12px;
+    max-height: 280px;
+  }
+
+  .extrato-table table {
+    table-layout: fixed;
+    font-size: 11px;
+  }
+
+  .extrato-table th,
+  .extrato-table td {
+    padding: 8px 6px;
+  }
+
+  /* Make date/time wrap into two lines */
+  .extrato-table td.data {
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  /* Allow value to wrap into two lines (e.g., sign/currency + amount) */
+  .extrato-table td.valor,
+  .extrato-table td.saldo-novo {
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  .tipo-badge,
+  .status-badge {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+
+  .extrato-table th {
+    font-size: 10px;
+  }
+}

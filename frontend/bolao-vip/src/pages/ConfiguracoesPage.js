@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import './ConfiguracoesPage.css';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 function ConfiguracoesPage() {
   const [campeonatos, setCampeonatos] = useState([]);
@@ -1123,6 +1124,13 @@ function AgendadorBox() {
   const [requisicoesUsadas, setRequisicoesUsadas] = useState(0);
   const [saldoDisponivel, setSaldoDisponivel] = useState(0);
   const limit = 10;
+  const [diaFiltro, setDiaFiltro] = useState(() => {
+    const hoje = new Date();
+    const y = hoje.getFullYear();
+    const m = String(hoje.getMonth() + 1).padStart(2, '0');
+    const d = String(hoje.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  });
 
   // Reusa API base e auth da página
   const token = useMemo(() => {
@@ -1138,7 +1146,8 @@ function AgendadorBox() {
     setLoading(true);
     setMensagem('');
     try {
-      const res = await axios.get(`${API}/configuracoes/agendador/agenda?page=${pageNum}&limit=${limit}`, authHeader);
+      const url = `${API}/configuracoes/agendador/agenda?page=${pageNum}&limit=${limit}${diaFiltro ? `&dia=${diaFiltro}` : ''}`;
+      const res = await axios.get(url, authHeader);
       setAgenda(res.data.agenda || []);
       setTotal(res.data.total || 0);
       setTotalPages(res.data.totalPages || 0);
@@ -1218,10 +1227,20 @@ function AgendadorBox() {
           Saldo disponível: {saldoDisponivel}
         </div>
       </div>
-      <div className="actions" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+      <div className="actions agendador-actions" style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         <button className="btn-import" onClick={() => carregarAgenda()} disabled={loading}>🔄 Atualizar Agenda</button>
         <button className="btn-import" onClick={planejar} disabled={loading}>🗓️ Planejar</button>
         <button className="btn-import" onClick={executarDevidos} disabled={loading}>🚀 Executar Devidos</button>
+        <div className="agendador-filtro-dia" style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
+          <input
+            type="date"
+            value={diaFiltro}
+            onChange={(e) => setDiaFiltro(e.target.value)}
+            style={{ background: '#161b22', border: '1px solid #2d333b', color: '#fff', padding: '6px 10px', borderRadius: 6, minWidth: 160 }}
+            disabled={loading}
+          />
+          <button className="btn-import" onClick={() => carregarAgenda(1)} disabled={loading}>📅 Filtrar Dia</button>
+        </div>
       </div>
       {mensagem && <p className="muted" style={{ whiteSpace: 'pre-wrap' }}>{mensagem}</p>}
       <div className="table-like agendador-grid">
@@ -1506,7 +1525,7 @@ function ImportarClassificacaoBox({ API, authHeader, grupoSelecionado, grupos, c
 }
 
 function LimiteRequisicoesDiaBox({ configuracoes, authHeader, onSalvarSucesso }) {
-  const [limite, setLimite] = useState(configuracoes?.limite_requisicoes_dia || 100);
+  const [limite, setLimite] = useState(configuracoes?.limite_requisicoes_dia || 1000);
   const [loading, setLoading] = useState(false);
   const [mensagem, setMensagem] = useState('');
 
@@ -1517,8 +1536,8 @@ function LimiteRequisicoesDiaBox({ configuracoes, authHeader, onSalvarSucesso })
   }, [configuracoes]);
 
   const salvarLimite = async () => {
-    if (!limite || limite < 1 || limite > 999) {
-      setMensagem('❌ Limite deve ser entre 1 e 999.');
+    if (!limite || limite < 1 || limite > 50000) {
+      setMensagem('❌ Limite deve ser entre 1 e 50000.');
       return;
     }
 
@@ -1547,7 +1566,7 @@ function LimiteRequisicoesDiaBox({ configuracoes, authHeader, onSalvarSucesso })
     setLoading(true);
     try {
       const res = await axios.get(`${API}/configuracoes`, authHeader);
-      setLimite(res.data?.limite_requisicoes_dia || 100);
+      setLimite(res.data?.limite_requisicoes_dia || 1000);
       setMensagem('✅ Limite recarregado do servidor.');
     } catch (err) {
       setMensagem('❌ Erro ao recarregar limite.');

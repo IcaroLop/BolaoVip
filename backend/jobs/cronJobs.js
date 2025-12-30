@@ -5,6 +5,7 @@ const axios = require('axios');
 const agendadorService = require('../services/agendadorService');
 const { registrarRequisicaoApiFutebol } = require('../services/apiFutebolHelper');
 const classificacaoService = require('../services/classificacaoService');
+const notificacoesAgendadasService = require('../services/notificacoesAgendadasService');
 
 // Configuração de timezone (Manaus - America/Manaus UTC-4)
 const TIMEZONE = 'America/Manaus';
@@ -18,7 +19,7 @@ function iniciarJobZerarContador() {
     console.log('🔄 [00:01] Iniciando job de zerar contador de requisições API-Futebol...');
     try {
       const [result] = await pool.query(
-        'UPDATE configuracoes SET requisicoes_api_futebol = 0 WHERE id = 1'
+        'UPDATE configuracoes SET requisicoes_api_futebol = 0 ORDER BY id DESC LIMIT 1'
       );
       console.log('✅ [00:01] Contador de requisições zerado com sucesso.', result.affectedRows, 'linha(s) atualizada(s).');
     } catch (err) {
@@ -205,8 +206,55 @@ function iniciarJobPlanejarAgendamentos() {
 }
 
 /**
- * Job 4: Executar requisições de placares agendadas
- * Execução: A cada 1 minuto (verifica agendamentos devidos)
+ * Job 5: Sincronizar notícias de futebol de múltiplas fontes
+ * Execução: A cada 30 minutos
+ */
+function iniciarJobSincronizarNoticias() {
+  const { coletarTodasNoticias } = require('../services/noticiasScraper');
+  
+  cron.schedule('*/30 * * * *', async () => {
+    console.log('🔄 [CRON] Iniciando sincronização automática de notícias de futebol...');
+    try {
+      const noticias = await coletarTodasNoticias();
+      
+      let inseridas = 0;
+      let atualizadas = 0;
+      let erros = 0;
+
+      for (const n of noticias) {
+        try {
+          const [result] = await pool.query(`
+            INSERT INTO noticias (titulo, resumo, imagem, link, fonte, data_publicacao)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+              resumo = VALUES(resumo), 
+              imagem = VALUES(imagem),
+              data_publicacao = VALUES(data_publicacao)
+          `, [n.titulo, n.resumo, n.imagem, n.link, n.fonte, n.data_publicacao]);
+
+          if (result.affectedRows === 1) inseridas++;
+          else if (result.affectedRows === 2) atualizadas++;
+        } catch (err) {
+          erros++;
+        }
+      }
+
+      console.log(`✅ [CRON] Sincronização de notícias concluída: ${inseridas} inseridas, ${atualizadas} atualizadas, ${erros} erros`);
+      try { logSistema({ origem: 'cron-noticias', nivel: 'info', descricao: `Sincronização de notícias: ${inseridas} inseridas, ${atualizadas} atualizadas, ${erros} erros` }); } catch {}
+    } catch (error) {
+      console.error('❌ [CRON] Erro na sincronização automática de notícias:', error.message);
+      try { logSistema({ origem: 'cron-noticias', nivel: 'error', descricao: `Erro na sincronização de notícias: ${error.message}` }); } catch {}
+    }
+  }, {
+    scheduled: true
+  });
+  console.log('✅ Job de sincronização de notícias agendado para executar a cada 30 minutos');
+  try { logSistema({ origem: 'cron', nivel: 'info', descricao: 'Job de sincronização de notícias agendado para executar a cada 30 minutos' }); } catch {}
+}
+
+/**
+ * Job 5: Sincronizar notícias de futebol de múltiplas fontes
+ * Execução: A cada 30 minutos
  */
 function iniciarJobExecutarRequisicoes() {
   cron.schedule('* * * * *', async () => {
@@ -230,8 +278,64 @@ function iniciarJobExecutarRequisicoes() {
 }
 
 /**
- * Inicializa todos os jobs
+ * Job 6: Agendar notificações para rodadas que estão próximas de começar
+ * Execução: A cada 2 minutos
  */
+function iniciarJobAgendarNotificacoes() {
+  cron.schedule('*/2 * * * *', async () => {
+    try {
+      await notificacoesAgendadasService.agendarNotificacoesRodadas();
+    } catch (err) {
+      console.error('❌ [Notificações] Erro ao agendar notificações:', err.message);
+    }
+  }, {
+    scheduled: true,
+    timezone: TIMEZONE
+  });
+  console.log('✅ Job de agendamento de notificações agendado para executar a cada 2 minutos (America/Manaus)');
+  try { logSistema({ origem: 'cron', nivel: 'info', descricao: 'Job de agendamento de notificações agendado para executar a cada 2 minutos' }); } catch {}
+}
+
+/**
+ * Job 7: Disparar notificações que estão vencidas
+ * Execução: A cada 1 minuto
+ */
+function iniciarJobDispararNotificacoes() {
+  cron.schedule('* * * * *', async () => {
+    try {
+      await notificacoesAgendadasService.dispararNotificacoesPendentes();
+    } catch (err) {
+      console.error('❌ [Disparo] Erro ao disparar notificações:', err.message);
+    }
+  }, {
+    scheduled: true,
+    timezone: TIMEZONE
+  });
+  console.log('✅ Job de disparo de notificações agendado para executar a cada 1 minuto (America/Manaus)');
+  try { logSistema({ origem: 'cron', nivel: 'info', descricao: 'Job de disparo de notificações agendado para executar a cada 1 minuto' }); } catch {}
+}
+
+/**
+ * Job 8: Limpar notificações expiradas
+ * Execução: Todos os dias às 03:00 AM
+ */
+function iniciarJobLimparNotificacoes() {
+  cron.schedule('0 3 * * *', async () => {
+    console.log('🗑️ [03:00] Iniciando limpeza de notificações expiradas...');
+    try {
+      await notificacoesAgendadasService.limparNotificacoesExpiradas();
+    } catch (err) {
+      console.error('❌ [Limpeza] Erro ao limpar notificações:', err.message);
+    }
+  }, {
+    scheduled: true,
+    timezone: TIMEZONE
+  });
+  console.log('✅ Job de limpeza de notificações agendado para 03:00 AM (America/Manaus)');
+  try { logSistema({ origem: 'cron', nivel: 'info', descricao: 'Job de limpeza de notificações agendado para 03:00 AM' }); } catch {}
+}
+
+
 function iniciarTodosJobs() {
   console.log('🚀 Iniciando sistema de cron jobs...');
   try { logSistema({ origem: 'cron', nivel: 'info', descricao: 'Iniciando sistema de cron jobs' }); } catch {}
@@ -240,6 +344,10 @@ function iniciarTodosJobs() {
   iniciarJobAtualizarClassificacao();
   iniciarJobPlanejarAgendamentos();
   iniciarJobExecutarRequisicoes();
+  iniciarJobSincronizarNoticias();
+  iniciarJobAgendarNotificacoes();
+  iniciarJobDispararNotificacoes();
+  iniciarJobLimparNotificacoes();
   console.log('✅ Todos os cron jobs foram agendados com sucesso!');
   try { logSistema({ origem: 'cron', nivel: 'info', descricao: 'Todos os cron jobs foram agendados com sucesso' }); } catch {}
 }
@@ -251,4 +359,8 @@ module.exports = {
   iniciarJobAtualizarClassificacao,
   iniciarJobPlanejarAgendamentos,
   iniciarJobExecutarRequisicoes,
+  iniciarJobSincronizarNoticias,
+  iniciarJobAgendarNotificacoes,
+  iniciarJobDispararNotificacoes,
+  iniciarJobLimparNotificacoes,
 };

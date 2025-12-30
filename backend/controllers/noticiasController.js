@@ -16,7 +16,7 @@ async function listarNoticias(req, res) {
     
     res.json(rows);
   } catch (error) {
-    console.error('Erro ao listar notícias:', error);
+    console.error('[NoticiasController] ❌ Erro ao listar notícias:', error);
     res.status(500).json({ erro: 'Erro ao listar notícias' });
   }
 }
@@ -28,27 +28,34 @@ async function sincronizarNoticias(req, res) {
 
     let inseridas = 0;
     let atualizadas = 0;
+    let erros = 0;
 
     for (const n of noticias) {
-      const [result] = await pool.query(`
-        INSERT INTO noticias (titulo, resumo, imagem, link, fonte, data_publicacao)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE 
-          resumo = VALUES(resumo), 
-          imagem = VALUES(imagem),
-          data_publicacao = VALUES(data_publicacao)
-      `, [n.titulo, n.resumo, n.imagem, n.link, n.fonte, n.data_publicacao]);
+      try {
+        const [result] = await pool.query(`
+          INSERT INTO noticias (titulo, resumo, imagem, link, fonte, data_publicacao)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE 
+            resumo = VALUES(resumo), 
+            imagem = VALUES(imagem),
+            data_publicacao = VALUES(data_publicacao)
+        `, [n.titulo, n.resumo, n.imagem, n.link, n.fonte, n.data_publicacao]);
 
-      if (result.affectedRows === 1) inseridas++;
-      else if (result.affectedRows === 2) atualizadas++;
+        if (result.affectedRows === 1) inseridas++;
+        else if (result.affectedRows === 2) atualizadas++;
+      } catch (err) {
+        erros++;
+        console.error(`[NoticiasController] Erro ao inserir notícia [${n.fonte}] ${n.titulo}:`, err.message);
+      }
     }
 
-    console.log(`✅ Sincronização concluída: ${inseridas} inseridas, ${atualizadas} atualizadas`);
+    console.log(`✅ Sincronização concluída: ${inseridas} inseridas, ${atualizadas} atualizadas, ${erros} erros`);
     res.json({ 
       sucesso: true, 
       total: noticias.length,
       inseridas,
-      atualizadas
+      atualizadas,
+      erros
     });
   } catch (error) {
     console.error('❌ Erro ao sincronizar notícias:', error);

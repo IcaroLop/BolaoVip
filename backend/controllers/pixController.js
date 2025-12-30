@@ -1,5 +1,6 @@
 const pixService = require('../services/pixService');
 const db = require('../database/conexao'); // mysql2/promise pool
+const { criarNotificacao } = require('../services/notificacoesService');
 require('dotenv').config();
 
 const chavePix = process.env.EFI_PIX_KEY;
@@ -67,6 +68,29 @@ async function gerarCobranca(req, res) {
     const [insertResult] = await db.query('INSERT INTO pix_cobrancas SET ?', [insertData]);
     console.log(`[gerarCobranca] ✅ PIX criado com sucesso. db_id=${insertResult.insertId}, sanitizedTxid=${sanitizedTxid}, valor=${valorOriginal}`);
 
+    // ✅ NOTIFICAÇÃO: Cobrança PIX Pendente
+    const dadosNotificacao = {
+      txid: cobranca.txid,
+      codigo_envio,
+      valor: valorOriginal,
+      pix_copiaecola: pixCopiaECola,
+      calendario_expiracao: calendarioExpiracao,
+      loc_location: locLocation
+    };
+
+    const tituloNotificacao = '💳 Cobrança PIX Pendente';
+    const mensagemNotificacao = `Código ${codigo_envio}: Pague R$ ${valorOriginal.toFixed(2)} via PIX. Válida até ${new Date(calendarioExpiracao * 1000).toLocaleString('pt-BR')}`;
+
+    await criarNotificacao(
+      id_usuario,
+      'pagamento_pendente',
+      tituloNotificacao,
+      mensagemNotificacao,
+      dadosNotificacao
+    ).catch(err => {
+      console.error('Erro ao criar notificação de cobrança pendente:', err);
+    });
+
     // Buscar a cobrança inserida pelo ID gerado
     const [rows] = await db.query('SELECT * FROM pix_cobrancas WHERE id = ?', [insertResult.insertId]);
 
@@ -114,6 +138,33 @@ async function webhookCobranca (req, res) {
             'UPDATE palpites SET status_pagamento = ?, data_pagamento = NOW() WHERE codigo_envio = ?',
             ['PAGO', txid]
           );
+
+          // ✅ NOTIFICAÇÃO: Pagamento Confirmado
+          const [cobrancaRows] = await db.query('SELECT id_usuario, codigo_envio, valor_original FROM pix_cobrancas WHERE txid = ?', [txid]);
+          if (cobrancaRows && cobrancaRows.length > 0) {
+            const { id_usuario, codigo_envio, valor_original } = cobrancaRows[0];
+            
+            const dadosNotificacao = {
+              txid,
+              codigo_envio,
+              valor: valor_original,
+              data_pagamento: new Date(),
+              status: 'CONFIRMADO'
+            };
+
+            const tituloNotificacao = '✅ Pagamento Confirmado';
+            const mensagemNotificacao = `Seu pagamento de R$ ${valor_original.toFixed(2)} foi confirmado! Referência: ${codigo_envio}`;
+
+            await criarNotificacao(
+              id_usuario,
+              'pagamento_confirmado',
+              tituloNotificacao,
+              mensagemNotificacao,
+              dadosNotificacao
+            ).catch(err => {
+              console.error('Erro ao criar notificação de pagamento confirmado:', err);
+            });
+          }
 
           console.log(`✅ Palpites atualizados para PAGO → codigo_envio: ${txid}`);
         } else {

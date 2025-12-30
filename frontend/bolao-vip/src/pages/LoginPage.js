@@ -2,31 +2,51 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import storage from '../utils/storage';
+import API_BASE_URL from '../config';
+import TrocarSenhaModal from '../components/TrocarSenhaModal';
 import './LoginPage.css';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [mensagem, setMensagem] = useState('');
+  const [mostrarModalTrocarSenha, setMostrarModalTrocarSenha] = useState(false);
+  const [tokenTrocaSenha, setTokenTrocaSenha] = useState(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-      const res = await axios.post('http://192.168.56.127:3001/auth/login', {
+      const res = await axios.post(`${API_BASE_URL}/auth/login`, {
         email,
         senha,
       });
 
       storage.setItem('token', res.data.token);
+      storage.setItem('refreshToken', res.data.refreshToken);
+      if (res.data.nome) {
+        storage.setItem('userName', res.data.nome);
+      }
+      
+      // Verificar se precisa trocar senha
+      if (res.data.precisa_trocar_senha === true) {
+        setTokenTrocaSenha(res.data.token);
+        setMostrarModalTrocarSenha(true);
+        setMensagem('🔐 Você precisa trocar sua senha antes de continuar');
+        return; // Bloqueia navegação até trocar senha
+      }
+      
       setMensagem('✅ Login realizado com sucesso!');
+      
+      // Disparar evento para notificar Layout sobre mudança de autenticação
+      window.dispatchEvent(new Event('authChange'));
 
       // Pós-login: carregar grupos do usuário e persistir em storage,
       // preservando grupoId previamente selecionado se válido
       try {
         const authHeader = { headers: { Authorization: `Bearer ${res.data.token}` } };
-        const gruposRes = await axios.get('http://192.168.56.127:3001/grupos', authHeader);
+        const gruposRes = await axios.get(`${API_BASE_URL}/grupos`, authHeader);
         const gruposUsuario = gruposRes.data || [];
         storage.setItem('gruposUsuario', JSON.stringify(gruposUsuario));
 
@@ -59,6 +79,18 @@ function LoginPage() {
     } catch (error) {
       console.error('Erro no login:', error);
       setMensagem('❌ Email ou senha inválidos.');
+    }
+  };
+
+  const handleTrocaSenhaCompleta = (sucesso) => {
+    setMostrarModalTrocarSenha(false);
+    if (sucesso) {
+      setMensagem('✅ Senha alterada! Redirecionando...');
+      // Aguardar 1s e navegar
+      setTimeout(() => {
+        window.dispatchEvent(new Event('authChange'));
+        navigate('/noticias');
+      }, 1000);
     }
   };
 
@@ -101,9 +133,16 @@ function LoginPage() {
           Não tem conta? <span>Cadastre-se</span>
         </p>
       </div>
+
+      {/* Modal de Trocar Senha - bloqueante quando necessário */}
+      <TrocarSenhaModal
+        isOpen={mostrarModalTrocarSenha}
+        onClose={handleTrocaSenhaCompleta}
+        token={tokenTrocaSenha}
+        bloqueante={true}
+      />
     </div>
   );
 }
 
 export default LoginPage;
-

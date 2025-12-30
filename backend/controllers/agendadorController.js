@@ -4,7 +4,10 @@ exports.listarAgendaCalculada = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
-    const resultado = await agendadorService.calcularAgendaTodosGrupos(page, limit);
+    const dia = req.query.dia || null;
+    const resultado = dia
+      ? await agendadorService.calcularAgendaPorDia(dia, page, limit)
+      : await agendadorService.calcularAgendaTodosGrupos(page, limit);
     res.json(resultado);
   } catch (err) {
     console.error('Erro ao listar agenda calculada:', err);

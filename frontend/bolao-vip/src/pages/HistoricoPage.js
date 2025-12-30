@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import axios from 'axios';
 import storage from '../utils/storage';
+import API_BASE_URL from '../config';
 import './HistoricoPage.css';
+import '../styles/RodadaNav.css';
+import DetalhesJogoModal from '../components/DetalhesJogoModal';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 const HistoricoPage = () => {
   const [rodada, setRodada] = useState(null);
@@ -12,6 +15,7 @@ const HistoricoPage = () => {
   const [grupoSelecionado, setGrupoSelecionado] = useState(null);
   const [campeonatoId, setCampeonatoId] = useState(null);
   const [contextKey, setContextKey] = useState(0);
+  const [modalDetalhes, setModalDetalhes] = useState({ aberto: false, jogo: null, palpites: [], ranking: [] });
 
   const token = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -173,6 +177,31 @@ const HistoricoPage = () => {
 
   const totalPontos = historico.reduce((sum, jogo) => sum + (Number(jogo.pontos) || 0), 0);
 
+  const abrirDetalhesJogo = async (jogo) => {
+    try {
+      const params = new URLSearchParams();
+      if (grupoSelecionado) params.append('grupoId', grupoSelecionado);
+      if (campeonatoId) params.append('campeonatoId', campeonatoId);
+
+      // Buscar palpites do grupo para este jogo
+      const palpitesRes = await axios.get(`${API}/palpites/jogo/${jogo.id_jogo}/grupo?${params.toString()}`, authHeader);
+      const palpites = palpitesRes.data;
+
+      // Buscar ranking da rodada
+      const rankingRes = await axios.get(`${API}/ranking/rodada/${rodada}?${params.toString()}`, authHeader);
+      const ranking = rankingRes.data;
+
+      setModalDetalhes({ aberto: true, jogo, palpites, ranking });
+    } catch (err) {
+      console.error('Erro ao buscar detalhes do jogo:', err);
+      setModalDetalhes({ aberto: true, jogo, palpites: [], ranking: [] });
+    }
+  };
+
+  const fecharModal = () => {
+    setModalDetalhes({ aberto: false, jogo: null, palpites: [], ranking: [] });
+  };
+
   const calcularContagemRegressiva = (data) => {
     const agora = new Date();
     const inicio = new Date(data);
@@ -189,12 +218,23 @@ const HistoricoPage = () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Histórico de Palpites - Rodada {rodada}</h2>
-
-      <div style={styles.navegacao}>
-        <button disabled={rodada <= 1} onClick={() => setRodada(r => r - 1)} style={styles.navBtn}>⬅ Anterior</button>
-        <button onClick={() => setRodada(r => r + 1)} style={styles.navBtn}>Próxima ➡</button>
+      <div className="rodada-nav-bar">
+        <button
+          className="rodada-nav-btn rodada-nav-prev"
+          disabled={!rodada || rodada <= 1}
+          onClick={() => setRodada(r => Math.max(1, (r || 1) - 1))}
+        >
+          &lt;
+        </button>
+        <button
+          className="rodada-nav-btn rodada-nav-next"
+          onClick={() => setRodada(r => Math.min(38, (r || 1) + 1))}
+        >
+          &gt;
+        </button>
       </div>
+
+      <h2 style={styles.title}>Histórico de Palpites - Rodada {rodada}</h2>
 
       {mensagem && <p style={styles.mensagem}>{mensagem}</p>}
       <p style={{ textAlign: 'center', marginBottom: '1rem' }}>
@@ -219,7 +259,15 @@ const HistoricoPage = () => {
                 ${agendado ? 'borda-azul' : ''}`}
                 style={styles.jogo}
             >
-  {/* conteúdo */}
+              {(emAndamento || finalizado) && (
+                <button
+                  style={styles.eyeIcon}
+                  onClick={() => abrirDetalhesJogo(jogo)}
+                  title="Ver detalhes do jogo"
+                >
+                  👁️
+                </button>
+              )}
 
               <div style={styles.data}>{formatarData(jogo.data)}</div>
 
@@ -258,6 +306,14 @@ const HistoricoPage = () => {
           );
         })}
       </div>
+
+      <DetalhesJogoModal
+        isOpen={modalDetalhes.aberto}
+        onClose={fecharModal}
+        jogo={modalDetalhes.jogo}
+        palpitesGrupo={modalDetalhes.palpites}
+        rankingRodada={modalDetalhes.ranking}
+      />
     </div>
   );
 };
@@ -274,20 +330,6 @@ const styles = {
     marginBottom: '1rem',
     textAlign: 'center'
   },
-  navegacao: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '1rem',
-    marginBottom: '1rem'
-  },
-  navBtn: {
-    padding: '6px 10px',
-    backgroundColor: '#333',
-    color: '#fff',
-    border: '1px solid #666',
-    borderRadius: '6px',
-    cursor: 'pointer'
-  },
   lista: {
     display: 'flex',
     flexDirection: 'column',
@@ -297,7 +339,25 @@ const styles = {
     backgroundColor: '#161B22',
     borderRadius: '10px',
     padding: '1rem',
-    textAlign: 'center'
+    textAlign: 'center',
+    position: 'relative'
+  },
+  eyeIcon: {
+    position: 'absolute',
+    bottom: '0.75rem',
+    left: '0.75rem',
+    background: 'rgba(0, 255, 136, 0.1)',
+    border: '1px solid rgba(0, 255, 136, 0.3)',
+    borderRadius: '50%',
+    width: '36px',
+    height: '36px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    fontSize: '1.2rem',
+    transition: 'all 0.2s',
+    zIndex: 10
   },
   data: {
     fontSize: '0.8rem',

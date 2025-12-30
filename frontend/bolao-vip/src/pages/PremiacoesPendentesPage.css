@@ -1,0 +1,126 @@
+/* Dark theme styling for PremiacoesPendentesPage */
+
+.premiacoes-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+  background: #0D1117;
+  color: #E5E7EB;
+  min-height: calc(100vh - 140px);
+}
+
+.premiacoes-header h2 {
+  margin-bottom: 8px;
+  color: #9FEF00;
+  font-weight: 600;
+}
+
+.premiacoes-header p {
+  color: #9CA3AF;
+  margin-top: -4px;
+  margin-bottom: 16px;
+}
+
+.premiacoes-message {
+  background: rgba(11, 107, 203, 0.1);
+  color: #8AC7FF;
+  padding: 10px;
+  border: 1px solid #1C3D5A;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.premiacoes-empty {
+  text-align: center;
+  padding: 24px;
+  background: #161B22;
+  border: 1px solid #2A2F3A;
+  border-radius: 10px;
+  color: #9CA3AF;
+}
+
+.premiacoes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.premiacao-card {
+  border: 1px solid #2A2F3A;
+  border-radius: 10px;
+  padding: 14px;
+  background: #161B22;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.premiacao-card .premiacao-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.premiacao-card .premiacao-meta .rodada {
+  font-weight: 700;
+  color: #E5E7EB;
+}
+
+.premiacao-card .premiacao-meta .tipo {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #0D1117;
+  border: 1px solid #2A2F3A;
+  border-radius: 999px;
+  color: #9CA3AF;
+}
+
+.premiacao-values {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #D1D5DB;
+}
+
+.premiacao-values strong {
+  color: #FFFFFF;
+}
+
+.premiacao-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: #0ea5e9;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #0284c7;
+}
+
+.btn-success {
+  background: #22c55e;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: #16a34a;
+}
+
+@media (max-width: 420px) {
+  .premiacoes-container {
+    padding: 12px;
+  }
+  .premiacoes-grid {
+    grid-template-columns: 1fr;
+  }
+}

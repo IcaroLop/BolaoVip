@@ -12,47 +12,6 @@
   margin-bottom: 0.5rem;
 }
 
-.nav-buttons {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: rgba(22, 27, 34, 0.7);
-  backdrop-filter: blur(4px);
-  border: 1px solid #2D333B;
-  padding: 4px;
-  border-radius: 999px;
-  margin: 6px auto 12px;
-}
-
-.nav-buttons button {
-  background-color: #0f172a;
-  color: #e5e7eb;
-  border: 1px solid #1f2937;
-  padding: 4px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  line-height: 1rem;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.nav-buttons button:hover {
-  background-color: #0b1220;
-}
-
-.nav-buttons button:active {
-  transform: scale(0.98);
-}
-
-.nav-buttons .label {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin: 0 6px;
-}
-
 .card {
   background-color: #161B22;
   border-radius: 10px;
@@ -85,7 +44,8 @@
   right: 10px;
   width: 30px;
   height: 30px;
-  background-image: url('http://192.168.56.127:3001/escudos/bola.gif');
+  /* background-image: url(/assets/bola.gif); */
+  /* TODO: Mover bola.gif para src/assets ou usar import no componente */
   background-size: cover;
   background-repeat: no-repeat;
   
@@ -97,6 +57,12 @@
   100% { transform: rotate(360deg); }
 }
 
+
+.estadio {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-top: 0.2rem;
+}
 
 .status {
   font-size: 0.9rem;
@@ -146,32 +112,85 @@
     margin-bottom: 0.5rem;
   }
 
-  .nav-buttons {
-    position: sticky;
-    top: 0;
-    gap: 4px;
-    padding: 3px;
-    margin: 4px auto 10px;
-  }
-
-  .nav-buttons button {
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    min-height: unset;
-  }
-
   .card {
     padding: 0.75rem;
     margin-bottom: 0.75rem;
   }
 
   .times {
-    gap: 1rem;
-    flex-wrap: wrap;
+    gap: 0.6rem;
   }
 
   .status {
     font-size: 0.8rem;
+  }
+}
+
+/* Ajustes para telas muito estreitas (<375px) */
+@media (max-width: 375px) {
+  .resultados-container {
+    padding: 0.3rem;
+  }
+
+  .card {
+    width: calc(100% - 0.4rem);
+    max-width: 100%;
+    padding: 0.5rem 0.35rem;
+    margin: 0.3rem auto;
+  }
+
+  .info {
+    min-height: unset;
+    gap: 1px;
+    font-size: 0.8rem;
+  }
+
+  .estadio {
+    font-size: 0.75rem;
+    margin-top: 0.1rem;
+  }
+
+  .times {
+    display: grid;
+    grid-template-columns: minmax(55px, 1fr) auto minmax(55px, 1fr);
+    align-items: center;
+    justify-items: center;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+  }
+
+  .placar {
+    font-size: 1.1rem;
+    min-width: 50px;
+    min-height: 38px;
+  }
+
+  .team-name {
+    max-width: 72px;
+    font-size: 0.8rem;
+  }
+
+  .resultados-container .escudo {
+    width: 38px !important;
+    height: 38px !important;
+    margin-bottom: 2px;
+  }
+
+  .time {
+    gap: 2px;
+  }
+}
+
+/* Ultra-narrow tweaks for <350px */
+@media (max-width: 350px) {
+  .resultados-container .escudo {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .team-name {
+    max-width: 68px;
+    font-size: 0.75rem;
   }
 }
 
@@ -180,7 +199,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 80px; /* menor para telas de celular */
+  min-width: 0;
 }
 
 .team-name {
@@ -192,6 +211,7 @@
   word-break: break-word;
   hyphens: auto;
   overflow-wrap: break-word;
+  font-size: 0.85rem;
 }
 
 .resultados-container .escudo {
@@ -220,14 +240,4 @@
 /* Position nav buttons as a compact bar under the title */
 .title + .nav-buttons {
   margin-top: 0.25rem;
-}
-
-/* Mobile adjustments for larger crests */
-/* Empilha apenas em telas muito estreitas (<400px) */
-@media (max-width: 400px) {
-  .card { margin: 0.6rem auto; padding: 0.6rem 0.45rem; }
-  .times { grid-template-columns: 1fr; gap: 0.6rem; }
-  .time { min-width: 0; }
-  .resultados-container .escudo { width: 48px !important; height: 48px !important; }
-  .placar { font-size: 1.6rem; }
 }

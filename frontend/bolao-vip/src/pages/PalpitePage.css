@@ -1,0 +1,83 @@
+/* PalpitePage.css - Otimizado para Mobile */
+
+/* Ajustes específicos para <375px */
+@media (max-width: 375px) {
+  * {
+    box-sizing: border-box;
+  }
+
+  .palpite-times-container {
+    flex-direction: column;
+    gap: 0.35rem !important;
+  }
+
+  .palpite-time-col {
+    width: 100%;
+  }
+
+  .palpite-input {
+    min-width: 45px;
+    height: 40px;
+  }
+
+  /* Garante que inputs não transborda */
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+/* Ultra-narrow mobile (320px-425px) */
+@media (max-width: 425px) and (min-width: 376px) {
+  * {
+    box-sizing: border-box;
+  }
+
+  .palpite-times-container {
+    flex-direction: column;
+    gap: 0.5rem !important;
+  }
+
+  .palpite-time-col {
+    width: 100%;
+  }
+
+  .palpite-input {
+    min-width: 48px;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+/* Responsividade Small Tablet (426px - 768px) */
+@media (min-width: 426px) and (max-width: 768px) {
+  /* Ajustes finos para tablets pequenos */
+}
+
+/* Responsividade Desktop (769px+) */
+@media (min-width: 769px) {
+  /* Layouts normais para desktop */
+}
+
+/* 🆕 Animação do Spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

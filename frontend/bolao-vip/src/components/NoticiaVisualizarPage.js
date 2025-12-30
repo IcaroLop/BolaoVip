@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import './NoticiaVisualizarPage.css';
 
 const NoticiaVisualizarPage = () => {
@@ -16,7 +17,7 @@ const NoticiaVisualizarPage = () => {
       async function fetchNoticia() {
         setCarregando(true);
         try {
-          const res = await axios.get(`http://192.168.56.127:3001/noticias/${id}`, {
+          const res = await axios.get(`${API_BASE_URL}/noticias/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setNoticia(res.data);

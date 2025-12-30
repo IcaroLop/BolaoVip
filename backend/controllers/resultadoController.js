@@ -20,27 +20,75 @@ async function obterCampeonatoIdPorGrupo(grupoId) {
 
 async function obterRodadaAtual(campeonatoId) {
   if (campeonatoId) {
-    // Tenta primeiro na tabela 'rodadas_status'; se não existir, usa 'rodada_status'
-    let preferenciais = [];
+    // **PRIORIDADE 1**: Busca primeira rodada com jogos PENDENTES (sem placar preenchido)
+    try {
+      const hasCampId = await ensureCampeonatoIdColumn();
+      const sql = hasCampId
+        ? `SELECT rodada FROM jogos 
+           WHERE campeonato_id = ? AND placar_mandante IS NULL
+           ORDER BY rodada ASC LIMIT 1`
+        : `SELECT rodada FROM jogos 
+           WHERE placar_mandante IS NULL
+           ORDER BY rodada ASC LIMIT 1`;
+      const params = hasCampId ? [campeonatoId] : [];
+      const [pendentes] = await pool.query(sql, params);
+      if (pendentes.length) {
+        console.log(`[obterRodadaAtual] Encontrada rodada ${pendentes[0].rodada} com jogos pendentes`);
+        return pendentes[0].rodada;
+      }
+    } catch (e) {
+      console.warn('[obterRodadaAtual] Busca por pendentes falhou:', e.message);
+    }
+
+    // **PRIORIDADE 2**: Tenta rodadas_status com status 'andamento'
     try {
       const [p] = await pool.query(
         `SELECT rodada FROM rodadas_status
-         WHERE campeonato_id = ? AND status IN ('andamento','agendada','programada')
+         WHERE campeonato_id = ? AND status = 'andamento'
          ORDER BY rodada ASC LIMIT 1`,
         [campeonatoId]
       );
-      preferenciais = p;
+      if (p.length) {
+        console.log(`[obterRodadaAtual] Encontrada rodada ${p[0].rodada} com status 'andamento'`);
+        return p[0].rodada;
+      }
     } catch (e) {
+      console.warn('[obterRodadaAtual] Busca em rodadas_status falhou:', e.message);
+    }
+
+    // **PRIORIDADE 3**: Tenta rodadas_status com status 'agendada' ou 'programada'
+    try {
+      const [p] = await pool.query(
+        `SELECT rodada FROM rodadas_status
+         WHERE campeonato_id = ? AND status IN ('agendada','programada')
+         ORDER BY rodada ASC LIMIT 1`,
+        [campeonatoId]
+      );
+      if (p.length) {
+        console.log(`[obterRodadaAtual] Encontrada rodada ${p[0].rodada} com status 'agendada/programada'`);
+        return p[0].rodada;
+      }
+    } catch (e) {
+      console.warn('[obterRodadaAtual] Busca por agendada/programada falhou:', e.message);
+    }
+
+    // **PRIORIDADE 4**: Fallback para rodada_status (tabela alternativa)
+    try {
       const [p2] = await pool.query(
         `SELECT rodada FROM rodada_status
          WHERE campeonato_id = ? AND status IN ('andamento','agendada','programada')
          ORDER BY rodada ASC LIMIT 1`,
         [campeonatoId]
       );
-      preferenciais = p2;
+      if (p2.length) {
+        console.log(`[obterRodadaAtual] Encontrada rodada ${p2[0].rodada} em rodada_status`);
+        return p2[0].rodada;
+      }
+    } catch (e) {
+      console.warn('[obterRodadaAtual] Busca em rodada_status falhou:', e.message);
     }
-    if (preferenciais.length) return preferenciais[0].rodada;
-    let encerradas = [];
+
+    // **ÚLTIMO RECURSO**: Busca maior rodada encerrada
     try {
       const [e] = await pool.query(
         `SELECT rodada FROM rodadas_status
@@ -48,20 +96,16 @@ async function obterRodadaAtual(campeonatoId) {
          ORDER BY rodada DESC LIMIT 1`,
         [campeonatoId]
       );
-      encerradas = e;
+      if (e.length) {
+        console.log(`[obterRodadaAtual] Usando rodada ${e[0].rodada} (encerrada)`);
+        return e[0].rodada;
+      }
     } catch (e) {
-      const [e2] = await pool.query(
-        `SELECT rodada FROM rodada_status
-         WHERE campeonato_id = ?
-         ORDER BY rodada DESC LIMIT 1`,
-        [campeonatoId]
-      );
-      encerradas = e2;
+      console.warn('[obterRodadaAtual] Busca por encerrada falhou:', e.message);
     }
-    if (encerradas.length) return encerradas[0].rodada;
   }
-  // Sem fallback em 'jogos': quando não houver status em rodada_status/rodadas_status
-  // para o campeonato informado, retornamos null para indicar ausência de rodada vigente.
+  
+  console.warn('[obterRodadaAtual] Nenhuma rodada encontrada para campeonato', campeonatoId);
   return null;
 }
 
@@ -85,18 +129,18 @@ exports.buscarResultadosRodadaVigente = async (req, res) => {
 
     const usaCampoCampeonato = campeonatoId ? await ensureCampeonatoIdColumn() : false;
 
-    const sql = usaCampoCampeonato
-      ? `SELECT partida_id, data, estadio,
-               time_mandante, time_visitante,
-               escudo_mandante, escudo_visitante,
-               placar_mandante, placar_visitante, status
+        const sql = usaCampoCampeonato
+      ? `SELECT id, partida_id, data, estadio,
+           time_mandante, time_visitante,
+           escudo_mandante, escudo_visitante,
+           placar_mandante, placar_visitante, status
          FROM jogos
          WHERE rodada = ? AND campeonato_id = ?
          ORDER BY data`
-      : `SELECT partida_id, data, estadio,
-               time_mandante, time_visitante,
-               escudo_mandante, escudo_visitante,
-               placar_mandante, placar_visitante, status
+      : `SELECT id, partida_id, data, estadio,
+           time_mandante, time_visitante,
+           escudo_mandante, escudo_visitante,
+           placar_mandante, placar_visitante, status
          FROM jogos
          WHERE rodada = ?
          ORDER BY data`;
@@ -127,18 +171,18 @@ exports.buscarResultadosRodada = async (req, res) => {
 
     const usaCampoCampeonato = campeonatoId ? await ensureCampeonatoIdColumn() : false;
 
-    const sql = usaCampoCampeonato
-      ? `SELECT partida_id, data, estadio,
-               time_mandante, time_visitante,
-               escudo_mandante, escudo_visitante,
-               placar_mandante, placar_visitante, status
+        const sql = usaCampoCampeonato
+      ? `SELECT id, partida_id, data, estadio,
+           time_mandante, time_visitante,
+           escudo_mandante, escudo_visitante,
+           placar_mandante, placar_visitante, status
          FROM jogos
          WHERE rodada = ? AND campeonato_id = ?
          ORDER BY data`
-      : `SELECT partida_id, data, estadio,
-               time_mandante, time_visitante,
-               escudo_mandante, escudo_visitante,
-               placar_mandante, placar_visitante, status
+      : `SELECT id, partida_id, data, estadio,
+           time_mandante, time_visitante,
+           escudo_mandante, escudo_visitante,
+           placar_mandante, placar_visitante, status
          FROM jogos
          WHERE rodada = ?
          ORDER BY data`;

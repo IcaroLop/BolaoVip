@@ -1,6 +1,8 @@
 .saldo-dropdown {
   position: relative;
-  display: inline-block;
+  display: flex;
+  width: 100%;
+  justify-content: center;
 }
 
 .saldo-button {
@@ -17,6 +19,8 @@
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(61, 242, 157, 0.2);
+  width: 100%;
+  max-width: 200px;
 }
 
 .saldo-button:hover {
@@ -51,7 +55,7 @@
 .saldo-dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  left: 0;
   background: rgba(20, 35, 55, 0.98);
   border: 1px solid rgba(61, 242, 157, 0.3);
   border-radius: 8px;
@@ -107,6 +111,7 @@
   .saldo-button {
     padding: 8px 12px;
     font-size: 13px;
+    max-width: 170px;
   }
 
   .saldo-valor {
@@ -125,5 +130,27 @@
 
   .dropdown-icon {
     font-size: 16px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 425px) {
+  .saldo-button {
+    padding: 6px 10px;
+    font-size: 12px;
+    max-width: 150px;
+  }
+
+  .saldo-icon {
+    font-size: 16px;
+  }
+
+  .saldo-valor {
+    min-width: 60px;
+    font-size: 12px;
+  }
+
+  .saldo-arrow {
+    font-size: 11px;
   }
 }

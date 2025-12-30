@@ -1,5 +1,6 @@
 const axios = require('axios');
 const pool = require('../database/conexao');
+const { DateTime } = require('luxon');
 const { calcularRankingRodada, gerarPremiacoesRodada } = require('../controllers/rankingController');
 const { obterCampeonatoPreferido, obterTokenApiFutebol } = require('../services/apiFutebolHelper');
 
@@ -18,7 +19,13 @@ async function importarRodadas() {
       const partidas = res.data.partidas;
 
       for (const p of partidas) {
-        const dataHora = new Date(p.data_realizacao_iso);
+        // Converte para America/Sao_Paulo -> America/Manaus e aplica -4h para Premier League (camp 69)
+        const campeonatoId = res.data?.campeonato?.campeonato_id || null;
+        let dt = DateTime.fromISO(p.data_realizacao_iso, { zone: 'America/Sao_Paulo' }).setZone('America/Manaus');
+        if (campeonatoId === 69) {
+          dt = dt.minus({ hours: 4 });
+        }
+        const dataHora = dt.toJSDate();
         await pool.query(`
           INSERT INTO jogos (
             partida_id, campeonato_id, rodada, data, time_mandante, time_visitante,

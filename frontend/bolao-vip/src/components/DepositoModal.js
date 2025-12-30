@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import './DepositoModal.css';
 
 function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
@@ -32,7 +33,12 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
     setCarregando(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://192.168.56.127:3001/saldo/deposito', {
+      
+      // Detectar ambiente: usar deposito-dev em desenvolvimento, deposito em produção
+      const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+      const endpoint = isDevelopment ? '/saldo/deposito-dev' : '/saldo/deposito';
+      
+      const response = await axios.post(`${API_BASE_URL}${endpoint}`, {
         valor: parseFloat(valor)
       }, {
         headers: {
@@ -40,12 +46,12 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         }
       });
 
-      setSucesso(`Depósito de R$ ${parseFloat(valor).toFixed(2)} solicitado com sucesso!`);
+      setSucesso(`✅ Depósito de R$ ${parseFloat(valor).toFixed(2)} confirmado com sucesso!`);
       setValor('');
       
       setTimeout(() => {
         if (onDepositoSucesso) {
-          onDepositoSucesso(response.data.deposito_id);
+          onDepositoSucesso(response.data.movimentacao_id || response.data.deposito_id);
         }
         onClose();
       }, 2000);
@@ -95,7 +101,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary" disabled={carregando}>
-              {carregando ? 'Processando...' : 'Gerar PIX'}
+              {carregando ? 'Processando...' : 'Confirmar'}
             </button>
           </div>
         </form>
@@ -104,9 +110,8 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
           <p>
             <strong>ℹ️ Como funciona:</strong><br />
             1. Digite o valor desejado<br />
-            2. Clique em "Gerar PIX"<br />
-            3. Escaneie o código ou copie a chave<br />
-            4. Seu saldo será creditado automaticamente
+            2. Clique em "Confirmar"<br />
+            3. Seu saldo será creditado instantaneamente (modo desenvolvimento)
           </p>
         </div>
       </div>

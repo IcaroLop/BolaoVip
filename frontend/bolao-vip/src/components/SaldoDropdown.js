@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import storage from '../utils/storage';
+import API_BASE_URL from '../config';
 import './SaldoDropdown.css';
 import DepositoModal from './DepositoModal';
 import SaqueModal from './SaqueModal';
 import ExtratoModal from './ExtratoModal';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 const SaldoDropdown = () => {
   const [saldo, setSaldo] = useState(null);
@@ -41,7 +42,8 @@ const SaldoDropdown = () => {
       const res = await axios.get(`${API}/saldo/usuario`, authHeader);
       setSaldo(res.data);
     } catch (err) {
-      console.error('Erro ao buscar saldo:', err);
+      console.error('[SaldoDropdown] Erro ao buscar saldo:', err);
+      // Interceptor já cuida de 401/403, não precisa redirecionar aqui
     }
   };
 

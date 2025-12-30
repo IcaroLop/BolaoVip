@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import './SaqueModal.css';
 
 function SaqueModal({ isOpen, onClose, saldoDisponivel, onSaqueSucesso }) {
@@ -20,7 +21,7 @@ function SaqueModal({ isOpen, onClose, saldoDisponivel, onSaqueSucesso }) {
   const buscarChavePixUsuario = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://192.168.56.127:3001/usuarios/me', {
+      const response = await axios.get(`${API_BASE_URL}/usuarios/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -60,7 +61,7 @@ function SaqueModal({ isOpen, onClose, saldoDisponivel, onSaqueSucesso }) {
     setCarregando(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('http://192.168.56.127:3001/saldo/saque', {
+      const response = await axios.post(`${API_BASE_URL}/saldo/saque`, {
         valor: parseFloat(valor),
         chave_pix: chavePix || null
       }, {
@@ -152,14 +153,15 @@ function SaqueModal({ isOpen, onClose, saldoDisponivel, onSaqueSucesso }) {
           </div>
         </form>
 
-        <div className="info-box">
-          <p>
-            <strong>ℹ️ Informações:</strong><br />
-            • Saques podem levar até 2 dias úteis<br />
-            • Iremos para PIX da chave fornecida<br />
-            • Taxas podem ser aplicadas
-          </p>
-        </div>
+            <div className="info-box">
+              <p>
+                <strong>ℹ️ Informações:</strong><br />
+                • Modo DEV: saque instantâneo (simulado)<br />
+                • Modo Produção: saques levam até 2 dias úteis<br />
+                • Iremos para PIX da chave fornecida<br />
+                • Taxas podem ser aplicadas
+              </p>
+            </div>
       </div>
     </div>,
     document.body

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import './ExtratoModal.css';
 
 function ExtratoModal({ isOpen, onClose }) {
@@ -20,12 +21,19 @@ function ExtratoModal({ isOpen, onClose }) {
     setErro('');
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://192.168.56.127:3001/saldo/extrato', {
+      const response = await axios.get(`${API_BASE_URL}/saldo/extrato`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      setExtrato(response.data.extrato || []);
+      const payload = Array.isArray(response.data) ? response.data : (response.data?.extrato || []);
+      const normalizado = payload.map((item) => ({
+        ...item,
+        valor: Number(item.valor),
+        saldo_novo: Number(item.saldo_novo),
+        saldo_anterior: item.saldo_anterior != null ? Number(item.saldo_anterior) : null,
+      }));
+      setExtrato(normalizado);
     } catch (err) {
       setErro(err.response?.data?.erro || 'Erro ao carregar extrato');
     } finally {
@@ -69,10 +77,10 @@ function ExtratoModal({ isOpen, onClose }) {
   };
 
   const extratoFiltrado = filtrarExtrato();
-  const totalDepositos = extrato.filter(e => e.tipo === 'deposito').reduce((sum, e) => sum + e.valor, 0);
-  const totalSaques = extrato.filter(e => e.tipo === 'saque').reduce((sum, e) => sum + e.valor, 0);
-  const totalPalpites = extrato.filter(e => e.tipo === 'palpite_debitado').reduce((sum, e) => sum + e.valor, 0);
-  const totalPremios = extrato.filter(e => e.tipo === 'premiacao_creditada').reduce((sum, e) => sum + e.valor, 0);
+  const totalDepositos = extrato.filter(e => e.tipo === 'deposito').reduce((sum, e) => sum + Number(e.valor || 0), 0);
+  const totalSaques = extrato.filter(e => e.tipo === 'saque').reduce((sum, e) => sum + Number(e.valor || 0), 0);
+  const totalPalpites = extrato.filter(e => e.tipo === 'palpite_debitado').reduce((sum, e) => sum + Number(e.valor || 0), 0);
+  const totalPremios = extrato.filter(e => e.tipo === 'premiacao_creditada').reduce((sum, e) => sum + Number(e.valor || 0), 0);
 
   if (!isOpen) return null;
 
@@ -149,9 +157,9 @@ function ExtratoModal({ isOpen, onClose }) {
                       </span>
                     </td>
                     <td className={`valor ${['deposito', 'premiacao_creditada'].includes(item.tipo) ? 'positivo' : 'negativo'}`}>
-                      {['deposito', 'premiacao_creditada'].includes(item.tipo) ? '+' : '-'}R$ {Math.abs(item.valor).toFixed(2)}
+                      {['deposito', 'premiacao_creditada'].includes(item.tipo) ? '+' : '-'}R$ {Math.abs(Number(item.valor || 0)).toFixed(2)}
                     </td>
-                    <td className="saldo-novo">R$ {item.saldo_novo.toFixed(2)}</td>
+                    <td className="saldo-novo">R$ {Number(item.saldo_novo || 0).toFixed(2)}</td>
                     <td className="status">
                       <span 
                         className="status-badge"

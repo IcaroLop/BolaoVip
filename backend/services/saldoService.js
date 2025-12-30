@@ -48,15 +48,15 @@ async function registrarMovimentacao(usuarioId, tipo, valor, descricao, referenc
     if (saldoAnterior.length === 0) {
       throw new Error('Usuário não possui registro de saldo');
     }
-
-    const saldoAnt = saldoAnterior[0].saldo_atual;
+    const saldoAnt = parseFloat(saldoAnterior[0].saldo_atual);
+    const valorNum = parseFloat(valor);
     
     // Registrar movimentação
     const [resultado] = await conexao.query(
       `INSERT INTO extrato_movimentacao 
        (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [usuarioId, tipo, valor, saldoAnt, saldoAnt + valor, descricao, referenciaId, referenciaTipo, status]
+      [usuarioId, tipo, valorNum, saldoAnt, saldoAnt + valorNum, descricao, referenciaId, referenciaTipo, status]
     );
 
     return resultado;
@@ -135,7 +135,7 @@ async function creditarSaldo(usuarioId, valor, descricao, referenciaId, referenc
     if (saldo.length === 0) {
       // Criar registro se não existir
       await conexao.query(
-        'INSERT INTO saldo_usuario (usuario_id, saldo_atual) VALUES (?, ?)',
+        'INSERT INTO saldo_usuario (usuario_id, saldo_atual, saldo_bloqueado) VALUES (?, ?, 0.00)',
         [usuarioId, valor]
       );
     } else {
@@ -147,12 +147,13 @@ async function creditarSaldo(usuarioId, valor, descricao, referenciaId, referenc
     }
 
     // Registrar movimentação
-    const saldoAnt = saldo && saldo.length > 0 ? saldo[0].saldo_atual : 0;
+    const saldoAnt = parseFloat(saldo && saldo.length > 0 ? saldo[0].saldo_atual : 0);
+    const valorNum = parseFloat(valor);
     await conexao.query(
       `INSERT INTO extrato_movimentacao 
        (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [usuarioId, 'premiacao_creditada', valor, saldoAnt, saldoAnt + valor, descricao, referenciaId, referenciaTipo, 'confirmado']
+      [usuarioId, 'premiacao_creditada', valorNum, saldoAnt, saldoAnt + valorNum, descricao, referenciaId, referenciaTipo, 'confirmado']
     );
 
     await conexao.commit();
@@ -247,7 +248,7 @@ async function confirmarDeposito(usuarioId, movimentacaoId) {
       throw new Error('Movimentação não encontrada');
     }
 
-    const valor = movimentacao[0].valor;
+    const valor = parseFloat(movimentacao[0].valor);
 
     // Obter saldo anterior
     const [saldo] = await conexao.query(
@@ -255,7 +256,7 @@ async function confirmarDeposito(usuarioId, movimentacaoId) {
       [usuarioId]
     );
 
-    const saldoAnt = saldo[0].saldo_atual;
+    const saldoAnt = parseFloat(saldo[0].saldo_atual);
 
     // Atualizar saldo
     await conexao.query(

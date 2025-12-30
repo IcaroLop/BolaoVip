@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
 import './NoticiasPage.css';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 const NoticiasPage = () => {
   const [noticias, setNoticias] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [atualizando, setAtualizando] = useState(false);
+  const [pullProgress, setPullProgress] = useState(0);
 
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
 
@@ -43,11 +45,18 @@ const NoticiasPage = () => {
     setCarregando(true);
 
     try {
-      const res = await axios.get(`${API}/noticias?limite=30`, authHeader);
-      setNoticias(res.data);
+      const res = await axios.get(`${API}/noticias?limite=50`, authHeader);
+      
+      // Filtrar apenas notícias de fonte GE (case-insensitive)
+      const noticiasFiltradas = res.data.filter(n => {
+        const fonte = n.fonte ? n.fonte.toString().trim().toUpperCase() : '';
+        return fonte === 'GE';
+      });
+      
+      setNoticias(noticiasFiltradas);
       setUltimaAtualizacao(new Date());
     } catch (err) {
-      console.error('Erro ao carregar notícias:', err);
+      console.error('[NoticiasPage] Erro ao carregar notícias:', err);
     } finally {
       setCarregando(false);
     }
@@ -58,13 +67,18 @@ const NoticiasPage = () => {
     setAtualizando(true);
 
     try {
-      const res = await axios.get(`${API}/noticias/ao-vivo`, authHeader);
-      setNoticias(res.data);
+      const res = await axios.get(`${API}/noticias?limite=50`, authHeader);
+      
+      // Filtrar apenas notícias de fonte GE (case-insensitive)
+      const noticiasFiltradas = res.data.filter(n => {
+        const fonte = n.fonte ? n.fonte.toString().trim().toUpperCase() : '';
+        return fonte === 'GE';
+      });
+      
+      setNoticias(noticiasFiltradas);
       setUltimaAtualizacao(new Date());
-      await carregarAoVivo();
     } catch (err) {
-      console.error('Erro ao buscar notícias ao vivo:', err);
-      alert('Erro ao atualizar notícias. Tente novamente.');
+      console.error('[NoticiasPage] Erro ao atualizar notícias:', err);
     } finally {
       setAtualizando(false);
     }
@@ -99,8 +113,59 @@ const NoticiasPage = () => {
   useEffect(() => {
     carregarNoticias();
     carregarAoVivo();
+    
+    // Implementar pull-to-refresh
+    let touchStartY = 0;
+    let isDragging = false;
+
+    const handleTouchStart = (e) => {
+      // Só inicia pull se estiver no topo da página
+      if (window.scrollY === 0) {
+        touchStartY = e.touches[0].clientY;
+        isDragging = true;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (!isDragging || atualizando) return;
+
+      const touchY = e.touches[0].clientY;
+      const diff = touchY - touchStartY;
+
+      // Mostrar progresso visualmente
+      if (diff > 0) {
+        const progress = Math.min(diff / 80, 1); // 80px para trigger completo
+        setPullProgress(progress);
+
+        // Prevenir scroll enquanto faz pull
+        if (diff > 10) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      isDragging = false;
+
+      // Se puxou mais de 80px, atualizar
+      if (pullProgress >= 1) {
+        buscarNoticiasAoVivo();
+      }
+
+      setPullProgress(0);
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [atualizando]);
 
   // Atualização automática da agenda a cada 90s para manter os quadros vivos sem ação do usuário
   useEffect(() => {
@@ -130,36 +195,15 @@ const NoticiasPage = () => {
 
   return (
     <div className="noticias-container">
-      <div className="noticias-header">
-        <h2 className="titulo">📰 Notícias do Brasileirão</h2>
-        <div className="noticias-acoes">
-          <button 
-            className="btn-atualizar"
-            onClick={buscarNoticiasAoVivo}
-            disabled={atualizando}
-          >
-            {atualizando ? '🔄 Atualizando...' : '🔄 Atualizar Agora'}
-          </button>
-          {ultimaAtualizacao && (
-            <span className="ultima-atualizacao">
-              Atualizado: {ultimaAtualizacao.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Bloco de jogos ao vivo desativado temporariamente */}
-
-      <section className="agenda-bloco">
-        <div className="agenda-header">
-          <div>
-            <p className="agenda-legenda">Mundo · Ao vivo (principais ligas e copas)</p>
-            <h3>Destaques internacionais</h3>
+      {/* Indicador de Pull-to-Refresh */}
+      {pullProgress > 0 && (
+        <div className="pull-to-refresh-indicator" style={{ opacity: pullProgress }}>
+          <div className="pull-spinner" style={{ transform: `rotate(${pullProgress * 360}deg)` }}>
+            🔄
           </div>
-          <span className="agenda-count">0 partida(s)</span>
+          <p>{pullProgress >= 1 ? 'Solte para atualizar' : 'Deslize para atualizar'}</p>
         </div>
-        <p className="agenda-vazio">Quadro internacional desativado.</p>
-      </section>
+      )}
 
       {carregando && noticias.length === 0 ? (
         <p className="carregando">Carregando notícias...</p>

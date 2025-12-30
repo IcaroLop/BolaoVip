@@ -17,13 +17,42 @@ const PixModal = ({ dadosPix, onClose }) => {
   const handleCopy = async () => {
     const codigoPix = dadosPix.pix_copiaecola;
     if (codigoPix) {
-      try {
-        await navigator.clipboard.writeText(codigoPix);
-        setCopiado(true);
-      } catch (err) {
-        console.error('Erro ao copiar código Pix:', err);
-        alert('Não foi possível copiar automaticamente. Copie manualmente o código Pix.');
+      // Tenta usar navigator.clipboard (Chrome, Edge moderno, Firefox)
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(codigoPix);
+          setCopiado(true);
+        } catch (err) {
+          console.error('Erro ao copiar código Pix:', err);
+          // Fallback para método antigo
+          copiarComFallback(codigoPix);
+        }
+      } else {
+        // Fallback para navegadores antigos ou contexto inseguro
+        copiarComFallback(codigoPix);
       }
+    }
+  };
+
+  const copiarComFallback = (codigoPix) => {
+    const textarea = document.createElement('textarea');
+    textarea.value = codigoPix;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    try {
+      textarea.select();
+      const sucesso = document.execCommand('copy');
+      if (sucesso) {
+        setCopiado(true);
+      } else {
+        alert('Não foi possível copiar. Copie manualmente o código Pix.');
+      }
+    } catch (err) {
+      console.error('Erro ao copiar:', err);
+      alert('Não foi possível copiar automaticamente. Copie manualmente o código Pix.');
+    } finally {
+      document.body.removeChild(textarea);
     }
   };
 

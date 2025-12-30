@@ -86,6 +86,14 @@ async function consultarResultadosDaRodada(rodada) {
     console.error(`❌ Erro crítico ao consultar rodada ${rodada}:`, error.message);
   }
 
+  // Persistir pontos jogo a jogo e atualizar ranking/premiações
+  try {
+    const { processarRodadaJogoAJogo } = require('./rankingPontosService');
+    await processarRodadaJogoAJogo(rodada);
+  } catch (e) {
+    console.error(`❌ Erro ao processar pontos jogo a jogo da rodada ${rodada}:`, e.message);
+  }
+
   // Atualiza ranking e premiações independentemente da fonte
   await calcularRankingRodada(rodada);
   await gerarPremiacoesRodada(rodada);

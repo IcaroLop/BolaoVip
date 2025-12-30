@@ -58,47 +58,22 @@ async function obterRodadaAtualPorCampeonato(conn) {
   // Campeonatos ativos a partir dos grupos
   const [grps] = await conn.query(`SELECT DISTINCT campeonato_id FROM grupos WHERE campeonato_id IS NOT NULL`);
   const mapa = new Map();
+  const agora = DateTime.now().setZone('America/Manaus');
+  const limiteData = agora.plus({ days: 7 }); // Busca apenas rodadas com jogos nos próximos 7 dias
+  
   for (const g of grps) {
     const campId = Number(g.campeonato_id);
     
-    // Primeiro: tenta encontrar rodada com status != 'encerrada'
-    let [rs] = await conn.query(
-      `SELECT rodada, status, proxima_rodada
-       FROM rodadas_status
-       WHERE campeonato_id = ? AND (status IS NULL OR status != 'encerrada')
-       ORDER BY rodada ASC
-       LIMIT 1`,
-      [campId]
-    );
-    
-    if (rs && rs.length > 0) {
-      mapa.set(campId, Number(rs[0].rodada));
-      continue;
-    }
-    
-    // Segundo: busca a maior rodada encerrada e usa proxima_rodada
-    [rs] = await conn.query(
-      `SELECT proxima_rodada
-       FROM rodadas_status
-       WHERE campeonato_id = ? AND status = 'encerrada'
-       ORDER BY rodada DESC
-       LIMIT 1`,
-      [campId]
-    );
-    
-    if (rs && rs.length > 0 && rs[0].proxima_rodada != null) {
-      mapa.set(campId, Number(rs[0].proxima_rodada));
-      continue;
-    }
-    
-    // Terceiro: tenta qualquer rodada com jogos pendentes
-    [rs] = await conn.query(
-      `SELECT DISTINCT rodada
+    // Busca a menor rodada com jogos pendentes nos próximos 7 dias
+    const [rs] = await conn.query(
+      `SELECT rodada
        FROM jogos
-       WHERE campeonato_id = ? AND (status IS NULL OR placar_mandante IS NULL)
-       ORDER BY rodada ASC
+       WHERE campeonato_id = ? 
+         AND (status IN ('agendado','andamento') OR status IS NULL OR placar_mandante IS NULL)
+         AND data <= ?
+       ORDER BY data ASC
        LIMIT 1`,
-      [campId]
+      [campId, limiteData.toSQL({ includeOffset: false })]
     );
     
     if (rs && rs.length > 0) {
@@ -112,6 +87,7 @@ async function obterRodadaAtualPorCampeonato(conn) {
 async function obterGruposPorRodadaAtual(conn) {
   const mapaRodada = await obterRodadaAtualPorCampeonato(conn);
   const grupos = new Map();
+  
   for (const [campId, rodada] of mapaRodada.entries()) {
     const [rows] = await conn.query(
       `SELECT campeonato_id, rodada, data
@@ -205,8 +181,12 @@ exports.calcularAgendaTodosGrupos = async (page = 1, limit = 10) => {
       // Monta agenda agregada (uma linha placar + uma linha classificação por grupo)
       const linhas = [];
       for (const [chave, g] of gruposAgregados.entries()) {
-        const numJogos = jogosMap.get(chave) || 0;
+        // Corrige busca em jogosMap - monta chave compatível com formato do mapa
+        const chaveJogos = `${g.campeonatoId}|${g.rodada}|${g.baseDataHora.toFormat('yyyy-LL-dd HH:mm')}`;
+        const numJogos = jogosMap.get(chaveJogos) || 0;
         if (g.placarPrevistos > 0) {
+          const intervaloCalculado = 130 / g.placarPrevistos;
+          const intervaloFinal = Math.max(0.5, intervaloCalculado); // Mínimo 30 segundos
           linhas.push({
             dataHora: g.baseDataHora,
             campeonatoId: g.campeonatoId,
@@ -215,7 +195,7 @@ exports.calcularAgendaTodosGrupos = async (page = 1, limit = 10) => {
             permitido: true,
             motivo: null,
             disparosPrevistos: g.placarPrevistos,
-            intervaloMinutos: 130 / g.placarPrevistos,
+            intervaloMinutos: intervaloFinal,
             tipo: 'placar',
           });
         }
@@ -276,13 +256,14 @@ exports.calcularAgendaTodosGrupos = async (page = 1, limit = 10) => {
         lista.forEach((g, idx) => {
           const disparos = base + (idx < resto ? 1 : 0);
           if (disparos <= 0) return;
-          const intervaloMin = 130 / disparos;
+          const intervaloCalculado = 130 / disparos;
+          const intervaloFinal = Math.max(0.5, intervaloCalculado); // Mínimo 30 segundos
           agenda.push({
             ...g,
             permitido: true,
             motivo: null,
             disparosPrevistos: disparos,
-            intervaloMinutos: intervaloMin,
+            intervaloMinutos: intervaloFinal,
             tipo: 'placar',
           });
         });
@@ -308,6 +289,70 @@ exports.calcularAgendaTodosGrupos = async (page = 1, limit = 10) => {
       tipo: item.tipo || 'placar',
     }));
     
+    return {
+      agenda: paginado,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      limiteDiario: cfg.limite,
+      requisicoesUsadas: cfg.usadas,
+      saldoDisponivel: Math.max(0, cfg.limite - cfg.usadas),
+    };
+  } finally {
+    conn.release();
+  }
+};
+
+exports.calcularAgendaPorDia = async (dia, page = 1, limit = 10) => {
+  await ensureTable();
+  const conn = await pool.getConnection();
+  try {
+    const cfg = await obterConfiguracoes(conn);
+    const [rows] = await conn.query(
+      `SELECT campeonato_id, rodada, data, COUNT(*) AS total
+       FROM jogos
+       WHERE DATE(data) = ? AND (status IN ('agendado','andamento') OR status IS NULL OR placar_mandante IS NULL)
+       GROUP BY campeonato_id, rodada, data
+       ORDER BY data ASC`,
+      [dia]
+    );
+
+    const gruposNoDia = rows.length;
+    const saldoDisponivel = Math.max(0, cfg.limite - cfg.usadas);
+    const disparosPorGrupo = Math.max(1, Math.floor(saldoDisponivel / Math.max(1, gruposNoDia)));
+    const intervaloCalculado = 130 / disparosPorGrupo;
+    const intervaloMin = Math.max(0.5, intervaloCalculado); // mínimo 0,5 minuto (30s)
+
+    const agenda = rows.map(r => {
+      const dt = DateTime.fromJSDate(r.data).setZone('America/Manaus');
+      return {
+        dataHora: dt,
+        campeonatoId: r.campeonato_id,
+        rodada: r.rodada,
+        jogosNoGrupo: Number(r.total) || 0,
+        permitido: true,
+        motivo: null,
+        disparosPrevistos: disparosPorGrupo,
+        intervaloMinutos: intervaloMin,
+        tipo: 'placar',
+      };
+    });
+
+    const total = agenda.length;
+    const skip = (page - 1) * limit;
+    const paginado = agenda.slice(skip, skip + limit).map(item => ({
+      dataHora: item.dataHora.toISO(),
+      campeonatoId: item.campeonatoId,
+      rodada: item.rodada,
+      jogosNoGrupo: item.jogosNoGrupo,
+      permitido: item.permitido,
+      motivo: item.motivo,
+      disparosPrevistos: item.disparosPrevistos,
+      intervaloMinutos: item.intervaloMinutos,
+      tipo: item.tipo,
+    }));
+
     return {
       agenda: paginado,
       total,
@@ -372,7 +417,8 @@ exports.planejarPersistirAgenda = async () => {
         const g = lista[idx];
         const disparos = base + (idx < resto ? 1 : 0);
         if (disparos <= 0) continue;
-        const intervaloMin = 130 / disparos;
+        const intervaloCalculado = 130 / disparos;
+        const intervaloMin = Math.max(0.5, intervaloCalculado); // Mínimo 30 segundos
         for (let k = 0; k < disparos; k++) {
           const dtExec = g.dataHora.plus({ minutes: intervaloMin * k });
           const grupoChave = `${g.dataHora.toFormat('yyyy-LL-dd HH:mm')}-${k + 1}/${disparos}`;
@@ -445,6 +491,15 @@ exports.executarDevidos = async () => {
           });
           requisicoesApi++;
           try { await logSistema({ origem: 'agendadorService', nivel: 'info', descricao: `Executado placar camp=${grupo.campeonato_id} rodada=${grupo.rodada}` }); } catch {}
+          
+          // Recalcular ranking da rodada após atualizar placares
+          try {
+            const rankingController = require('../controllers/rankingController');
+            await rankingController.calcularRankingRodada(grupo.rodada, grupo.campeonato_id, null);
+            try { await logSistema({ origem: 'agendadorService', nivel: 'info', descricao: `Ranking da rodada ${grupo.rodada} atualizado automaticamente` }); } catch {}
+          } catch (rankErr) {
+            try { await logSistema({ origem: 'agendadorService', nivel: 'warn', descricao: `Falha ao atualizar ranking: ${rankErr.message}` }); } catch {}
+          }
         }
         
         // Marca TODOS os registros deste grupo como executados

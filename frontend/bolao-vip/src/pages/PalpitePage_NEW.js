@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import PixModal from '../components/pixModal';
+import API_BASE_URL from '../config';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 const PalpitePage = () => {
   const [rodadaAtual, setRodadaAtual] = useState(null);
@@ -212,7 +213,7 @@ const PalpitePage = () => {
   const enviarPalpitesQuadro = async (quadro, gerarPix = false) => {
     const jogosEditaveis = quadro.jogos.filter(j => {
       const status = (j.status || '').toLowerCase();
-      return status === 'agendado' || status === 'programado' || status === 'agendada';
+      return status === 'agendado' || status === 'programado' || status === 'agendada' || status === 'pre-jogo';
     });
 
     if (jogosEditaveis.length === 0) {
@@ -261,7 +262,7 @@ const PalpitePage = () => {
           id_usuario,
           nome_usuario,
           codigo_envio,
-          valor: 10.00,
+          valor: 15.00,
           txid
         }, {
           headers: { Authorization: `Bearer ${token}` }
@@ -341,7 +342,7 @@ const PalpitePage = () => {
           id_usuario,
           nome_usuario,
           codigo_envio,
-          valor: 10.00,
+          valor: 15.00,
           txid
         }, {
           headers: { Authorization: `Bearer ${token}` }

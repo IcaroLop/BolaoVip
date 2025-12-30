@@ -64,6 +64,47 @@ exports.criarDeposito = async (req, res) => {
 };
 
 /**
+ * POST /saldo/deposito-dev - Depósito instantâneo para desenvolvimento (cria e confirma automaticamente)
+ */
+exports.criarDepositoDev = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const { valor } = req.body;
+
+    if (!valor || valor <= 0) {
+      return res.status(400).json({ erro: 'Valor inválido' });
+    }
+
+    console.log(`[criarDepositoDev] Iniciando depósito dev. usuario=${usuarioId}, valor=${valor}`);
+
+    // 1. Criar depósito pendente
+    const criarRes = await saldoService.criarDeposito(usuarioId, valor, 'Depósito via PIX (DEV - Confirmado automaticamente)');
+    const movimentacaoId = criarRes.movimentacao_id;
+
+    console.log(`[criarDepositoDev] Depósito pendente criado. movimentacao_id=${movimentacaoId}`);
+
+    // 2. Confirmar imediatamente (simula recebimento do PIX)
+    const confirmarRes = await saldoService.confirmarDeposito(usuarioId, movimentacaoId);
+
+    console.log(`[criarDepositoDev] Depósito confirmado e creditado. saldoNovo=${confirmarRes.saldoNovo}`);
+
+    // 3. Obter saldo atualizado
+    const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
+
+    res.json({
+      sucesso: true,
+      mensagem: `Depósito de R$ ${parseFloat(valor).toFixed(2)} confirmado automaticamente (modo DEV)`,
+      movimentacao_id: movimentacaoId,
+      saldo_novo: confirmarRes.saldoNovo,
+      saldo: saldoAtualizado
+    });
+  } catch (err) {
+    console.error('[criarDepositoDev] Erro ao criar depósito dev:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao processar depósito' });
+  }
+};
+
+/**
  * POST /saldo/confirmar-deposito/:movimentacaoId - Confirma um depósito
  */
 exports.confirmarDeposito = async (req, res) => {
@@ -77,6 +118,55 @@ exports.confirmarDeposito = async (req, res) => {
   } catch (err) {
     console.error('Erro ao confirmar depósito:', err);
     res.status(500).json({ erro: err.message || 'Erro ao confirmar depósito' });
+  }
+};
+
+/**
+ * POST /saldo/saque-dev - Saque instantâneo para desenvolvimento (cria e confirma automaticamente com débito)
+ */
+exports.criarSaqueDev = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const { valor } = req.body;
+
+    if (!valor || valor <= 0) {
+      return res.status(400).json({ erro: 'Valor inválido' });
+    }
+
+    console.log(`[criarSaqueDev] Iniciando saque dev. usuario=${usuarioId}, valor=${valor}`);
+
+    // 1. Verificar saldo disponível
+    const saldoAtual = await saldoService.obterSaldoUsuario(usuarioId);
+    if (saldoAtual.saldo_disponivel < valor) {
+      return res.status(400).json({ 
+        erro: `Saldo insuficiente. Disponível: R$ ${saldoAtual.saldo_disponivel.toFixed(2)}`
+      });
+    }
+
+    // 2. Criar saque pendente
+    const criarRes = await saldoService.criarSaque(usuarioId, valor, 'Saque via PIX (DEV - Confirmado automaticamente)');
+    const movimentacaoId = criarRes.movimentacao_id;
+
+    console.log(`[criarSaqueDev] Saque pendente criado. movimentacao_id=${movimentacaoId}`);
+
+    // 3. Confirmar imediatamente (simula transferência aprovada)
+    const confirmarRes = await saldoService.confirmarSaque(usuarioId, movimentacaoId);
+
+    console.log(`[criarSaqueDev] Saque confirmado e debitado. saldoNovo=${confirmarRes.saldoNovo}`);
+
+    // 4. Obter saldo atualizado
+    const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
+
+    res.json({
+      sucesso: true,
+      mensagem: `Saque de R$ ${parseFloat(valor).toFixed(2)} processado automaticamente (modo DEV)`,
+      movimentacao_id: movimentacaoId,
+      saldo_novo: confirmarRes.saldoNovo,
+      saldo: saldoAtualizado
+    });
+  } catch (err) {
+    console.error('[criarSaqueDev] Erro ao criar saque dev:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao processar saque' });
   }
 };
 

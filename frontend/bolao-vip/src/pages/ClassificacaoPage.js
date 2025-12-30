@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import './ClassificacaoPage.css';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 const ClassificacaoPage = () => {
   const [classificacao, setClassificacao] = useState([]);

@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import storage from '../utils/storage';
+import API_BASE_URL from '../config';
 import './RankingPage.css';
 import PalpitesModal from '../components/PalpitesModal';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 const RankingPage = () => {
   const [rankingRodada, setRankingRodada] = useState([]);
@@ -17,6 +18,18 @@ const RankingPage = () => {
   const [campeonatoId, setCampeonatoId] = useState(null);
   const [contextKey, setContextKey] = useState(0);
   const [rodadaVigenteMax, setRodadaVigenteMax] = useState(null);
+  const [statusRodada, setStatusRodada] = useState({ 
+    rodadaFinalizada: false, 
+    pagamentosGerados: false,
+    ultimoStatus: 'N/A',
+    pagamentosGeradosEm: null
+  });
+  const [usuarioPerfis, setUsuarioPerfis] = useState([]);
+  const [carregandoPagamentos, setCarregandoPagamentos] = useState(false);
+  const [showDebug, setShowDebug] = useState(true);
+  const [pageRodada, setPageRodada] = useState(0);
+  const [pageGeral, setPageGeral] = useState(0);
+  const PAGE_SIZE = 20;
 
   const token = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -35,6 +48,39 @@ const RankingPage = () => {
   }, []);
 
   const authHeader = useMemo(() => (token ? { headers: { Authorization: `Bearer ${token}` } } : {}), [token]);
+
+  // Carregar dados do usuário autenticado (perfis)
+  useEffect(() => {
+    if (!token) {
+      console.log('[RankingPage] Sem token, perfis não carregados');
+      return;
+    }
+    
+    const carregarUsuario = async () => {
+      try {
+        console.log('[RankingPage] Carregando dados do usuário...');
+        console.log('[RankingPage] URL:', `${API}/usuarios/me`);
+        console.log('[RankingPage] Headers:', authHeader);
+        const res = await axios.get(`${API}/usuarios/me`, authHeader);
+        console.log('[RankingPage] Resposta completa:', res.data);
+        const perfis = res.data.perfis || [];
+        console.log('[RankingPage] Perfis array:', perfis);
+        const nomePerfis = perfis.map(p => p.nome);
+        console.log('[RankingPage] Nomes dos perfis:', nomePerfis);
+        console.log('[RankingPage] Tem Admin:', nomePerfis.includes('Administrador'));
+        console.log('[RankingPage] Tem Financeiro:', nomePerfis.includes('Financeiro'));
+        setUsuarioPerfis(nomePerfis);
+      } catch (err) {
+        console.error('[RankingPage] Erro ao carregar dados do usuário:', err);
+        console.error('[RankingPage] Error message:', err.message);
+        console.error('[RankingPage] Response status:', err.response?.status);
+        console.error('[RankingPage] Response data:', err.response?.data);
+        setUsuarioPerfis([]);
+      }
+    };
+    
+    carregarUsuario();
+  }, [token, authHeader]);
 
   // **CRÍTICO**: Sincroniza grupo do Header IMEDIATAMENTE ao montar
   useEffect(() => {
@@ -97,6 +143,8 @@ const RankingPage = () => {
     setRankingGeral([]);
     setPremiacoesRodada([]);
     setMensagem('');
+    setPageRodada(0);
+    setPageGeral(0);
 
     carregarCampeonatoDoGrupo();
   }, [grupoSelecionado, token, authHeader]);
@@ -153,10 +201,17 @@ const RankingPage = () => {
         setRankingGeral([]);
         return;
       }
+      if (!rodadaSelecionada) {
+        setRankingGeral([]);
+        return;
+      }
 
       const params = new URLSearchParams();
       if (grupoSelecionado) params.append('grupoId', grupoSelecionado);
       if (campeonatoId) params.append('campeonatoId', campeonatoId);
+      params.append('rodadaFinal', rodadaSelecionada);
+      params.append('limit', PAGE_SIZE);
+      params.append('offset', pageGeral * PAGE_SIZE);
 
       const res = await axios.get(`${API}/ranking/geral?${params.toString()}`, authHeader);
       setRankingGeral(res.data);
@@ -164,7 +219,7 @@ const RankingPage = () => {
       console.error(err);
       setMensagem('Erro ao carregar ranking geral');
     }
-  }, [grupoSelecionado, campeonatoId, authHeader]);
+  }, [grupoSelecionado, campeonatoId, authHeader, rodadaSelecionada, pageGeral]);
 
   const buscarRankingRodada = useCallback(async (rodada) => {
     try {
@@ -173,9 +228,17 @@ const RankingPage = () => {
         return;
       }
 
+      // Se paginação retrocedeu além do total retornado, normalizar para 0
+      if (pageRodada > 0 && rankingRodada.length === 0) {
+        setPageRodada(0);
+        return;
+      }
+
       const params = new URLSearchParams();
       if (grupoSelecionado) params.append('grupoId', grupoSelecionado);
       if (campeonatoId) params.append('campeonatoId', campeonatoId);
+      params.append('limit', PAGE_SIZE);
+      params.append('offset', pageRodada * PAGE_SIZE);
 
       const res = await axios.get(`${API}/ranking/rodada/${rodada}?${params.toString()}`, authHeader);
       setRankingRodada(res.data);
@@ -183,7 +246,7 @@ const RankingPage = () => {
       console.error(err);
       setMensagem('Erro ao carregar ranking da rodada');
     }
-  }, [grupoSelecionado, campeonatoId, authHeader]);
+  }, [grupoSelecionado, campeonatoId, authHeader, pageRodada, rankingRodada.length]);
 
   const buscarPremiacoesRodada = useCallback(async (rodada) => {
     try {
@@ -204,6 +267,35 @@ const RankingPage = () => {
     }
   }, [grupoSelecionado, campeonatoId, authHeader]);
 
+  const buscarStatusRodada = useCallback(async (rodada) => {
+    try {
+      const params = new URLSearchParams();
+      if (grupoSelecionado) params.append('grupoId', grupoSelecionado);
+      if (campeonatoId) params.append('campeonatoId', campeonatoId);
+      
+      console.log(`[RankingPage] Buscando status da rodada ${rodada}...`);
+      // GET /ranking/rodada/:rodada/status é público, não precisa de token
+      const res = await axios.get(`${API}/ranking/rodada/${rodada}/status?${params.toString()}`);
+      console.log('[RankingPage] Status da rodada carregado:', res.data);
+      console.log('[RankingPage] rodadaFinalizada:', res.data.rodadaFinalizada, typeof res.data.rodadaFinalizada);
+      console.log('[RankingPage] pagamentosGerados:', res.data.pagamentosGerados, typeof res.data.pagamentosGerados);
+      
+      const statusObj = {
+        rodadaFinalizada: Boolean(res.data.rodadaFinalizada),
+        pagamentosGerados: Boolean(res.data.pagamentosGerados),
+        ultimoStatus: res.data.ultimoStatus || 'N/A',
+        pagamentosGeradosEm: res.data.pagamentosGeradosEm || null
+      };
+      
+      console.log('[RankingPage] Status final após conversão:', statusObj);
+      setStatusRodada(statusObj);
+    } catch (err) {
+      console.error('[RankingPage] Erro ao buscar status da rodada:', err);
+      console.error('[RankingPage] Erro details:', err.response?.data);
+      setStatusRodada({ rodadaFinalizada: false, pagamentosGerados: false, ultimoStatus: 'erro' });
+    }
+  }, [grupoSelecionado, campeonatoId]);
+
   useEffect(() => {
     if (rodadaSelecionada) {
       // Não permitir navegar além da rodada vigente máxima conhecida
@@ -216,8 +308,59 @@ const RankingPage = () => {
       buscarRankingRodada(rodadaSelecionada);
       buscarPremiacoesRodada(rodadaSelecionada);
       buscarRankingGeral();
+      buscarStatusRodada(rodadaSelecionada);
     }
-  }, [rodadaSelecionada, grupoSelecionado, campeonatoId, buscarRankingRodada, buscarPremiacoesRodada, buscarRankingGeral, rodadaVigenteMax]);
+  }, [rodadaSelecionada, grupoSelecionado, campeonatoId, buscarRankingRodada, buscarPremiacoesRodada, buscarRankingGeral, buscarStatusRodada, rodadaVigenteMax]);
+
+  // Atualização automática a cada 30s (ranking da rodada + geral + status)
+  useEffect(() => {
+    if (!rodadaSelecionada) return;
+    const intervalId = setInterval(() => {
+      buscarRankingRodada(rodadaSelecionada);
+      buscarPremiacoesRodada(rodadaSelecionada);
+      buscarRankingGeral();
+      buscarStatusRodada(rodadaSelecionada);
+    }, 30000);
+    return () => clearInterval(intervalId);
+  }, [rodadaSelecionada, buscarRankingRodada, buscarPremiacoesRodada, buscarRankingGeral, buscarStatusRodada]);
+
+  const gerarPagamentosRodada = async () => {
+    if (!rodadaSelecionada) {
+      setMensagem('⚠️ Selecione uma rodada');
+      return;
+    }
+
+    setCarregandoPagamentos(true);
+    setMensagem('');
+
+    try {
+      const params = new URLSearchParams();
+      if (grupoSelecionado) params.append('grupoId', grupoSelecionado);
+      if (campeonatoId) params.append('campeonatoId', campeonatoId);
+
+      console.log('[RankingPage] Gerando pagamentos para rodada:', rodadaSelecionada);
+      console.log('[RankingPage] Token:', token ? 'Sim' : 'Não');
+      console.log('[RankingPage] authHeader:', authHeader);
+      
+      const res = await axios.post(
+        `${API}/ranking/rodada/${rodadaSelecionada}/gerar-pagamentos?${params.toString()}`,
+        {},
+        authHeader
+      );
+
+      console.log('[RankingPage] Resposta de gerar pagamentos:', res.data);
+      setMensagem(`✅ ${res.data.mensagem}`);
+      // Recarregar status da rodada
+      await buscarStatusRodada(rodadaSelecionada);
+    } catch (err) {
+      const errorMsg = err.response?.data?.erro || err.message;
+      console.error('[RankingPage] Erro ao gerar pagamentos:', err);
+      console.error('[RankingPage] Erro response:', err.response?.data);
+      setMensagem(`❌ Erro: ${errorMsg}`);
+    } finally {
+      setCarregandoPagamentos(false);
+    }
+  };
 
   const buscarPalpitesUsuario = async (id_usuario, nome) => {
     try {
@@ -277,29 +420,83 @@ const RankingPage = () => {
           {mensagem}
         </div>
       )}
-      <h2 className="ranking-title">🏆 Ranking da Rodada {rodadaSelecionada}</h2>
-
-      <div className="ranking-nav">
+      <div className="ranking-nav-bar">
         <button
           onClick={() => setRodadaSelecionada(r => Math.max(1, r - 1))}
-          className="ranking-nav-btn"
+          className="ranking-nav-btn nav-prev"
           disabled={rodadaSelecionada <= 1}
         >
-          ⬅
+          &lt;
         </button>
         <button
           onClick={() => setRodadaSelecionada(r => {
             const limite = rodadaVigenteMax ?? 38;
             return Math.min(limite, r + 1);
           })}
-          className="ranking-nav-btn"
+          className="ranking-nav-btn nav-next"
           disabled={rodadaVigenteMax ? rodadaSelecionada >= rodadaVigenteMax : rodadaSelecionada >= 38}
         >
-          ➡
+          &gt;
         </button>
       </div>
 
-      <table className="ranking-table">
+      <h2 className="ranking-title">🏆 Ranking da Rodada {rodadaSelecionada}</h2>
+
+      {/* DEBUG INFO - Apenas em desenvolvimento */}
+      {(() => {
+        const podeGerar = statusRodada.rodadaFinalizada && !statusRodada.pagamentosGerados &&
+          (usuarioPerfis.includes('Administrador') || usuarioPerfis.includes('Financeiro'));
+        return process.env.NODE_ENV === 'development' && showDebug && (
+          <div className={`debug-banner ${podeGerar ? 'is-ok' : 'is-warn'}`}>
+            <div className="debug-left">
+              <span className="debug-title">🔍 Debug</span>
+              <span className="debug-item">Rodada: {String(statusRodada.rodadaFinalizada)}</span>
+              <span className="debug-item">Pagtos: {String(statusRodada.pagamentosGerados)}</span>
+              <span className="debug-item debug-perfis" title={usuarioPerfis.join(', ') || 'nenhum'}>
+                Perfis: {usuarioPerfis.join(', ') || 'nenhum'}
+              </span>
+              <span className="debug-item">Botão: {podeGerar ? '✅ visível' : '❌ oculto'}</span>
+            </div>
+            <button className="debug-close" onClick={() => setShowDebug(false)} aria-label="Fechar debug">×</button>
+          </div>
+        );
+      })()}
+
+      {/* Legendas compactas (sempre visíveis) */}
+      <div className="ranking-legends" aria-label="Legendas do ranking">
+        <span className="legend-badge badge-recebe" title="Quem recebe premiação">RECEBE</span>
+        <span className="legend-badge badge-paga" title="Quem paga taxa de participação">PAGA</span>
+        <span className="legend-badge badge-pendente" title="Pagamento ainda pendente">PENDENTE</span>
+      </div>
+
+      {/* Botão Gerar Pagamentos - Visível apenas para Admin/Financeiro quando rodada finalizada */}
+      {statusRodada.rodadaFinalizada && !statusRodada.pagamentosGerados && 
+       (usuarioPerfis.includes('Administrador') || usuarioPerfis.includes('Financeiro')) && (
+        <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+          <button
+            onClick={gerarPagamentosRodada}
+            disabled={carregandoPagamentos}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: carregandoPagamentos ? 'not-allowed' : 'pointer',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              opacity: carregandoPagamentos ? 0.6 : 1
+            }}
+          >
+            {carregandoPagamentos ? '⏳ Gerando...' : '💳 Gerar Pagamentos'}
+          </button>
+          <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
+            {statusRodada.rodadaFinalizada ? '✅ Rodada finalizada - Pronto para gerar pagamentos' : ''}
+          </p>
+        </div>
+      )}
+
+      <table className="ranking-table" key={`ranking-${rodadaSelecionada}`}>
         <thead>
           <tr>
             <th>Posição</th>
@@ -313,7 +510,7 @@ const RankingPage = () => {
         </thead>
         <tbody>
           {rankingRodada.map((item, index) => {
-            const posicao = index + 1;
+            const posicao = item.posicao || (pageRodada * PAGE_SIZE + index + 1);
             const premio = premiacaoPorPosicao(posicao);
             return (
               <tr key={index}>
@@ -344,7 +541,7 @@ const RankingPage = () => {
                 <td className={premio.acao === 'RECEBE' ? 'acao-recebe' : 'acao-paga'}>
                   {premio.acao || '-'}
                 </td>
-                <td>{premio.valor}</td>
+                <td data-status={premio.status}>{premio.valor}</td>
                 <td>{premio.status}</td>
               </tr>
             );
@@ -352,17 +549,55 @@ const RankingPage = () => {
         </tbody>
       </table>
 
+      {/* Paginação Ranking da Rodada */}
+      <div className="ranking-pagination">
+        <button
+          onClick={() => setPageRodada(p => Math.max(0, p - 1))}
+          disabled={pageRodada === 0}
+          className="ranking-nav-btn nav-prev"
+        >
+          ◀ Anterior
+        </button>
+        <span className="pagination-info">Página {pageRodada + 1}</span>
+        <button
+          onClick={() => setPageRodada(p => (rankingRodada.length < PAGE_SIZE ? p : p + 1))}
+          disabled={rankingRodada.length < PAGE_SIZE}
+          className="ranking-nav-btn nav-next"
+        >
+          Próxima ▶
+        </button>
+      </div>
+
       <h2 className="ranking-title" style={{ marginTop: '2rem' }}>📊 Ranking Geral</h2>
 
       <ul className="ranking-list">
         {rankingGeral.map((item, index) => (
           <li key={item.id_usuario} className="ranking-item">
-            <span>{index + 1}º</span>
+            <span>{pageGeral * PAGE_SIZE + index + 1}º</span>
             <strong>{item.nome}</strong>
             <span>{Number(item.pontos || 0).toFixed(2)} pts</span>
           </li>
         ))}
       </ul>
+
+      {/* Paginação Ranking Geral */}
+      <div className="ranking-pagination">
+        <button
+          onClick={() => setPageGeral(p => Math.max(0, p - 1))}
+          disabled={pageGeral === 0}
+          className="ranking-nav-btn nav-prev"
+        >
+          ◀ Anterior
+        </button>
+        <span className="pagination-info">Página {pageGeral + 1}</span>
+        <button
+          onClick={() => setPageGeral(p => (rankingGeral.length < PAGE_SIZE ? p : p + 1))}
+          disabled={rankingGeral.length < PAGE_SIZE}
+          className="ranking-nav-btn nav-next"
+        >
+          Próxima ▶
+        </button>
+      </div>
 
       {mensagem && <p className="ranking-message">{mensagem}</p>}
       <PalpitesModal

@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import './ResultadosPage.css';
+import '../styles/RodadaNav.css';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 const ResultadosPage = () => {
   const [rodada, setRodada] = useState(null);
@@ -115,12 +117,23 @@ const ResultadosPage = () => {
 
   return (
     <div className="resultados-container">
-      <h2 className="title">Resultados - Rodada {rodada}</h2>
-
-      <div className="nav-buttons">
-        <button onClick={() => setRodada(r => Math.max(1, r - 1))}>⬅ Rodada Anterior</button>
-        <button onClick={() => setRodada(r => r + 1)}>Próxima Rodada ➡</button>
+      <div className="rodada-nav-bar">
+        <button
+          className="rodada-nav-btn rodada-nav-prev"
+          disabled={!rodada || rodada <= 1}
+          onClick={() => setRodada(r => Math.max(1, (r || 1) - 1))}
+        >
+          &lt;
+        </button>
+        <button
+          className="rodada-nav-btn rodada-nav-next"
+          onClick={() => setRodada(r => (r || 1) + 1)}
+        >
+          &gt;
+        </button>
       </div>
+
+      <h2 className="title">Resultados - Rodada {rodada}</h2>
 
       {jogos.map(jogo => {
         const status = jogo.status ? jogo.status.toLowerCase() : 'indefinido';

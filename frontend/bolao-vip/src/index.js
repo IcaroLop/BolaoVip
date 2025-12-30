@@ -3,6 +3,11 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import setupInterceptor from './utils/axiosInterceptor';
+import API_BASE_URL from './config';
+
+// Configurar interceptor para renovação automática de token
+setupInterceptor(API_BASE_URL);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -3,7 +3,10 @@ const pool = require('../database/conexao');
 const tokenConfig = require('../config/tokenConfig');
 
 const API_BASE = 'https://api.api-futebol.com.br/v1';
-const PREFERENCIAS_CAMPEONATO = [10, 14]; // Série A, depois Série B
+// Ordem de preferência de campeonatos para chamadas genéricas
+// 69 = Premier League (ajuste de fuso necessário)
+// 10 = Série A, 14 = Série B
+const PREFERENCIAS_CAMPEONATO = [69, 10, 14];
 let cacheCampeonato = null;
 let cacheMomento = 0;
 const CACHE_MS = 15 * 60 * 1000;

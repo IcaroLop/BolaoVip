@@ -9,13 +9,16 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  /* Evita colisão com notch / status bar em devices móveis */
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
 }
 
 .header-row {
   display: flex;
   align-items: center;
-  padding: 0.85rem 1.5rem;
+  padding: 0.7rem 1.4rem;
   gap: 1.5rem;
+  flex-wrap: nowrap;
 }
 
 .header-row-1 {
@@ -25,9 +28,10 @@
 
 
 .header-row-2 {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
-  gap: 1.2rem;
+  gap: 0.9rem;
 }
 
 .logo {
@@ -48,7 +52,7 @@
 }
 
 .select-grupo {
-  padding: 0.6rem 0.8rem;
+  padding: 0.6rem 0.9rem;
   background: rgba(11, 22, 36, 0.8);
   border: 1px solid rgba(61, 242, 157, 0.3);
   border-radius: 6px;
@@ -57,9 +61,11 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 200px;
-  max-width: 350px;
-  flex: 0 1 auto;
+  min-width: 170px;
+  width: auto;
+  max-width: none;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .select-grupo:hover {
@@ -81,30 +87,87 @@
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 0.9rem;
   white-space: nowrap;
-  flex: 0 1 auto;
+  flex: 1;
+  justify-content: flex-end;
+  margin-left: auto;
+  min-width: 0;
+  overflow: visible;
+}
+
+.time-favorito {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.4rem 0.6rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  min-width: 130px;
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.time-favorito:hover {
+  border-color: rgba(61, 242, 157, 0.3);
+  box-shadow: 0 10px 30px rgba(61, 242, 157, 0.12);
+  transform: translateY(-1px);
+}
+
+.time-favorito-escudo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #0b1624;
+}
+
+.time-favorito-nome {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  line-height: 1.05;
+  max-width: 160px;
 }
 
 .header-saldo {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 0.8rem;
+  width: 100%;
 }
 
 .header-saudacao {
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
-  white-space: nowrap;
   letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
 }
 
 .menu {
   display: flex;
   gap: 0.6rem;
   align-items: center;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50001;
+  background: rgba(7, 13, 22, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.5rem;
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
 
 .menu a {
@@ -131,51 +194,244 @@
   box-shadow: 0 10px 30px rgba(61, 242, 157, 0.35);
 }
 
+.menu-link {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  transition: all 0.18s ease;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.menu-link:hover {
+  color: #041013;
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  box-shadow: 0 10px 30px rgba(61, 242, 157, 0.3);
+}
+
+.menu-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.menu-sair {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  transition: all 0.18s ease;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: inherit;
+  margin-left: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.8rem;
+  margin-top: 0.8rem;
+}
+
+.menu-sair:hover {
+  color: #041013;
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+}
+
+.time-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 99999;
+  padding: 8vh 1rem 4vh;
+  overflow-y: auto;
+}
+
+.time-modal {
+  background: #0b1624;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  width: min(900px, 96vw);
+  max-height: 82vh;
+  margin: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.time-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.time-modal-header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.time-modal-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1.2rem;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+
+.time-modal-erro {
+  color: #ff6b6b;
+  padding: 0.8rem 1.25rem;
+}
+
+.time-modal-loading {
+  color: #fff;
+  padding: 1.2rem 1.25rem;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.9rem;
+  padding: 1.1rem 1.25rem 1.4rem;
+  overflow-y: auto;
+  justify-items: center;
+}
+
+.time-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  color: #fff;
+  width: 150px;
+  min-height: 160px;
+}
+
+.time-card:hover {
+  border-color: rgba(61, 242, 157, 0.28);
+  box-shadow: 0 10px 30px rgba(61, 242, 157, 0.15);
+  transform: translateY(-2px);
+}
+
+.time-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.time-card-escudo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  background: #0b1624;
+  border-radius: 10px;
+}
+
+.time-card-nome {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  max-width: 130px;
+  white-space: normal;
+  line-height: 1.2;
+  min-height: 2.2em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time-modal-footer {
+  padding: 0.9rem 1.25rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.time-modal-clear {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.time-modal-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
 .menu-icon {
   display: none;
-  font-size: 1.8rem;
+  width: 44px;
+  height: 36px;
+  font-size: 1.6rem;
   cursor: pointer;
   color: var(--text);
-  padding: 0.35rem 0.55rem;
+  padding: 0;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.05);
   border: var(--border);
   margin-left: auto;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.menu-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2.2;
 }
 
 .menu-container {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   margin-left: auto;
+  height: 100%;
+  overflow: visible;
 }
 
 /* ---------- MOBILE ---------- */
 @media (max-width: 900px) {
   .header-right {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem;
-    width: auto;
-    white-space: nowrap;
     flex: 1;
-    min-width: 0;
+    justify-content: flex-end;
+    gap: 0.6rem;
   }
 
   .header-row-2 {
-    width: auto;
-    justify-content: flex-start;
-    align-items: center;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
 
   .header-saudacao {
-    max-width: 45vw;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-    justify-content: space-between;
-    gap: 0.75rem;
   }
 
   .logo {
@@ -188,27 +444,38 @@
   }
 
   .select-grupo {
-    flex: 1;
+    flex: 0 0 auto;
     min-width: 150px;
-    max-width: 65%;
+    width: auto;
+    max-width: none;
   }
 
   .header-right {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
     gap: 0.6rem;
-    width: auto;
     white-space: nowrap;
   }
 
   .header-saldo {
-    width: auto;
-    justify-content: flex-end;
+    width: 100%;
+    justify-content: center;
   }
 
   .header-saudacao {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+  }
+
+  .time-favorito-escudo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .time-favorito-nome {
+    font-size: 0.72rem;
+  }
+
+  .time-favorito {
+    min-width: 0;
+    width: 100%;
   }
 
   .menu-container {
@@ -219,7 +486,7 @@
 
   .menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 4px);
     right: 0;
     min-width: 250px;
     background: rgba(7, 13, 22, 0.99);
@@ -229,7 +496,7 @@
     padding: 0;
     display: none;
     overflow-y: auto;
-    z-index: 1000;
+    z-index: 50001;
     max-height: calc(100vh - 70px);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     border-radius: 0 0 8px 8px;
@@ -251,6 +518,17 @@
     transition: all 0.2s ease;
   }
 
+  .menu-link {
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
   .menu a:hover {
     color: #041013;
     background: linear-gradient(135deg, var(--primary), var(--primary-strong));
@@ -261,9 +539,84 @@
     background: linear-gradient(135deg, var(--primary), var(--primary-strong));
   }
 
+  .menu-sair {
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    border-radius: 0;
+    border-bottom: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    font-weight: 700;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.02);
+    margin: 0;
+    margin-top: auto;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+  }
+
+  .menu-sair:hover {
+    color: #041013;
+    background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  }
+
   .menu-icon {
-    display: block;
+    display: flex;
     margin-left: 0;
+  }
+}
+
+/* Ultra-narrow mobile: 320px-425px */
+@media (max-width: 425px) {
+  .header-row {
+    padding: 0.65rem 0.8rem;
+    gap: 0.6rem;
+  }
+
+  .logo {
+    font-size: 0.95rem;
+    letter-spacing: 0;
+    text-shadow: 0 0 12px rgba(61, 242, 157, 0.25);
+  }
+
+  .header-select {
+    min-width: 120px;
+    gap: 0.4rem;
+  }
+
+  .select-grupo {
+    font-size: 0.7rem;
+    min-width: 100px;
+    width: auto;
+    max-width: none;
+    flex: 0 0 auto;
+  }
+
+  .header-saudacao {
+    font-size: 0.7rem;
+    max-width: 30vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .menu-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .header-row-2 {
+    gap: 0.4rem;
+  }
+
+  .time-favorito-escudo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .time-favorito-nome {
+    font-size: 0.7rem;
   }
 }
 

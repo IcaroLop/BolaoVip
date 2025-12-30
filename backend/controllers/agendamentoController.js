@@ -54,7 +54,7 @@ const historicoAgendamentos = async (req, res) => {
         COUNT(*) AS total_jogos
       FROM jogos
       GROUP BY rodada
-      ORDER BY MIN(data) ASC
+      ORDER BY MIN(data) DESC
       LIMIT ? OFFSET ?
     `, [limit, offset]);
 

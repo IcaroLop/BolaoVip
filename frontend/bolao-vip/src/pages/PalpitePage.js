@@ -2,34 +2,47 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import storage from '../utils/storage';
 import PixModal from '../components/pixModal';
+import OpcoesPagamentoModal from '../components/OpcoesPagamentoModal';
+import API_BASE_URL from '../config';
+import './PalpitePage.css';
+import '../styles/RodadaNav.css';
 
-const API = 'http://192.168.56.127:3001';
+const API = API_BASE_URL;
 
 const PalpitePage = () => {
+  console.error('[PalpitePage] 🎯🎯🎯 COMPONENTE COMEÇOU A EXECUTAR 🎯🎯🎯');
+  console.log('[PalpitePage] 🎯 Componente MONTANDO/RENDERIZANDO');
+  
+  console.log('[PalpitePage] Tentando inicializar useState para rodadaAtual...');
   const [rodadaAtual, setRodadaAtual] = useState(null);
+  console.log('[PalpitePage] ✅ rodadaAtual inicializado');
+  
+  console.log('[PalpitePage] Tentando inicializar useState para jogos...');
   const [jogos, setJogos] = useState([]);
+  console.log('[PalpitePage] ✅ jogos inicializado');
+  
   const [palpites, setPalpites] = useState({});
+  const [grupoSelecionado, setGrupoSelecionado] = useState(null);
+  const [grupoCarregado, setGrupoCarregado] = useState(false);
+  const [contextKey, setContextKey] = useState(0);
+  const [campeonatoId, setCampeonatoId] = useState(null);
   const [mensagem, setMensagem] = useState('');
   const [tipoMensagem, setTipoMensagem] = useState('');
   const [dadosPix, setDadosPix] = useState(null);
-
-  const [temPalpitesServidor, setTemPalpitesServidor] = useState(false);
   const [jaEnviado, setJaEnviado] = useState(false);
-  
-  // Não inicializa com valor - força leitura no useEffect para garantir valor mais recente
-  const [grupoSelecionado, setGrupoSelecionado] = useState(null);
-  
-  // Flag para indicar que o grupo foi sincronizado do Header
-  const [grupoCarregado, setGrupoCarregado] = useState(false);
-  
-  const [campeonatoId, setCampeonatoId] = useState(null);
-  const [contextKey, setContextKey] = useState(0);
+  const [temPalpitesServidor, setTemPalpitesServidor] = useState(false);
   const [quadrosEnviados, setQuadrosEnviados] = useState(new Set());
-  
-  // Estados para verificação de PIX
   const [pixPago, setPixPago] = useState(false);
   const [pixPendente, setPixPendente] = useState(false);
   const [dadosPixPendente, setDadosPixPendente] = useState(null);
+  const [usuarioBloqueado, setUsuarioBloqueado] = useState(false);
+  const [totalPendente, setTotalPendente] = useState(0);
+  const [mensagemBloqueio, setMensagemBloqueio] = useState('');
+  const [processando, setProcessando] = useState(false);
+  const [mensagemProcessando, setMensagemProcessando] = useState('');
+  const [dadosSaldoInsuficiente, setDadosSaldoInsuficiente] = useState(null);
+  const [quadroEmProcessamento, setQuadroEmProcessamento] = useState(null);
+  const [mostrarOpcoesModal, setMostrarOpcoesModal] = useState(false);
 
   const token = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
@@ -51,13 +64,17 @@ const PalpitePage = () => {
 
   // **CRÍTICO**: Sincroniza grupo do Header IMEDIATAMENTE ao montar, antes de qualquer fetch
   useEffect(() => {
-    const timestamp = new Date().toISOString();
     const gidStr = storage.getItem('grupoId');
     const gidNum = gidStr ? Number(gidStr) : null;
-    console.log(`[PalpitePage ${timestamp}] Mount - Sincronizando grupoId do storage:`, gidNum);
-    console.log(`[PalpitePage ${timestamp}] Storage disponível - localStorage: ${storage.hasLocalStorage}, sessionStorage: ${storage.hasSessionStorage}`);
+    console.log('[PalpitePage] 🔧 useEffect MOUNT - Sincronizando grupoId do storage:', gidNum);
     setGrupoSelecionado(gidNum);
     setGrupoCarregado(true);
+    console.log('[PalpitePage] ✅ grupoCarregado definido como TRUE');
+    
+    // Se não tem grupoId no mount, aguarda até aparecer
+    if (!gidNum) {
+      console.log('[PalpitePage] ⚠️ Nenhum grupoId encontrado no mount. Aguardando Header salvar...');
+    }
   }, []); // Roda apenas no mount
 
   // Agrupa jogos por data+hora
@@ -95,7 +112,7 @@ const PalpitePage = () => {
       const timestamp = new Date().toISOString();
       const gid = storage.getItem('grupoId');
       const gidNum = gid ? Number(gid) : null;
-      console.log(`[PalpitePage ${timestamp}] Storage event - grupoId mudou para:`, gidNum);
+
       setGrupoSelecionado(gidNum);
       setContextKey((k) => k + 1);
     });
@@ -105,7 +122,7 @@ const PalpitePage = () => {
       const timestamp = new Date().toISOString();
       const gidNum = newValue ? Number(newValue) : null;
       if (gidNum !== grupoSelecionado) {
-        console.log(`[PalpitePage ${timestamp}] Polling - grupoId mudou de ${grupoSelecionado} para ${gidNum}`);
+        console.log(`[PalpitePage ${timestamp}] 🔄 Watcher detectou mudança: ${grupoSelecionado} → ${gidNum}`);
         setGrupoSelecionado(gidNum);
         setContextKey((k) => k + 1);
       }
@@ -119,17 +136,22 @@ const PalpitePage = () => {
 
   // Reset ao mudar grupo
   useEffect(() => {
-    if (!grupoSelecionado || !token) return;
+    if (!grupoSelecionado || !token) {
+      console.log(`[PalpitePage] Reset ao mudar grupo - SKIP (grupoSelecionado=${grupoSelecionado}, token=${!!token})`);
+      return;
+    }
     
     const timestamp = new Date().toISOString();
-    console.log(`[PalpitePage ${timestamp}] 🔄 Grupo mudou para: ${grupoSelecionado}, contextKey: ${contextKey}`);
+    console.log(`[PalpitePage ${timestamp}] 🔄 Grupo mudou para: ${grupoSelecionado}, carregando campeonato...`);
+
 
     async function carregarCampeonatoDoGrupo() {
       try {
         const res = await axios.get(`${API}/grupos/${grupoSelecionado}/contexto`, authHeader);
         const campId = res.data.campeonatoId || res.data.campeonato_id || null;
         setCampeonatoId(campId);
-        console.log(`[PalpitePage ${timestamp}] ✅ Campeonato carregado para grupo ${grupoSelecionado}: ${campId}`);
+        console.log(`[PalpitePage ${timestamp}] ✅ Campeonato carregado: ${campId}`);
+
       } catch (err) {
         console.error(`[PalpitePage ${timestamp}] ❌ Erro ao carregar campeonato do grupo:`, err);
         setCampeonatoId(null);
@@ -156,7 +178,7 @@ const PalpitePage = () => {
   useEffect(() => {
     // Só executa se grupo está carregado e há campeonato ou grupo válido
     if ((!campeonatoId && !grupoSelecionado) || !grupoCarregado) {
-      console.log('[PalpitePage] Aguardando sincronização - grupoCarregado:', grupoCarregado, 'grupoSelecionado:', grupoSelecionado, 'campeonatoId:', campeonatoId);
+      console.log(`[PalpitePage] Aguardando dados: campeonatoId=${campeonatoId}, grupoSelecionado=${grupoSelecionado}, grupoCarregado=${grupoCarregado}`);
       return;
     }
 
@@ -168,7 +190,7 @@ const PalpitePage = () => {
         if (grupoSelecionado) params.append('grupoId', grupoSelecionado);
         if (campeonatoId) params.append('campeonatoId', campeonatoId);
 
-        console.log(`[PalpitePage ${timestamp}] 🔍 Buscando rodada vigente - grupoId: ${grupoSelecionado}, campeonatoId: ${campeonatoId}, params: ${params.toString()}`);
+        console.log(`[PalpitePage ${timestamp}] 🔍 Buscando rodada vigente com params:`, params.toString());
         const res = await axios.get(`${API}/resultados/rodada-vigente?${params.toString()}`, authHeader);
         const rodadaResp = res.data?.rodada ?? null;
         const jogosResp = Array.isArray(res.data?.jogos) ? res.data.jogos : [];
@@ -187,12 +209,13 @@ const PalpitePage = () => {
           setMensagem('');
           setTipoMensagem('');
         }
+        console.log(`[PalpitePage ${timestamp}] ✅ Rodada vigente carregada: rodada=${rodadaResp}, jogos=${jogosResp.length}`);
       } catch (err) {
         console.error('Erro ao buscar rodada vigente:', err);
         if (myKey !== contextKey) return;
         setRodadaAtual(null);
         setJogos([]);
-        setMensagem('Nenhum jogo ou status de rodada para este grupo.');
+        setMensagem('Erro ao buscar dados da rodada. Verifique se um grupo foi selecionado.');
         setTipoMensagem('erro');
       }
     }
@@ -200,12 +223,38 @@ const PalpitePage = () => {
     buscarRodadaVigente();
   }, [campeonatoId, grupoSelecionado, authHeader, contextKey, grupoCarregado]);
 
+  // 🆕 Verificar se usuário está bloqueado por pagamentos pendentes
+  useEffect(() => {
+    if (!token || !grupoCarregado) return;
+
+    async function verificarBloqueio() {
+      try {
+        const res = await axios.get(`${API}/palpites/verificar-bloqueio`, authHeader);
+        const { bloqueado, total_pendente, mensagem: msg } = res.data;
+        
+        setUsuarioBloqueado(bloqueado);
+        setTotalPendente(total_pendente || 0);
+        setMensagemBloqueio(msg || '');
+
+        if (bloqueado) {
+
+        }
+      } catch (err) {
+        console.error('[PalpitePage] Erro ao verificar bloqueio:', err);
+        // Não bloqueia em caso de erro na verificação
+        setUsuarioBloqueado(false);
+      }
+    }
+
+    verificarBloqueio();
+  }, [token, authHeader, grupoCarregado]);
+
   // Busca jogos ao navegar rodadas
   useEffect(() => {
     if (!rodadaAtual || !campeonatoId) return;
 
     // Reset estados quando a rodada muda
-    console.log('[PalpitePage] Rodada mudou para:', rodadaAtual, '- resetando jaEnviado para false');
+
     setJaEnviado(false);
     setTemPalpitesServidor(false);
     setQuadrosEnviados(new Set());
@@ -305,14 +354,14 @@ const PalpitePage = () => {
         if (grupoSelecionado) params.append('grupoId', grupoSelecionado);
         if (campeonatoId) params.append('campeonatoId', campeonatoId);
 
-        console.log(`[PalpitePage] Verificando PIX para rodada ${rodadaAtual}`);
+
         const res = await axios.get(`${API}/palpites/verificar-pagamento/${rodadaAtual}?${params.toString()}`, authHeader);
         
         setPixPago(res.data.pixPago || false);
         setPixPendente(res.data.pixPendente || false);
         setDadosPixPendente(res.data.dadosPix || null);
         
-        console.log(`[PalpitePage] Status PIX - Pago: ${res.data.pixPago}, Pendente: ${res.data.pixPendente}`);
+
       } catch (err) {
         console.error('Erro ao verificar PIX:', err);
         setPixPago(false);
@@ -356,10 +405,10 @@ const PalpitePage = () => {
   }, []);
 
 
-  const enviarPalpitesQuadro = async (quadro, gerarPix = false) => {
+  const enviarPalpitesQuadro = async (quadro, gerarPix = false, opcaoPagamento = null) => {
     const jogosEditaveis = quadro.jogos.filter(j => {
       const status = (j.status || '').toLowerCase();
-      return status === 'agendado' || status === 'programado' || status === 'agendada';
+      return status === 'agendado' || status === 'programado' || status === 'agendada' || status === 'pre-jogo';
     });
 
     if (jogosEditaveis.length === 0) {
@@ -369,7 +418,8 @@ const PalpitePage = () => {
     }
 
     const jogosComNull = jogosEditaveis.filter(jogo => {
-      const p = palpites[jogo.partida_id] || {};
+      const key = (jogo.id ?? jogo.partida_id);
+      const p = palpites[key] || {};
       const casaVazio = p.placar_casa === undefined || p.placar_casa === '' || p.placar_casa === null;
       const foraVazio = p.placar_fora === undefined || p.placar_fora === '' || p.placar_fora === null;
       return casaVazio || foraVazio;
@@ -377,6 +427,13 @@ const PalpitePage = () => {
 
     if (jogosComNull.length > 0) {
       setMensagem('Preencha todos os placares deste horário antes de enviar.');
+      setTipoMensagem('erro');
+      return;
+    }
+
+    // 🆕 Verificar se usuário está bloqueado
+    if (usuarioBloqueado) {
+      setMensagem(`⛔ ${mensagemBloqueio}`);
       setTipoMensagem('erro');
       return;
     }
@@ -389,6 +446,10 @@ const PalpitePage = () => {
     }
 
     try {
+      // 🆕 Ativar loading
+      setProcessando(true);
+      setMensagemProcessando('Enviando palpites...');
+      
       const payload = JSON.parse(atob(token.split('.')[1]));
       const id_usuario = payload.id;
       const nome_usuario = payload.nome || payload.username || 'Usuário';
@@ -397,109 +458,140 @@ const PalpitePage = () => {
         rodada: rodadaAtual,
         campeonatoId: campeonatoId,
         grupoId: grupoSelecionado,
-        palpites: jogosEditaveis.map(jogo => ({
-          jogo_id: jogo.partida_id,
-          placar_casa: Number(palpites[jogo.partida_id]?.placar_casa),
-          placar_fora: Number(palpites[jogo.partida_id]?.placar_fora),
-        }))
+        palpites: jogosEditaveis.map(jogo => {
+          const key = (jogo.id ?? jogo.partida_id);
+          return {
+            jogo_id: key,
+            placar_casa: Number(palpites[key]?.placar_casa),
+            placar_fora: Number(palpites[key]?.placar_fora),
+          };
+        })
       };
+
+      // 🆕 Se tem opcao_pagamento, adicionar ao body
+      if (opcaoPagamento) {
+        body.opcao_pagamento = opcaoPagamento;
+
+      }
 
       const res = await axios.post(`${API}/palpites/enviar`, body, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const { codigo_envio } = res.data;
+
+      // 🆕 VERIFICAR SE SALDO É INSUFICIENTE
+      if (res.data.saldo_insuficiente) {
+
+        setDadosSaldoInsuficiente({
+          saldo_atual: res.data.saldo_atual,
+          valor_palpite: res.data.valor_palpite,
+          diferenca: res.data.diferenca,
+          saldo_negativo: res.data.saldo_negativo || false,
+          valor_para_zerar_debito: res.data.valor_para_zerar_debito || 0,
+          total_pix_necessario: res.data.total_pix_necessario || res.data.valor_palpite
+        });
+        setQuadroEmProcessamento(quadro);
+        setMostrarOpcoesModal(true);
+        return; // Para aqui e aguarda escolha do usuário
+      }
+
+      const { codigo_envio, precisa_gerar_pix, valor_pix, pagamento_completo } = res.data;
 
       setQuadrosEnviados(prev => new Set([...prev, quadro.chave]));
 
+      // 🆕 SALDO FOI USADO - Pagamento completo
+      if (pagamento_completo) {
+
+        setMensagem(`✅ ${res.data.mensagem}`);
+        setTipoMensagem('sucesso');
+        setJaEnviado(true);
+        return; // Não precisa gerar PIX
+      }
+
       // Lógica de PIX
       if (gerarPix) {
-        if (pixPago) {
-          // PIX já pago - não gera novo nem exibe
-          console.log('[enviarPalpitesQuadro] PIX já pago - apenas salvando palpites');
-          setMensagem(`Palpites atualizados com sucesso! (PIX já pago anteriormente)`);
-          setTipoMensagem('sucesso');
-          setJaEnviado(true);
-          return;
-        }
+        // 🆕 Se precisa_gerar_pix=true (PIX integral ou parcial)
+        if (precisa_gerar_pix && valor_pix > 0) {
+          if (pixPago) {
 
-        if (pixPendente && dadosPixPendente) {
-          // PIX pendente - reutiliza cobrança existente
-          console.log('[enviarPalpitesQuadro] PIX pendente encontrado - reutilizando cobrança');
-          
-          const expiracao = dadosPixPendente.expiracao || 3600;
-          const dadosPisix = {
-            qr_code: dadosPixPendente.qr_code,
-            pix_copiaecola: dadosPixPendente.pix_copiaecola,
-            txid: dadosPixPendente.txid,
-            expiracao: expiracao
-          };
-          
-          console.log('[enviarPalpitesQuadro] Exibindo PIX pendente:', dadosPisix);
-          setDadosPix(dadosPisix);
-          setMensagem('Palpites atualizados! Utilize o PIX gerado anteriormente para pagamento.');
-          setTipoMensagem('sucesso');
-          setJaEnviado(true);
-          return;
-        }
+            setMensagem(`Palpites atualizados com sucesso! (PIX já pago anteriormente)`);
+            setTipoMensagem('sucesso');
+            setJaEnviado(true);
+          } else if (pixPendente && dadosPixPendente) {
 
-        // Sem PIX (nem pago nem pendente) - gera nova cobrança
-        try {
-          console.log('[enviarPalpitesQuadro] Gerando nova cobrança PIX...');
-          const txid = codigo_envio;
-          console.log('[enviarPalpitesQuadro] Iniciando POST para /pix/cobranca com:', { id_usuario, nome_usuario, codigo_envio, valor: 10.00, txid });
-          
-          const pixPayload = {
-            id_usuario,
-            nome_usuario,
-            codigo_envio,
-            valor: 10.00,
-            txid
-          };
-          
-          console.log('[enviarPalpitesQuadro] Payload PIX:', JSON.stringify(pixPayload));
-          
-          const cobranca = await axios.post(`${API}/pix/cobranca`, pixPayload, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+            
+            const expiracao = dadosPixPendente.expiracao || 3600;
+            const dadosPisix = {
+              qr_code: dadosPixPendente.qr_code,
+              pix_copiaecola: dadosPixPendente.pix_copiaecola,
+              txid: dadosPixPendente.txid,
+              expiracao: expiracao
+            };
+            
 
-          console.log('[enviarPalpitesQuadro] ✅ Resposta recebida da API PIX:', cobranca.status);
-          console.log('[enviarPalpitesQuadro] Dados completos:', JSON.stringify(cobranca.data, null, 2));
-          console.log('[enviarPalpitesQuadro] cobranca_api:', cobranca.data.cobranca_api);
+            setDadosPix(dadosPisix);
+            setMensagem(res.data.mensagem || 'Palpites atualizados! Utilize o PIX gerado anteriormente para pagamento.');
+            setTipoMensagem('sucesso');
+            setJaEnviado(true);
+          } else {
+            // Gerar nova cobrança PIX com o valor correto (integral ou parcial)
+            try {
+              // 🆕 Atualizar mensagem de loading
+              setMensagemProcessando(`Gerando cobrança PIX de R$ ${valor_pix.toFixed(2)}...`);
+              
+              const txid = codigo_envio;
+              
+              const pixPayload = {
+                id_usuario,
+                nome_usuario,
+                codigo_envio,
+                valor: valor_pix, // 🆕 Usa valor retornado pela API (integral ou diferença)
+                txid
+              };
+            
 
-          if (!cobranca.data.cobranca_api) {
-            throw new Error('Resposta da API não contém cobranca_api');
+              
+              const cobranca = await axios.post(`${API}/pix/cobranca`, pixPayload, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+
+
+
+              if (!cobranca.data.cobranca_api) {
+                throw new Error('Resposta da API não contém cobranca_api');
+              }
+
+              const dadosPisix = {
+                nome_usuario,
+                codigo_envio,
+                valor: cobranca.data.cobranca_api.valor.original,
+                txid: cobranca.data.cobranca_api.txid,
+                expiracao: new Date(new Date(cobranca.data.cobranca_api.calendario.criacao).getTime() + (cobranca.data.cobranca_api.calendario.expiracao * 1000)).toISOString(),
+                pix_copiaecola: cobranca.data.cobranca_api.pixCopiaECola,
+                qr_code_url: cobranca.data.cobranca_api.loc.location
+              };
+              
+              setDadosPix(dadosPisix);
+
+              setMensagem('Palpites enviados! Aguardando pagamento.');
+              setTipoMensagem('sucesso');
+              setJaEnviado(true);
+            } catch (pixErr) {
+              console.error('[enviarPalpitesQuadro] ❌ Erro ao gerar PIX - Tipo de erro:', pixErr.constructor.name);
+              console.error('[enviarPalpitesQuadro] ❌ Mensagem de erro:', pixErr.message);
+              console.error('[enviarPalpitesQuadro] ❌ Status HTTP:', pixErr.response?.status);
+              console.error('[enviarPalpitesQuadro] ❌ Dados de erro:', JSON.stringify(pixErr.response?.data, null, 2));
+              console.error('[enviarPalpitesQuadro] ❌ URL tentada:', pixErr.config?.url);
+              console.error('[enviarPalpitesQuadro] ❌ Headers enviados:', pixErr.config?.headers);
+              
+              setMensagem(`Palpites salvos, mas erro ao gerar PIX: ${pixErr.response?.data?.error || pixErr.response?.data?.detalhes || pixErr.message}`);
+              setTipoMensagem('erro');
+            }
           }
-
-          const dadosPisix = {
-            nome_usuario,
-            codigo_envio,
-            valor: cobranca.data.cobranca_api.valor.original,
-            txid: cobranca.data.cobranca_api.txid,
-            expiracao: new Date(new Date(cobranca.data.cobranca_api.calendario.criacao).getTime() + (cobranca.data.cobranca_api.calendario.expiracao * 1000)).toISOString(),
-            pix_copiaecola: cobranca.data.cobranca_api.pixCopiaECola,
-            qr_code_url: cobranca.data.cobranca_api.loc.location
-          };
-          
-          console.log('[enviarPalpitesQuadro] Dados de PIX preparados:', dadosPisix);
-          setDadosPix(dadosPisix);
-          console.log('[enviarPalpitesQuadro] ✅ setDadosPix chamado com sucesso');
-
-          setMensagem('Palpites enviados! Aguardando pagamento.');
+        } else {
+          setMensagem(`Palpites do horário ${quadro.chave.split('_')[1]} salvos com sucesso!`);
           setTipoMensagem('sucesso');
-          setJaEnviado(true);
-        } catch (pixErr) {
-          console.error('[enviarPalpitesQuadro] ❌ Erro ao gerar PIX - Tipo de erro:', pixErr.constructor.name);
-          console.error('[enviarPalpitesQuadro] ❌ Mensagem de erro:', pixErr.message);
-          console.error('[enviarPalpitesQuadro] ❌ Status HTTP:', pixErr.response?.status);
-          console.error('[enviarPalpitesQuadro] ❌ Dados de erro:', JSON.stringify(pixErr.response?.data, null, 2));
-          console.error('[enviarPalpitesQuadro] ❌ URL tentada:', pixErr.config?.url);
-          console.error('[enviarPalpitesQuadro] ❌ Headers enviados:', pixErr.config?.headers);
-          
-          setMensagem(`Palpites salvos, mas erro ao gerar PIX: ${pixErr.response?.data?.error || pixErr.response?.data?.detalhes || pixErr.message}`);
-          setTipoMensagem('erro');
         }
       } else {
-        console.log('[enviarPalpitesQuadro] gerarPix=false (não é último quadro), apenas salvando palpites');
         setMensagem(`Palpites do horário ${quadro.chave.split('_')[1]} salvos com sucesso!`);
         setTipoMensagem('sucesso');
       }
@@ -507,13 +599,17 @@ const PalpitePage = () => {
       console.error('Erro ao enviar palpites:', err);
       setMensagem('Erro ao enviar palpites.');
       setTipoMensagem('erro');
+    } finally {
+      // 🆕 Desativar loading
+      setProcessando(false);
+      setMensagemProcessando('');
     }
   };
 
   const enviarTodosOsPalpites = async () => {
     const todosJogosEditaveis = jogos.filter(j => {
       const status = (j.status || '').toLowerCase();
-      return status === 'agendado' || status === 'programado' || status === 'agendada';
+      return status === 'agendado' || status === 'programado' || status === 'agendada' || status === 'pre-jogo';
     });
 
     if (todosJogosEditaveis.length === 0) {
@@ -523,7 +619,8 @@ const PalpitePage = () => {
     }
 
     const jogosComNull = todosJogosEditaveis.filter(jogo => {
-      const p = palpites[jogo.partida_id] || {};
+      const key = (jogo.id ?? jogo.partida_id);
+      const p = palpites[key] || {};
       const casaVazio = p.placar_casa === undefined || p.placar_casa === '' || p.placar_casa === null;
       const foraVazio = p.placar_fora === undefined || p.placar_fora === '' || p.placar_fora === null;
       return casaVazio || foraVazio;
@@ -542,7 +639,18 @@ const PalpitePage = () => {
       return;
     }
 
+    // 🆕 Verificar se usuário está bloqueado
+    if (usuarioBloqueado) {
+      setMensagem(`⛔ ${mensagemBloqueio}`);
+      setTipoMensagem('erro');
+      return;
+    }
+
     try {
+      // 🆕 Ativar loading
+      setProcessando(true);
+      setMensagemProcessando('Enviando todos os palpites...');
+      
       const payload = JSON.parse(atob(token.split('.')[1]));
       const id_usuario = payload.id;
       const nome_usuario = payload.nome || payload.username || 'Usuário';
@@ -551,43 +659,90 @@ const PalpitePage = () => {
         rodada: rodadaAtual,
         campeonatoId: campeonatoId,
         grupoId: grupoSelecionado,
-        palpites: todosJogosEditaveis.map(jogo => ({
-          jogo_id: jogo.partida_id,
-          placar_casa: Number(palpites[jogo.partida_id]?.placar_casa),
-          placar_fora: Number(palpites[jogo.partida_id]?.placar_fora),
-        }))
+        palpites: todosJogosEditaveis.map(jogo => {
+          const key = (jogo.id ?? jogo.partida_id);
+          return {
+            jogo_id: key,
+            placar_casa: Number(palpites[key]?.placar_casa),
+            placar_fora: Number(palpites[key]?.placar_fora),
+          };
+        })
       };
 
       const res = await axios.post(`${API}/palpites/enviar`, body, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const { codigo_envio } = res.data;
 
-      // Sempre tentar gerar PIX após salvar todos os palpites
-      try {
-          console.log('[enviarTodosOsPalpites] Gerando PIX após salvar palpites...');
-          const txid = codigo_envio;
-          console.log('[enviarTodosOsPalpites] Iniciando POST para /pix/cobranca com:', { id_usuario, nome_usuario, codigo_envio, valor: 10.00, txid });
-          console.log('[enviarTodosOsPalpites] Token disponível?', !!token);
-          console.log('[enviarTodosOsPalpites] API URL:', API);
+      // 🆕 VERIFICAR SE SALDO É INSUFICIENTE
+      if (res.data.saldo_insuficiente) {
+        setDadosSaldoInsuficiente({
+          saldo_atual: res.data.saldo_atual,
+          valor_palpite: res.data.valor_palpite,
+          diferenca: res.data.diferenca,
+          saldo_negativo: res.data.saldo_negativo || false,
+          valor_para_zerar_debito: res.data.valor_para_zerar_debito || 0,
+          total_pix_necessario: res.data.total_pix_necessario || res.data.valor_palpite
+        });
+        setQuadroEmProcessamento({ chave: 'todos' }); // Marca como "todos os palpites"
+        setMostrarOpcoesModal(true);
+        return;
+      }
+
+      const { codigo_envio, precisa_gerar_pix, valor_pix, pagamento_completo } = res.data;
+
+      // 🆕 SALDO FOI USADO - Pagamento completo
+      if (pagamento_completo) {
+        setMensagem(`✅ ${res.data.mensagem}`);
+        setTipoMensagem('sucesso');
+        setJaEnviado(true);
+        setTemPalpitesServidor(true);
+        return;
+      }
+
+      // Se precisa gerar PIX
+      if (precisa_gerar_pix && valor_pix > 0) {
+        if (pixPago) {
+          setMensagem(`Palpites atualizados com sucesso! (PIX já pago anteriormente)`);
+          setTipoMensagem('sucesso');
+          setJaEnviado(true);
+          setTemPalpitesServidor(true);
+          return;
+        }
+
+        if (pixPendente && dadosPixPendente) {
+          const expiracao = dadosPixPendente.expiracao || 3600;
+          const dadosPisix = {
+            qr_code: dadosPixPendente.qr_code,
+            pix_copiaecola: dadosPixPendente.pix_copiaecola,
+            txid: dadosPixPendente.txid,
+            expiracao: expiracao
+          };
           
+          setDadosPix(dadosPisix);
+          setMensagem(res.data.mensagem || 'Palpites atualizados! Utilize o PIX gerado anteriormente para pagamento.');
+          setTipoMensagem('sucesso');
+          setJaEnviado(true);
+          setTemPalpitesServidor(true);
+          return;
+        }
+
+        // Gerar nova cobrança PIX
+        try {
+          // 🆕 Atualizar mensagem de loading
+          setMensagemProcessando(`Gerando cobrança PIX de R$ ${valor_pix.toFixed(2)}...`);
+          
+          const txid = codigo_envio;
           const pixPayload = {
             id_usuario,
             nome_usuario,
             codigo_envio,
-            valor: 10.00,
+            valor: valor_pix,
             txid
           };
-          
-          console.log('[enviarTodosOsPalpites] Payload PIX:', JSON.stringify(pixPayload));
           
           const cobranca = await axios.post(`${API}/pix/cobranca`, pixPayload, {
             headers: { Authorization: `Bearer ${token}` }
           });
-
-          console.log('[enviarTodosOsPalpites] ✅ Resposta recebida da API PIX:', cobranca.status);
-          console.log('[enviarTodosOsPalpites] Dados completos:', JSON.stringify(cobranca.data, null, 2));
-          console.log('[enviarTodosOsPalpites] cobranca_api:', cobranca.data.cobranca_api);
 
           if (!cobranca.data.cobranca_api) {
             throw new Error('Resposta da API não contém cobranca_api');
@@ -603,10 +758,7 @@ const PalpitePage = () => {
             qr_code_url: cobranca.data.cobranca_api.loc.location
           };
           
-          console.log('[enviarTodosOsPalpites] Dados de PIX preparados:', dadosPisix);
           setDadosPix(dadosPisix);
-          console.log('[enviarTodosOsPalpites] ✅ setDadosPix chamado com sucesso');
-
           setMensagem('Todos os palpites enviados! Aguardando pagamento.');
           setTipoMensagem('sucesso');
           setJaEnviado(true);
@@ -622,10 +774,20 @@ const PalpitePage = () => {
           setMensagem(`Palpites salvos, mas erro ao gerar PIX: ${pixErr.response?.data?.error || pixErr.response?.data?.detalhes || pixErr.message}`);
           setTipoMensagem('erro');
         }
+      } else {
+        setMensagem('Todos os palpites enviados com sucesso!');
+        setTipoMensagem('sucesso');
+        setJaEnviado(true);
+        setTemPalpitesServidor(true);
+      }
     } catch (err) {
       console.error('Erro ao enviar todos os palpites:', err);
       setMensagem('Erro ao enviar palpites.');
       setTipoMensagem('erro');
+    } finally {
+      // 🆕 Desativar loading
+      setProcessando(false);
+      setMensagemProcessando('');
     }
   };
 
@@ -652,11 +814,177 @@ const PalpitePage = () => {
   }, [quadrosDeJogos, verificarStatusJogos]);
 
   // Debug: log dos estados PIX
-  console.log('[PalpitePage RENDER] pixPago:', pixPago, 'pixPendente:', pixPendente, 'dadosPixPendente:', dadosPixPendente);
+
+
+  // 🆕 Handler para escolha de opção de pagamento
+  const handleEscolherOpcaoPagamento = async (opcao) => {
+    if (!quadroEmProcessamento) {
+      return;
+    }
+
+    // Fechar modal
+    setMostrarOpcoesModal(false);
+    
+    // 🆕 Ativar loading
+    setProcessando(true);
+    setMensagemProcessando('Processando pagamento...');
+
+    // Verificar se é "todos os palpites" ou um quadro específico
+    if (quadroEmProcessamento.chave === 'todos') {
+      // Reenviar TODOS os palpites com a opção escolhida
+      const todosJogosEditaveis = jogos.filter(j => {
+        const status = (j.status || '').toLowerCase();
+        return status === 'agendado' || status === 'programado' || status === 'agendada' || status === 'pre-jogo';
+      });
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const body = {
+          rodada: rodadaAtual,
+          campeonatoId: campeonatoId,
+          grupoId: grupoSelecionado,
+          opcao_pagamento: opcao,
+          palpites: todosJogosEditaveis.map(jogo => {
+            const key = (jogo.id ?? jogo.partida_id);
+            return {
+              jogo_id: key,
+              placar_casa: Number(palpites[key]?.placar_casa),
+              placar_fora: Number(palpites[key]?.placar_fora),
+            };
+          })
+        };
+
+        const res = await axios.post(`${API}/palpites/enviar`, body, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const { precisa_gerar_pix, valor_pix, pagamento_completo } = res.data;
+
+        if (pagamento_completo) {
+          setMensagem(`✅ ${res.data.mensagem}`);
+          setTipoMensagem('sucesso');
+          setJaEnviado(true);
+          setTemPalpitesServidor(true);
+        } else if (precisa_gerar_pix && valor_pix > 0) {
+          // 🆕 Atualizar mensagem de loading
+          setMensagemProcessando(`Gerando cobrança PIX de R$ ${valor_pix.toFixed(2)}...`);
+          
+          // Gerar PIX com o valor correto
+          const { codigo_envio } = res.data;
+          const id_usuario = payload.id;
+          const nome_usuario = payload.nome || payload.username || 'Usuário';
+          
+          const pixPayload = {
+            id_usuario,
+            nome_usuario,
+            codigo_envio,
+            valor: valor_pix,
+            txid: codigo_envio
+          };
+          
+          const cobranca = await axios.post(`${API}/pix/cobranca`, pixPayload, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          const dadosPisix = {
+            nome_usuario,
+            codigo_envio,
+            valor: cobranca.data.cobranca_api.valor.original,
+            txid: cobranca.data.cobranca_api.txid,
+            expiracao: new Date(new Date(cobranca.data.cobranca_api.calendario.criacao).getTime() + (cobranca.data.cobranca_api.calendario.expiracao * 1000)).toISOString(),
+            pix_copiaecola: cobranca.data.cobranca_api.pixCopiaECola,
+            qr_code_url: cobranca.data.cobranca_api.loc.location
+          };
+          
+          setDadosPix(dadosPisix);
+          setMensagem('Todos os palpites enviados! Aguardando pagamento.');
+          setTipoMensagem('sucesso');
+          setJaEnviado(true);
+          setTemPalpitesServidor(true);
+        }
+      } catch (err) {
+        console.error('[handleEscolherOpcaoPagamento] Erro:', err);
+        setMensagem('Erro ao processar pagamento.');
+        setTipoMensagem('erro');
+      } finally {
+        // 🆕 Desativar loading
+        setProcessando(false);
+        setMensagemProcessando('');
+      }
+    } else {
+      // Reenviar palpites de UM QUADRO específico com a opção escolhida
+      const gerarPix = opcao !== 'saldo';
+      await enviarPalpitesQuadro(quadroEmProcessamento, gerarPix, opcao);
+    }
+
+    // Limpar estados temporários
+    setDadosSaldoInsuficiente(null);
+    setQuadroEmProcessamento(null);
+  };
+
+  try {
+    console.log('[PalpitePage] 📤 Iniciando JSX return');
+  } catch (e) {
+    console.error('[PalpitePage] ❌ Erro antes do return:', e);
+  }
 
   return (
     <div style={styles.container}>
+      {/* 🆕 Overlay de Loading */}
+      {processando && (
+        <div style={styles.loadingOverlay}>
+          <div style={styles.loadingContent}>
+            <div style={styles.spinner}></div>
+            <p style={styles.loadingText}>{mensagemProcessando}</p>
+          </div>
+        </div>
+      )}
+      
+      <div className="rodada-nav-bar">
+        <button
+          className="rodada-nav-btn rodada-nav-prev"
+          disabled={!rodadaAtual || rodadaAtual <= 1}
+          onClick={() => {
+            setRodadaAtual(r => {
+              const base = (r == null ? 7 : r);
+              const next = Math.max(1, base - 1);
+              return next;
+            });
+            setMensagem('');
+          }}
+        >
+          &lt;
+        </button>
+
+        <button
+          className="rodada-nav-btn rodada-nav-next"
+          disabled={rodadaAtual >= 38}
+          onClick={() => {
+            setRodadaAtual(r => {
+              const base = (r == null ? 7 : r);
+              const next = Math.min(38, base + 1);
+              return next;
+            });
+            setMensagem('');
+          }}
+        >
+          &gt;
+        </button>
+      </div>
+
       <h2 style={styles.title}>{rodadaAtual ? `Palpites - Rodada ${rodadaAtual}` : 'Palpites'}</h2>
+
+      {!grupoCarregado && (
+        <div style={{ backgroundColor: '#333', color: '#FFA', padding: '12px 16px', borderRadius: '8px', border: '1px solid #666', marginBottom: '12px', textAlign: 'center', fontSize: '0.95rem' }}>
+          ⏳ Carregando dados do grupo...
+        </div>
+      )}
+
+      {!grupoSelecionado && grupoCarregado && (
+        <div style={{ backgroundColor: '#333', color: '#fff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #666', marginBottom: '12px', textAlign: 'center' }}>
+          ⚠️ Selecione um grupo no topo para carregar os jogos.
+        </div>
+      )}
 
       {/* Informação sobre status do PIX */}
       {(pixPago || pixPendente) && (
@@ -677,33 +1005,6 @@ const PalpitePage = () => {
           )}
         </div>
       )}
-
-      <div style={styles.navegacao}>
-        <button
-          disabled={rodadaAtual === 1}
-          onClick={() => {
-            setRodadaAtual(r => {
-              const base = (r == null ? 7 : r); // fallback para navegar quando nulo
-              const next = Math.max(1, base - 1);
-              return next;
-            });
-            setMensagem('');
-          }}
-          style={styles.navBtn}
-        >⬅ Anterior</button>
-        <button
-          disabled={rodadaAtual === 38}
-          onClick={() => {
-            setRodadaAtual(r => {
-              const base = (r == null ? 7 : r);
-              const next = Math.min(38, base + 1);
-              return next;
-            });
-            setMensagem('');
-          }}
-          style={styles.navBtn}
-        >Próxima ➡</button>
-      </div>
 
       {jogos.length === 0 ? (
         <p style={styles.mensagem}>Nenhum jogo encontrado para essa rodada.</p>
@@ -754,10 +1055,45 @@ const PalpitePage = () => {
         </p>
       )}
 
+      {/* 🆕 Alerta de Bloqueio */}
+      {usuarioBloqueado && (
+        <div style={{
+          backgroundColor: '#ff4444',
+          color: '#fff',
+          padding: '16px',
+          borderRadius: '8px',
+          margin: '20px 0',
+          textAlign: 'center',
+          fontWeight: 'bold',
+          border: '2px solid #cc0000'
+        }}>
+          ⛔ {mensagemBloqueio}
+        </div>
+      )}
+
       {dadosPix && (
         <PixModal
           dadosPix={dadosPix}
           onClose={() => setDadosPix(null)}
+        />
+      )}
+
+      {/* 🆕 Modal de Opções de Pagamento */}
+      {mostrarOpcoesModal && dadosSaldoInsuficiente && (
+        <OpcoesPagamentoModal
+          isOpen={mostrarOpcoesModal}
+          onClose={() => {
+            setMostrarOpcoesModal(false);
+            setDadosSaldoInsuficiente(null);
+            setQuadroEmProcessamento(null);
+          }}
+          saldoAtual={dadosSaldoInsuficiente.saldo_atual}
+          valorPalpite={dadosSaldoInsuficiente.valor_palpite}
+          diferenca={dadosSaldoInsuficiente.diferenca}
+          saldoNegativo={dadosSaldoInsuficiente.saldo_negativo}
+          valorDebitoNegativo={dadosSaldoInsuficiente.valor_para_zerar_debito}
+          totalPixNecessario={dadosSaldoInsuficiente.total_pix_necessario}
+          onEscolherOpcao={handleEscolherOpcaoPagamento}
         />
       )}
     </div>
@@ -828,9 +1164,10 @@ const QuadroDeJogos = ({ quadro, palpites, handleInput, enviarPalpitesQuadro, fo
           const escudoMandante = jogo.escudo_mandante || '/assets/escudo-placeholder.svg';
           const escudoVisitante = jogo.escudo_visitante || '/assets/escudo-visitante.svg';
           const jogoFechado = ['encerrado', 'finalizado', 'em andamento', 'andamento'].includes((jogo.status || '').toLowerCase());
+          const jogoKey = (jogo.id ?? jogo.partida_id);
 
           return (
-            <div key={jogo.partida_id} style={styles.jogo}>
+            <div key={jogoKey} style={styles.jogo}>
               <div style={styles.timesContainer}>
                 <div style={styles.timeCol}>
                   <img src={escudoMandante} alt="mandante" style={styles.escudo} />
@@ -846,8 +1183,8 @@ const QuadroDeJogos = ({ quadro, palpites, handleInput, enviarPalpitesQuadro, fo
                   type="number"
                   min="0"
                   disabled={fechado || jogoFechado}
-                  value={palpites[jogo.partida_id]?.placar_casa ?? ''}
-                  onChange={(e) => handleInput(jogo.partida_id, 'placar_casa', e.target.value)}
+                  value={palpites[jogoKey]?.placar_casa ?? ''}
+                  onChange={(e) => handleInput(jogoKey, 'placar_casa', e.target.value)}
                   style={styles.input}
                 />
                 <span style={styles.x}>x</span>
@@ -855,8 +1192,8 @@ const QuadroDeJogos = ({ quadro, palpites, handleInput, enviarPalpitesQuadro, fo
                   type="number"
                   min="0"
                   disabled={fechado || jogoFechado}
-                  value={palpites[jogo.partida_id]?.placar_fora ?? ''}
-                  onChange={(e) => handleInput(jogo.partida_id, 'placar_fora', e.target.value)}
+                  value={palpites[jogoKey]?.placar_fora ?? ''}
+                  onChange={(e) => handleInput(jogoKey, 'placar_fora', e.target.value)}
                   style={styles.input}
                 />
               </div>
@@ -892,6 +1229,7 @@ const styles = {
     marginBottom: '0.5rem',
     fontSize: 'clamp(1.3rem, 5vw, 1.8rem)',
     textAlign: 'center',
+    wordBreak: 'break-word',
   },
   navegacao: {
     display: 'flex',
@@ -928,21 +1266,21 @@ const styles = {
   },
   quadro: {
     width: '100%',
-    maxWidth: '600px',
+    maxWidth: '100%',
     backgroundColor: '#1C2128',
     borderRadius: '12px',
-    padding: 'clamp(1rem, 3vw, 1.5rem)',
-    marginBottom: '1.5rem',
+    padding: 'clamp(0.5rem, 3vw, 1.5rem)',
+    marginBottom: 'clamp(0.6rem, 2vw, 1.5rem)',
     border: '2px solid #30363D',
   },
   quadroHeader: {
-    marginBottom: '1rem',
+    marginBottom: 'clamp(0.5rem, 2vw, 1rem)',
     textAlign: 'center',
   },
   quadroTitulo: {
     color: '#58A6FF',
-    fontSize: 'clamp(1rem, 3vw, 1.2rem)',
-    marginBottom: '0.5rem',
+    fontSize: 'clamp(0.9rem, 3vw, 1.2rem)',
+    marginBottom: 'clamp(0.3rem, 1.5vw, 0.5rem)',
   },
   relogio: {
     fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)',
@@ -957,12 +1295,12 @@ const styles = {
   listaJogos: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.75rem',
-    marginBottom: '1rem',
+    gap: 'clamp(0.5rem, 2vw, 0.75rem)',
+    marginBottom: 'clamp(0.6rem, 2vw, 1rem)',
   },
   jogo: {
     backgroundColor: '#161B22',
-    padding: 'clamp(0.75rem, 3vw, 1rem)',
+    padding: 'clamp(0.5rem, 3vw, 1rem)',
     borderRadius: '8px',
     display: 'flex',
     flexDirection: 'column',
@@ -973,38 +1311,45 @@ const styles = {
     justifyContent: 'space-around',
     alignItems: 'center',
     width: '100%',
-    marginBottom: '0.75rem',
-    gap: '0.5rem',
+    marginBottom: 'clamp(0.4rem, 2vw, 0.75rem)',
+    gap: 'clamp(0.2rem, 1.5vw, 0.75rem)',
+    flexWrap: 'wrap',
   },
   timeCol: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    width: '45%',
+    flex: 1,
+    minWidth: 0,
   },
   escudo: {
-    width: 'clamp(35px, 8vw, 50px)',
-    height: 'clamp(35px, 8vw, 50px)',
+    width: 'clamp(36px, 12vw, 55px)',
+    height: 'clamp(36px, 12vw, 55px)',
     objectFit: 'contain',
     backgroundColor: '#fff',
     borderRadius: '50%',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
   },
   nomeTime: {
-    fontSize: 'clamp(0.75rem, 2.5vw, 0.9rem)',
-    marginTop: '4px',
+    fontSize: 'clamp(0.65rem, 2.5vw, 0.85rem)',
+    marginTop: 'clamp(2px, 1vw, 4px)',
     textAlign: 'center',
     wordBreak: 'break-word',
+    maxWidth: '100%',
+    lineHeight: '1.2',
   },
   placarLinha: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: '0.5rem',
-    gap: 'clamp(0.5rem, 3vw, 1rem)',
+    marginBottom: 'clamp(0.3rem, 1.5vw, 0.5rem)',
+    gap: 'clamp(0.35rem, 2vw, 1rem)',
+    width: '100%',
+    flexWrap: 'wrap',
   },
   input: {
-    width: 'clamp(45px, 10vw, 55px)',
-    height: '44px',
+    width: 'clamp(45px, 14vw, 65px)',
+    height: 'clamp(40px, 10vw, 44px)',
     padding: '0px',
     backgroundColor: '#222',
     border: '1px solid #444',
@@ -1014,8 +1359,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 'clamp(1.2rem, 4vw, 1.6rem)',
+    fontSize: 'clamp(0.95rem, 3.5vw, 1.4rem)',
     fontWeight: 'bold',
+    transition: 'all 0.2s ease',
   },
   x: {
     fontWeight: 'bold',
@@ -1119,6 +1465,40 @@ const styles = {
     fontSize: 'clamp(0.85rem, 2.5vw, 1rem)',
     fontWeight: 'bold',
     color: '#FFF',
+  },
+  // 🆕 Estilos do Loading Overlay
+  loadingOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+  },
+  loadingContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '20px',
+  },
+  spinner: {
+    width: '60px',
+    height: '60px',
+    border: '6px solid rgba(0, 255, 136, 0.2)',
+    borderTop: '6px solid #00FF88',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  },
+  loadingText: {
+    color: '#00FF88',
+    fontSize: 'clamp(1rem, 3vw, 1.2rem)',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    margin: 0,
   }
 };
 

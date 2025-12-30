@@ -37,7 +37,7 @@ async function verificarRodadaVigente() {
     const [palpitesRod17] = await pool.query(`
       SELECT p.id_usuario, COUNT(*) as total_palpites, SUM(j.placar_mandante IS NOT NULL) as com_resultado
       FROM palpites p
-      LEFT JOIN jogos j ON p.id_jogo = j.partida_id
+      LEFT JOIN jogos j ON p.id_jogo = j.id
       WHERE p.rodada = 17 AND p.campeonato_id = ? AND p.grupo_id = ?
       GROUP BY p.id_usuario
     `, [campeonatoId, grupoId]);

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import './AdminAgendamentosPage.css';
 
 const AdminAgendamentosPage = () => {
@@ -29,7 +30,7 @@ const AdminAgendamentosPage = () => {
 
   const consultarPorData = async () => {
   try {
-    await axios.post(`http://192.168.56.127:3001/agendamentos/data/${dataConsulta}/consultar`);
+    await axios.post(`${API_BASE_URL}/agendamentos/data/${dataConsulta}/consultar`);
     setMensagemData(`✅ Consulta dos jogos do dia ${dataConsulta} enviada com sucesso.`);
   } catch (error) {
     console.error('Erro ao consultar por data:', error);
@@ -41,8 +42,8 @@ const AdminAgendamentosPage = () => {
     setCarregando(true);
     try {
       const [resProximo, resHistorico] = await Promise.all([
-        axios.get('http://192.168.56.127:3001/agendamentos/proximo'),
-        axios.get(`http://192.168.56.127:3001/agendamentos/historico?offset=${offset}&limit=${limit}`)
+        axios.get(`${API_BASE_URL}/agendamentos/proximo`),
+        axios.get(`${API_BASE_URL}/agendamentos/historico?offset=${offset}&limit=${limit}`)
       ]);
 
       setProximo(resProximo.data);
@@ -57,7 +58,7 @@ const AdminAgendamentosPage = () => {
   const consultarRodadaManual = async () => {
     if (!proximo) return;
     try {
-      await axios.post(`http://192.168.56.127:3001/agendamentos/rodada/${proximo.rodada}/consultar`);
+      await axios.post(`${API_BASE_URL}/agendamentos/rodada/${proximo.rodada}/consultar`);
       setMensagem(`✅ Consulta manual da rodada ${proximo.rodada} enviada!`);
     } catch (err) {
       console.error('Erro ao consultar rodada:', err);

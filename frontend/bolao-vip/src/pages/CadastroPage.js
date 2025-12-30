@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config';
 
 function CadastroPage() {
   const [nome, setNome] = useState('');
@@ -13,7 +14,7 @@ function CadastroPage() {
     e.preventDefault();
 
     try {
-      await axios.post('http://192.168.56.127:3001/auth/cadastro', {
+      await axios.post(`${API_BASE_URL}/auth/cadastro`, {
         nome,
         email,
         senha,
