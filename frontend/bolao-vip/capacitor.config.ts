@@ -7,12 +7,13 @@ const config: CapacitorConfig = {
   server: {
     // Permite requisições HTTP em rede local (necessário para desenvolvimento)
     cleartext: true,
-    // Permite conexões com IPs locais
+    // Permite conexões com IPs locais e domínio de produção
     allowNavigation: [
       'http://192.168.56.127:3001',
       'http://localhost:3001',
       'http://192.168.*',
-      'http://10.0.*'
+      'http://10.0.*',
+      'https://bolaovip.csprojectia.com.br'
     ]
   },
   android: {
