@@ -98,7 +98,8 @@ async function obterGruposPorRodadaAtual(conn) {
       [campId, rodada]
     );
     for (const r of rows) {
-      const dt = DateTime.fromJSDate(r.data).setZone('America/Manaus');
+      // Interpreta campo 'data' como horário já salvo em Manaus (evita tratar como UTC do servidor)
+      const dt = DateTime.fromSQL(r.data, { zone: 'America/Manaus' });
       const key = `${dt.toFormat('yyyy-LL-dd HH:mm')}|${r.campeonato_id}|${r.rodada}`;
       const entry = grupos.get(key) || { dataHora: dt, campeonatoId: r.campeonato_id, rodada: r.rodada, jogos: 0 };
       entry.jogos += 1;
@@ -141,7 +142,7 @@ exports.calcularAgendaTodosGrupos = async (page = 1, limit = 10) => {
           [campId, rodada]
         );
         rows.forEach(row => {
-          const dtJogo = DateTime.fromJSDate(row.data).setZone('America/Manaus');
+          const dtJogo = DateTime.fromSQL(row.data, { zone: 'America/Manaus' });
           const chaveHorario = `${campId}|${rodada}|${dtJogo.toFormat('yyyy-LL-dd HH:mm')}`;
           jogosMap.set(chaveHorario, row.total);
         });
@@ -278,7 +279,7 @@ exports.calcularAgendaTodosGrupos = async (page = 1, limit = 10) => {
     const total = agenda.length;
     const skip = (page - 1) * limit;
     const paginado = agenda.slice(skip, skip + limit).map(item => ({
-      dataHora: item.dataHora.toISO ? item.dataHora.toISO() : item.dataHora,
+      dataHora: item.dataHora.setZone ? item.dataHora.setZone('America/Manaus').toISO() : item.dataHora,
       campeonatoId: item.campeonatoId,
       rodada: item.rodada,
       jogosNoGrupo: item.jogos,
@@ -325,7 +326,7 @@ exports.calcularAgendaPorDia = async (dia, page = 1, limit = 10) => {
     const intervaloMin = Math.max(0.5, intervaloCalculado); // mínimo 0,5 minuto (30s)
 
     const agenda = rows.map(r => {
-      const dt = DateTime.fromJSDate(r.data).setZone('America/Manaus');
+      const dt = DateTime.fromSQL(r.data, { zone: 'America/Manaus' });
       return {
         dataHora: dt,
         campeonatoId: r.campeonato_id,
@@ -342,7 +343,7 @@ exports.calcularAgendaPorDia = async (dia, page = 1, limit = 10) => {
     const total = agenda.length;
     const skip = (page - 1) * limit;
     const paginado = agenda.slice(skip, skip + limit).map(item => ({
-      dataHora: item.dataHora.toISO(),
+      dataHora: item.dataHora.setZone('America/Manaus').toISO(),
       campeonatoId: item.campeonatoId,
       rodada: item.rodada,
       jogosNoGrupo: item.jogosNoGrupo,

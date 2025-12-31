@@ -85,13 +85,18 @@ const PalpitePage = () => {
     const grupos = {};
     jogos.forEach(jogo => {
       // Garante interpretação em America/Manaus, evitando deslocamento de fuso
-      const dt = DateTime.fromISO(jogo.data ?? jogo.data_formatada, { setZone: true })
-        .setZone('America/Manaus')
-        .toJSDate();
+      const raw = jogo.data ?? jogo.data_formatada;
+      let dt;
+      if (raw instanceof Date) {
+        dt = DateTime.fromJSDate(raw).setZone('America/Manaus');
+      } else {
+        dt = DateTime.fromISO(String(raw), { setZone: true }).setZone('America/Manaus');
+      }
+      const dtJs = dt.toJSDate();
       const chave = `${dt.toLocaleDateString('pt-BR')}_${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`;
       if (!grupos[chave]) {
         grupos[chave] = {
-          dataHora: dt,
+          dataHora: dtJs,
           chave: chave,
           jogos: []
         };
