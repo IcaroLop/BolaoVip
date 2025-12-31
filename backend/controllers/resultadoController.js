@@ -1,4 +1,5 @@
 const pool = require('../database/conexao');
+const { DateTime } = require('luxon');
 
 let hasCampeonatoIdColumn = null;
 
@@ -148,7 +149,17 @@ exports.buscarResultadosRodadaVigente = async (req, res) => {
     const params = usaCampoCampeonato ? [rodadaVigente, campeonatoId] : [rodadaVigente];
     const [jogos] = await pool.query(sql, params);
 
-    res.json({ rodada: rodadaVigente, jogos, campeonatoId });
+    // Normaliza datas para America/Manaus e inclui string formatada
+    const jogosFmt = jogos.map(j => {
+      const dt = j.data ? DateTime.fromJSDate(j.data).setZone('America/Manaus') : null;
+      return {
+        ...j,
+        data: dt ? dt.toISO({ suppressMilliseconds: true }) : null,
+        data_formatada: dt ? dt.toFormat('dd/LL/yyyy HH:mm') : null
+      };
+    });
+
+    res.json({ rodada: rodadaVigente, jogos: jogosFmt, campeonatoId });
 
   } catch (err) {
     console.error('Erro ao buscar resultados da rodada:', err);
@@ -190,7 +201,17 @@ exports.buscarResultadosRodada = async (req, res) => {
     const params = usaCampoCampeonato ? [rodada, campeonatoId] : [rodada];
     const [jogos] = await pool.query(sql, params);
 
-    res.json({ rodada, jogos, campeonatoId });
+    // Normaliza datas para America/Manaus e inclui string formatada
+    const jogosFmt = jogos.map(j => {
+      const dt = j.data ? DateTime.fromJSDate(j.data).setZone('America/Manaus') : null;
+      return {
+        ...j,
+        data: dt ? dt.toISO({ suppressMilliseconds: true }) : null,
+        data_formatada: dt ? dt.toFormat('dd/LL/yyyy HH:mm') : null
+      };
+    });
+
+    res.json({ rodada, jogos: jogosFmt, campeonatoId });
 
   } catch (err) {
     console.error('Erro ao buscar resultados da rodada:', err);
