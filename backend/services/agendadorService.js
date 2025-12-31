@@ -3,6 +3,16 @@ const { DateTime } = require('luxon');
 const axios = require('axios');
 const { logSistema } = require('./logService');
 
+// Converte qualquer formato ISO/SQL para DateTime em America/Manaus; retorna null se inválido
+function parseDataManaus(value) {
+  if (!value) return null;
+  let dt = DateTime.fromISO(value, { setZone: true });
+  if (dt.isValid) return dt.setZone('America/Manaus');
+  dt = DateTime.fromSQL(value, { zone: 'America/Manaus' });
+  if (dt.isValid) return dt;
+  return null;
+}
+
 // Tabela de persistência
 const ensureTableSQL = `
 CREATE TABLE IF NOT EXISTS agendador_requisicoes (
@@ -98,16 +108,9 @@ async function obterGruposPorRodadaAtual(conn) {
       [campId, rodada]
     );
     for (const r of rows) {
-      if (!r.data) {
-        // Evita registros quebrados (data nula) que geram INSERT com data_hora NULL na tabela de agendamento
-        console.warn('[agendador] Ignorando jogo com data nula', { campId: r.campeonato_id, rodada: r.rodada, partida: r.partida_id });
-        continue;
-      }
-
-      // Interpreta campo 'data' como horário já salvo em Manaus (evita tratar como UTC do servidor)
-      const dt = DateTime.fromSQL(r.data, { zone: 'America/Manaus' });
-      if (!dt.isValid) {
-        console.warn('[agendador] Ignorando jogo com data inválida', { campId: r.campeonato_id, rodada: r.rodada, data: r.data });
+      const dt = parseDataManaus(r.data);
+      if (!dt) {
+        console.warn('[agendador] Ignorando jogo com data inválida', { campId: r.campeonato_id, rodada: r.rodada, partida: r.partida_id, data: r.data });
         continue;
       }
 
@@ -153,9 +156,11 @@ exports.calcularAgendaTodosGrupos = async (page = 1, limit = 10) => {
           [campId, rodada]
         );
         rows.forEach(row => {
-          const dtJogo = DateTime.fromSQL(row.data, { zone: 'America/Manaus' });
-          const chaveHorario = `${campId}|${rodada}|${dtJogo.toFormat('yyyy-LL-dd HH:mm')}`;
-          jogosMap.set(chaveHorario, row.total);
+          const dtJogo = parseDataManaus(row.data);
+          if (dtJogo) {
+            const chaveHorario = `${campId}|${rodada}|${dtJogo.toFormat('yyyy-LL-dd HH:mm')}`;
+            jogosMap.set(chaveHorario, row.total);
+          }
         });
       }
 
@@ -337,19 +342,19 @@ exports.calcularAgendaPorDia = async (dia, page = 1, limit = 10) => {
     const intervaloMin = Math.max(0.5, intervaloCalculado); // mínimo 0,5 minuto (30s)
 
     const agenda = rows.map(r => {
-      const dt = DateTime.fromSQL(r.data, { zone: 'America/Manaus' });
+      const dt = parseDataManaus(r.data);
       return {
-        dataHora: dt,
+        dataHora: dt || DateTime.invalid('Invalid date'),
         campeonatoId: r.campeonato_id,
         rodada: r.rodada,
         jogosNoGrupo: Number(r.total) || 0,
         permitido: true,
-        motivo: null,
+        motivo: dt ? null : 'data invalida',
         disparosPrevistos: disparosPorGrupo,
         intervaloMinutos: intervaloMin,
         tipo: 'placar',
       };
-    });
+    }).filter(item => item.dataHora.isValid);
 
     const total = agenda.length;
     const skip = (page - 1) * limit;
