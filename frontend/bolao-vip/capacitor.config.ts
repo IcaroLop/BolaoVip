@@ -13,7 +13,8 @@ const config: CapacitorConfig = {
       'http://localhost:3001',
       'http://192.168.*',
       'http://10.0.*',
-      'https://bolaovip.csprojectia.com.br'
+      'https://bolaovip.csprojectia.com.br',
+      'http://191.243.196.240:3001'
     ]
   },
   android: {

@@ -131,14 +131,15 @@ async function agendarConsultasResultadosPorRodada() {
 
     const gruposPorDia = {};
     jogos.forEach(jogo => {
-  const dataManaus = DateTime.fromJSDate(new Date(jogo.data)).setZone('America/Manaus');
-  const diaStr = dataManaus.toISODate();
-  const horaStr = dataManaus.startOf('minute').toFormat('yyyy-MM-dd HH:mm'); // normalizado
-  
-  if (!gruposPorDia[diaStr]) gruposPorDia[diaStr] = {};
-  if (!gruposPorDia[diaStr][horaStr]) gruposPorDia[diaStr][horaStr] = [];
-  gruposPorDia[diaStr][horaStr].push(jogo);
-});
+      // Interpreta o campo 'data' diretamente como horário de Manaus, evitando conversão implícita para UTC.
+      const dataManaus = DateTime.fromSQL(jogo.data, { zone: 'America/Manaus' });
+      const diaStr = dataManaus.toISODate();
+      const horaStr = dataManaus.startOf('minute').toFormat('yyyy-MM-dd HH:mm');
+
+      if (!gruposPorDia[diaStr]) gruposPorDia[diaStr] = {};
+      if (!gruposPorDia[diaStr][horaStr]) gruposPorDia[diaStr][horaStr] = [];
+      gruposPorDia[diaStr][horaStr].push(jogo);
+    });
 
 
     for (const dia of Object.keys(gruposPorDia)) {
@@ -150,11 +151,10 @@ async function agendarConsultasResultadosPorRodada() {
       const intervaloMs = Math.floor(duracaoMs / reqPorGrupo);
 
       horarios.forEach((horaIso, idx) => {
-        const inicio = new Date(horaIso);
-        const agora = new Date();
-        const tempoAteInicio = inicio - agora;
-
-        const inicioManaus = DateTime.fromJSDate(inicio).setZone('America/Manaus');
+        // Mantém o horário em Manaus e calcula o delta em ms sem depender do timezone do servidor.
+        const inicioManaus = DateTime.fromFormat(horaIso, 'yyyy-MM-dd HH:mm', { zone: 'America/Manaus' });
+        const agoraManaus = DateTime.now().setZone('America/Manaus');
+        const tempoAteInicio = inicioManaus.diff(agoraManaus).as('milliseconds');
         const inicioStr = inicioManaus.toFormat('dd/MM/yyyy HH:mm');
 
         console.log(`📅 Agendado grupo ${idx + 1}/${numGruposNoDia} no dia ${dia} (local ${inicioStr}) → ${reqPorGrupo} requisições em intervalos de ${Math.floor(intervaloMs / 1000)}s`);

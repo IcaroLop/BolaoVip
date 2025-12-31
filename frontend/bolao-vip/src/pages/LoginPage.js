@@ -77,8 +77,16 @@ function LoginPage() {
 
       navigate('/noticias');
     } catch (error) {
-      console.error('Erro no login:', error);
-      setMensagem('❌ Email ou senha inválidos.');
+      const status = error?.response?.status;
+      const netStatus = error?.request?.status;
+      console.error('Erro no login:', {
+        message: error?.message,
+        status,
+        netStatus,
+        url: `${API_BASE_URL}/auth/login`,
+        data: error?.response?.data,
+      });
+      setMensagem(`❌ Falha no login. URL=${API_BASE_URL} status=${status ?? 'n/a'} net=${netStatus ?? 'n/a'} msg=${error?.message ?? ''}`);
     }
   };
 
@@ -105,6 +113,7 @@ function LoginPage() {
       <div className="auth-card glass-card">
         <h2>Bem-vindo de volta</h2>
         <p className="muted">Acesse com seu email e senha</p>
+        <p className="muted" style={{ fontSize: '12px', wordBreak: 'break-all' }}>API: {API_BASE_URL}</p>
         <form className="auth-form" onSubmit={handleLogin}>
           <label>
             Email

@@ -5,5 +5,7 @@
         <domain includeSubdomains="true">192.168.56.127</domain>
         <domain includeSubdomains="true">192.168.56.0</domain>
         <domain includeSubdomains="true">localhost</domain>
+        <!-- IP público do backend -->
+        <domain includeSubdomains="true">191.243.196.240</domain>
     </domain-config>
 </network-security-config>

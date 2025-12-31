@@ -23,8 +23,8 @@ try {
 // FASE 1: URL do backend em rede local (mesmo IP_HOST_DEV do backend/.env)
 const LOCAL_API = 'http://192.168.56.127:3001';
 
-// FASE 2: URL de produção com domínio hospedado
-const PRODUCTION_API = 'https://bolaovip.csprojectia.com.br';
+// FASE 2: URL de produção (fixo para APK)
+const PRODUCTION_API = 'http://191.243.196.240:3001';
 
 const getAPIBaseURL = () => {
   // Se estiver rodando no APK (plataforma nativa)
