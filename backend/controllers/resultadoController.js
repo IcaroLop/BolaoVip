@@ -131,14 +131,14 @@ exports.buscarResultadosRodadaVigente = async (req, res) => {
     const usaCampoCampeonato = campeonatoId ? await ensureCampeonatoIdColumn() : false;
 
         const sql = usaCampoCampeonato
-      ? `SELECT id, partida_id, data, estadio,
+      ? `SELECT id, partida_id, data, DATE_FORMAT(data, '%Y-%m-%d %H:%i:%s') AS data_sql, estadio,
            time_mandante, time_visitante,
            escudo_mandante, escudo_visitante,
            placar_mandante, placar_visitante, status
          FROM jogos
          WHERE rodada = ? AND campeonato_id = ?
          ORDER BY data`
-      : `SELECT id, partida_id, data, estadio,
+      : `SELECT id, partida_id, data, DATE_FORMAT(data, '%Y-%m-%d %H:%i:%s') AS data_sql, estadio,
            time_mandante, time_visitante,
            escudo_mandante, escudo_visitante,
            placar_mandante, placar_visitante, status
@@ -151,7 +151,8 @@ exports.buscarResultadosRodadaVigente = async (req, res) => {
 
     // Normaliza datas para America/Manaus e inclui string formatada
     const jogosFmt = jogos.map(j => {
-      const dt = j.data ? DateTime.fromJSDate(j.data).setZone('America/Manaus') : null;
+      const base = j.data_sql || (j.data ? DateTime.fromJSDate(j.data).toFormat('yyyy-LL-dd HH:mm:ss') : null);
+      const dt = base ? DateTime.fromFormat(base, 'yyyy-LL-dd HH:mm:ss', { zone: 'America/Manaus' }) : null;
       return {
         ...j,
         data: dt ? dt.toISO({ suppressMilliseconds: true }) : null,
@@ -183,14 +184,14 @@ exports.buscarResultadosRodada = async (req, res) => {
     const usaCampoCampeonato = campeonatoId ? await ensureCampeonatoIdColumn() : false;
 
         const sql = usaCampoCampeonato
-      ? `SELECT id, partida_id, data, estadio,
+      ? `SELECT id, partida_id, data, DATE_FORMAT(data, '%Y-%m-%d %H:%i:%s') AS data_sql, estadio,
            time_mandante, time_visitante,
            escudo_mandante, escudo_visitante,
            placar_mandante, placar_visitante, status
          FROM jogos
          WHERE rodada = ? AND campeonato_id = ?
          ORDER BY data`
-      : `SELECT id, partida_id, data, estadio,
+      : `SELECT id, partida_id, data, DATE_FORMAT(data, '%Y-%m-%d %H:%i:%s') AS data_sql, estadio,
            time_mandante, time_visitante,
            escudo_mandante, escudo_visitante,
            placar_mandante, placar_visitante, status
@@ -203,7 +204,8 @@ exports.buscarResultadosRodada = async (req, res) => {
 
     // Normaliza datas para America/Manaus e inclui string formatada
     const jogosFmt = jogos.map(j => {
-      const dt = j.data ? DateTime.fromJSDate(j.data).setZone('America/Manaus') : null;
+      const base = j.data_sql || (j.data ? DateTime.fromJSDate(j.data).toFormat('yyyy-LL-dd HH:mm:ss') : null);
+      const dt = base ? DateTime.fromFormat(base, 'yyyy-LL-dd HH:mm:ss', { zone: 'America/Manaus' }) : null;
       return {
         ...j,
         data: dt ? dt.toISO({ suppressMilliseconds: true }) : null,
