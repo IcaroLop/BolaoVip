@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { DateTime } from 'luxon';
 import axios from 'axios';
 import storage from '../utils/storage';
 import PixModal from '../components/pixModal';
@@ -83,7 +84,10 @@ const PalpitePage = () => {
     
     const grupos = {};
     jogos.forEach(jogo => {
-      const dt = new Date(jogo.data);
+      // Garante interpretação em America/Manaus, evitando deslocamento de fuso
+      const dt = DateTime.fromISO(jogo.data ?? jogo.data_formatada, { setZone: true })
+        .setZone('America/Manaus')
+        .toJSDate();
       const chave = `${dt.toLocaleDateString('pt-BR')}_${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`;
       if (!grupos[chave]) {
         grupos[chave] = {
