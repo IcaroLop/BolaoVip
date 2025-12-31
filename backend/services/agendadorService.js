@@ -6,10 +6,21 @@ const { logSistema } = require('./logService');
 // Converte qualquer formato ISO/SQL para DateTime em America/Manaus; retorna null se inválido
 function parseDataManaus(value) {
   if (!value) return null;
-  let dt = DateTime.fromISO(value, { setZone: true });
+
+  // Se já veio como objeto Date do MySQL, converte a partir de JSDate (assume UTC/offset embutido)
+  if (value instanceof Date) {
+    const dtJs = DateTime.fromJSDate(value, { zone: 'utc' }).setZone('America/Manaus');
+    return dtJs.isValid ? dtJs : null;
+  }
+
+  // Tenta ISO com offset/Z
+  let dt = DateTime.fromISO(String(value), { setZone: true });
   if (dt.isValid) return dt.setZone('America/Manaus');
-  dt = DateTime.fromSQL(value, { zone: 'America/Manaus' });
+
+  // Tenta formato SQL local
+  dt = DateTime.fromSQL(String(value), { zone: 'America/Manaus' });
   if (dt.isValid) return dt;
+
   return null;
 }
 
@@ -157,10 +168,9 @@ exports.calcularAgendaTodosGrupos = async (page = 1, limit = 10) => {
         );
         rows.forEach(row => {
           const dtJogo = parseDataManaus(row.data);
-          if (dtJogo) {
-            const chaveHorario = `${campId}|${rodada}|${dtJogo.toFormat('yyyy-LL-dd HH:mm')}`;
-            jogosMap.set(chaveHorario, row.total);
-          }
+          if (!dtJogo) return;
+          const chaveHorario = `${campId}|${rodada}|${dtJogo.toFormat('yyyy-LL-dd HH:mm')}`;
+          jogosMap.set(chaveHorario, row.total);
         });
       }
 
