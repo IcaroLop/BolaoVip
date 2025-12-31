@@ -20,8 +20,8 @@ async function proximoAgendamento(req, res) {
 
     const proximoJogo = jogos[0];
 
-    // Convertendo para horário de Brasília (UTC-3)
-    const dataBrasilia = DateTime.fromJSDate(new Date(proximoJogo.data), { zone: 'utc' })
+    // Converte diretamente do valor salvo (Manaus) para manter o horário correto
+    const dataBrasilia = DateTime.fromJSDate(proximoJogo.data)
       .setZone('America/Manaus');
 
     const data_formatada = dataBrasilia.toFormat('dd/LL/yyyy HH:mm');

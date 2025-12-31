@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../database/conexao');
+const { DateTime } = require('luxon');
 const { buscarJogosAoVivoComFallback } = require('../services/jogosAoVivoScraper');
 
 // Jogos por rodada (legado)
@@ -62,11 +63,13 @@ router.get('/agenda', async (req, res) => {
     const anteriores = [];
 
     jogos.forEach((j) => {
-      const dataStr = new Date(j.data_manaus).toLocaleDateString('en-CA', { timeZone: 'America/Manaus' });
+      const dataManaus = j.data_manaus ? DateTime.fromJSDate(j.data_manaus).setZone('America/Manaus') : null;
+      const dataStr = dataManaus ? dataManaus.toISODate() : null;
       const base = {
         partidaId: j.partida_id,
         rodada: j.rodada,
-        data: j.data_manaus,
+        data: dataManaus ? dataManaus.toISO({ suppressMilliseconds: true }) : null,
+        data_formatada: dataManaus ? dataManaus.toFormat('dd/LL/yyyy HH:mm') : null,
         timeMandante: j.time_mandante,
         timeVisitante: j.time_visitante,
         escudoMandante: j.escudo_mandante,
@@ -124,11 +127,13 @@ router.get('/agenda/destaques', async (req, res) => {
     const brasilAnteriores = [];
 
     jogos.forEach((j) => {
-      const dataStr = new Date(j.data_manaus).toLocaleDateString('en-CA', { timeZone: 'America/Manaus' });
+      const dataManaus = j.data_manaus ? DateTime.fromJSDate(j.data_manaus).setZone('America/Manaus') : null;
+      const dataStr = dataManaus ? dataManaus.toISODate() : null;
       const base = {
         partidaId: j.partida_id,
         rodada: j.rodada,
-        data: j.data_manaus,
+        data: dataManaus ? dataManaus.toISO({ suppressMilliseconds: true }) : null,
+        data_formatada: dataManaus ? dataManaus.toFormat('dd/LL/yyyy HH:mm') : null,
         timeMandante: j.time_mandante,
         timeVisitante: j.time_visitante,
         escudoMandante: j.escudo_mandante,
@@ -218,14 +223,16 @@ router.get('/agenda/destaques/unificado', async (req, res) => {
     const listaUnificada = [];
 
     jogos.forEach((j) => {
-      const dataStr = new Date(j.data_manaus).toLocaleDateString('en-CA', { timeZone: 'America/Manaus' });
+      const dataManaus = j.data_manaus ? DateTime.fromJSDate(j.data_manaus).setZone('America/Manaus') : null;
+      const dataStr = dataManaus ? dataManaus.toISODate() : null;
       const status = j.status || (dataStr > hojeISO ? 'agendado' : 'encerrado');
       listaUnificada.push({
         origem: 'brasil',
         campeonato: 'Brasileirão Série A',
         partidaId: j.partida_id,
         rodada: j.rodada,
-        data: j.data_manaus,
+        data: dataManaus ? dataManaus.toISO({ suppressMilliseconds: true }) : null,
+        data_formatada: dataManaus ? dataManaus.toFormat('dd/LL/yyyy HH:mm') : null,
         timeMandante: j.time_mandante,
         timeVisitante: j.time_visitante,
         escudoMandante: j.escudo_mandante,

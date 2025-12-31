@@ -608,6 +608,7 @@ exports.listarHistorico = async (req, res) => {
     `, [id_usuario, rodada, ...(contexto.grupoId ? [contexto.grupoId] : []), ...params]);
 
     const historico = rows.map(p => {
+      const dataManaus = p.data ? DateTime.fromJSDate(p.data).setZone('America/Manaus') : null;
       let pontos = 0;
       if (p.placar_mandante !== null && p.placar_visitante !== null) {
         pontos = calcularPontuacao(
@@ -625,7 +626,8 @@ exports.listarHistorico = async (req, res) => {
         placar_mandante: p.placar_mandante,
         placar_visitante: p.placar_visitante,
         estadio: p.estadio,
-        data: p.data,
+        data: dataManaus ? dataManaus.toISO({ suppressMilliseconds: true }) : null,
+        data_formatada: dataManaus ? dataManaus.toFormat('dd/LL/yyyy HH:mm') : null,
         status: p.status,
         palpite_casa: p.palpite_casa,
         palpite_fora: p.palpite_fora,
@@ -709,6 +711,7 @@ exports.getPalpitesUsuarioRodadaVigente = async (req, res) => {
 
     // Calcular pontos por jogo quando houver placar final
     const palpites = rows.map(p => {
+      const dataManaus = p.data ? DateTime.fromJSDate(p.data).setZone('America/Manaus') : null;
       let pontos = 0;
       let categoria = 'errado';
       if (p.placar_mandante !== null && p.placar_visitante !== null) {
@@ -739,7 +742,8 @@ exports.getPalpitesUsuarioRodadaVigente = async (req, res) => {
         gols_fora: p.gols_fora,
         placar_mandante: p.placar_mandante,
         placar_visitante: p.placar_visitante,
-        data: p.data,
+        data: dataManaus ? dataManaus.toISO({ suppressMilliseconds: true }) : null,
+        data_formatada: dataManaus ? dataManaus.toFormat('dd/LL/yyyy HH:mm') : null,
         pontos: Number(pontos.toFixed(2)),
         categoria
       };
