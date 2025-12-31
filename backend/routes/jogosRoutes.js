@@ -39,7 +39,7 @@ router.get('/agenda', async (req, res) => {
         SELECT 
           partida_id,
           rodada,
-          CONVERT_TZ(data, 'UTC', 'America/Manaus') AS data_manaus,
+          data AS data_manaus,
           time_mandante,
           time_visitante,
           escudo_mandante,
@@ -49,7 +49,7 @@ router.get('/agenda', async (req, res) => {
           placar_visitante,
           status
         FROM jogos
-        WHERE DATE(CONVERT_TZ(data, 'UTC', 'America/Manaus')) BETWEEN DATE_SUB(CURDATE(), INTERVAL ? DAY) AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
+        WHERE DATE(data) BETWEEN DATE_SUB(CURDATE(), INTERVAL ? DAY) AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
         ORDER BY data_manaus DESC
       `,
       [diasPassados, diasFuturos]
@@ -102,7 +102,7 @@ router.get('/agenda/destaques', async (req, res) => {
         SELECT 
           partida_id,
           rodada,
-          CONVERT_TZ(data, 'UTC', 'America/Manaus') AS data_manaus,
+          data AS data_manaus,
           time_mandante,
           time_visitante,
           escudo_mandante,
@@ -112,7 +112,7 @@ router.get('/agenda/destaques', async (req, res) => {
           placar_visitante,
           status
         FROM jogos
-        WHERE DATE(CONVERT_TZ(data, 'UTC', 'America/Manaus')) BETWEEN DATE_SUB(CURDATE(), INTERVAL ? DAY) AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
+        WHERE DATE(data) BETWEEN DATE_SUB(CURDATE(), INTERVAL ? DAY) AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
         ORDER BY data_manaus DESC
       `,
       [diasPassados, diasFuturos]
@@ -198,7 +198,7 @@ router.get('/agenda/destaques/unificado', async (req, res) => {
         SELECT 
           partida_id,
           rodada,
-          CONVERT_TZ(data, 'UTC', 'America/Manaus') AS data_manaus,
+          data AS data_manaus,
           time_mandante,
           time_visitante,
           escudo_mandante,
@@ -208,7 +208,7 @@ router.get('/agenda/destaques/unificado', async (req, res) => {
           placar_visitante,
           status
         FROM jogos
-        WHERE DATE(CONVERT_TZ(data, 'UTC', 'America/Manaus')) BETWEEN DATE_SUB(CURDATE(), INTERVAL ? DAY) AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
+        WHERE DATE(data) BETWEEN DATE_SUB(CURDATE(), INTERVAL ? DAY) AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
         ORDER BY data_manaus ASC
       `,
       [diasPassados, diasFuturos]
