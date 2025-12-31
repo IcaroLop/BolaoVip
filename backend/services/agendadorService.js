@@ -90,7 +90,7 @@ async function obterGruposPorRodadaAtual(conn) {
   
   for (const [campId, rodada] of mapaRodada.entries()) {
     const [rows] = await conn.query(
-      `SELECT campeonato_id, rodada, data
+      `SELECT campeonato_id, rodada, data, partida_id
        FROM jogos
        WHERE campeonato_id = ? AND rodada = ? 
          AND (status IN ('agendado', 'andamento') OR status IS NULL OR placar_mandante IS NULL)
@@ -98,8 +98,19 @@ async function obterGruposPorRodadaAtual(conn) {
       [campId, rodada]
     );
     for (const r of rows) {
+      if (!r.data) {
+        // Evita registros quebrados (data nula) que geram INSERT com data_hora NULL na tabela de agendamento
+        console.warn('[agendador] Ignorando jogo com data nula', { campId: r.campeonato_id, rodada: r.rodada, partida: r.partida_id });
+        continue;
+      }
+
       // Interpreta campo 'data' como horário já salvo em Manaus (evita tratar como UTC do servidor)
       const dt = DateTime.fromSQL(r.data, { zone: 'America/Manaus' });
+      if (!dt.isValid) {
+        console.warn('[agendador] Ignorando jogo com data inválida', { campId: r.campeonato_id, rodada: r.rodada, data: r.data });
+        continue;
+      }
+
       const key = `${dt.toFormat('yyyy-LL-dd HH:mm')}|${r.campeonato_id}|${r.rodada}`;
       const entry = grupos.get(key) || { dataHora: dt, campeonatoId: r.campeonato_id, rodada: r.rodada, jogos: 0 };
       entry.jogos += 1;
