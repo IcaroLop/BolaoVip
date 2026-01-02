@@ -608,7 +608,15 @@ exports.listarHistorico = async (req, res) => {
     `, [id_usuario, rodada, ...(contexto.grupoId ? [contexto.grupoId] : []), ...params]);
 
     const historico = rows.map(p => {
-      const dataManaus = p.data ? DateTime.fromJSDate(p.data).setZone('America/Manaus') : null;
+      // Interpretar objetos Date do MySQL como hora local de Manaus (MySQL DATETIME é 'naive')
+      const dataManaus = p.data ? DateTime.fromObject({
+        year: p.data.getFullYear(),
+        month: p.data.getMonth() + 1,
+        day: p.data.getDate(),
+        hour: p.data.getHours(),
+        minute: p.data.getMinutes(),
+        second: p.data.getSeconds()
+      }, { zone: 'America/Manaus' }) : null;
       let pontos = 0;
       if (p.placar_mandante !== null && p.placar_visitante !== null) {
         pontos = calcularPontuacao(
@@ -711,7 +719,15 @@ exports.getPalpitesUsuarioRodadaVigente = async (req, res) => {
 
     // Calcular pontos por jogo quando houver placar final
     const palpites = rows.map(p => {
-      const dataManaus = p.data ? DateTime.fromJSDate(p.data).setZone('America/Manaus') : null;
+      // Interpretar objetos Date do MySQL como hora local de Manaus
+      const dataManaus = p.data ? DateTime.fromObject({
+        year: p.data.getFullYear(),
+        month: p.data.getMonth() + 1,
+        day: p.data.getDate(),
+        hour: p.data.getHours(),
+        minute: p.data.getMinutes(),
+        second: p.data.getSeconds()
+      }, { zone: 'America/Manaus' }) : null;
       let pontos = 0;
       let categoria = 'errado';
       if (p.placar_mandante !== null && p.placar_visitante !== null) {
