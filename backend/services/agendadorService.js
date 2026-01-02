@@ -7,11 +7,18 @@ const { logSistema } = require('./logService');
 function parseDataManaus(value) {
   if (!value) return null;
 
-  // Se já veio como objeto Date do MySQL, assume que foi salvo em Manaus (sem offset)
-  // MySQL DATETIME não tem timezone, então interpreta como Manaus
+  // Se veio como objeto Date do MySQL (DATETIME), INTERPRETAR os campos como hora local de Manaus
+  // (não converter a partir do instante UTC, pois MySQL DATETIME é 'naive')
   if (value instanceof Date) {
-    const dtJs = DateTime.fromJSDate(value).setZone('America/Manaus');
-    return dtJs.isValid ? dtJs : null;
+    const dtObj = DateTime.fromObject({
+      year: value.getFullYear(),
+      month: value.getMonth() + 1,
+      day: value.getDate(),
+      hour: value.getHours(),
+      minute: value.getMinutes(),
+      second: value.getSeconds(),
+    }, { zone: 'America/Manaus' });
+    return dtObj.isValid ? dtObj : null;
   }
 
   // Tenta ISO com offset/Z
