@@ -37,28 +37,29 @@ if ($syncExit -ne 0) {
 Write-Host "✅ Sincronização concluída!" -ForegroundColor Green
 Write-Host ""
 
-# 3. Gerar APK
-Write-Host "🔨 Passo 3/3: Gerando APK..." -ForegroundColor Yellow
+# 3. Gerar APK (Release)
+Write-Host "🔨 Passo 3/3: Gerando APK Release (clean) ..." -ForegroundColor Yellow
 Push-Location $androidPath
-./gradlew.bat assembleDebug
+./gradlew.bat clean assembleRelease
 $apkExit = $LASTEXITCODE
 Pop-Location
 
 if ($apkExit -ne 0) {
-    Write-Host "❌ Erro ao gerar APK!" -ForegroundColor Red
+    Write-Host "❌ Erro ao gerar APK Release!" -ForegroundColor Red
     exit 1
 }
 
 Write-Host ""
-Write-Host "✅✅✅ APK GERADO COM SUCESSO! ✅✅✅" -ForegroundColor Green
+Write-Host "✅✅✅ APK Release gerado com sucesso! ✅✅✅" -ForegroundColor Green
 Write-Host ""
-Write-Host "📱 Localização do APK:" -ForegroundColor Cyan
-Write-Host "   $androidPath\app\build\outputs\apk\debug\app-debug.apk"
+Write-Host "📱 Localização do APK (release):" -ForegroundColor Cyan
+Write-Host "   $androidPath\app\build\outputs\apk\release\app-release.apk"
 Write-Host ""
-Write-Host "📂 Abrindo pasta do APK..." -ForegroundColor Yellow
+Write-Host "📂 Abrindo pasta do APK Release..." -ForegroundColor Yellow
+Write-Host "⚠️ Atenção: o APK release pode estar unsigned. Assine-o antes de distribuir." -ForegroundColor Yellow
 
-# Abrir pasta do APK
-explorer "$androidPath\app\build\outputs\apk\debug"
+# Abrir pasta do APK (release)
+explorer "$androidPath\app\build\outputs\apk\release"
 
 Write-Host ""
 Write-Host "🎉 Processo concluído!" -ForegroundColor Green
