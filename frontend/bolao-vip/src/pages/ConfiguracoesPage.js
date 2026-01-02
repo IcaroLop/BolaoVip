@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
+import { DateTime } from 'luxon';
 import API_BASE_URL from '../config';
 import './ConfiguracoesPage.css';
 
@@ -1148,7 +1149,15 @@ function AgendadorBox() {
     try {
       const url = `${API}/configuracoes/agendador/agenda?page=${pageNum}&limit=${limit}${diaFiltro ? `&dia=${diaFiltro}` : ''}`;
       const res = await axios.get(url, authHeader);
-      setAgenda(res.data.agenda || []);
+      // Garante que dataHora seja string ISO para Luxon; se vier Date, converte
+      const agendaFmt = (res.data.agenda || []).map((item) => {
+        if (item?.dataHora instanceof Date) {
+          const iso = DateTime.fromJSDate(item.dataHora, { zone: 'utc' }).toISO();
+          return { ...item, dataHora: iso };
+        }
+        return item;
+      });
+      setAgenda(agendaFmt);
       setTotal(res.data.total || 0);
       setTotalPages(res.data.totalPages || 0);
       setLimiteDiario(res.data.limiteDiario || 0);
@@ -1255,13 +1264,13 @@ function AgendadorBox() {
           <div className="cell">Permitido</div>
         </div>
         {agenda.map((a, idx) => {
-          const dt = new Date(a.dataHora);
-          const dataFmt = new Intl.DateTimeFormat('pt-BR', {
+          const dt = DateTime.fromISO(a.dataHora, { setZone: true }).setZone('America/Manaus');
+          const dataFmt = dt?.isValid ? dt.toFormat('dd/LL/yyyy') : new Intl.DateTimeFormat('pt-BR', {
             day: '2-digit', month: '2-digit', year: 'numeric',
-          }).format(dt);
-          const horaFmt = new Intl.DateTimeFormat('pt-BR', {
+          }).format(new Date(a.dataHora));
+          const horaFmt = dt?.isValid ? dt.toFormat('HH:mm') : new Intl.DateTimeFormat('pt-BR', {
             hour: '2-digit', minute: '2-digit', hour12: false,
-          }).format(dt);
+          }).format(new Date(a.dataHora));
           return (
             <div
               className="row"

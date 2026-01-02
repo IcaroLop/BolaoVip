@@ -7,9 +7,10 @@ const { logSistema } = require('./logService');
 function parseDataManaus(value) {
   if (!value) return null;
 
-  // Se já veio como objeto Date do MySQL, converte a partir de JSDate (assume UTC/offset embutido)
+  // Se já veio como objeto Date do MySQL, assume que foi salvo em Manaus (sem offset)
+  // MySQL DATETIME não tem timezone, então interpreta como Manaus
   if (value instanceof Date) {
-    const dtJs = DateTime.fromJSDate(value, { zone: 'utc' }).setZone('America/Manaus');
+    const dtJs = DateTime.fromJSDate(value).setZone('America/Manaus');
     return dtJs.isValid ? dtJs : null;
   }
 
@@ -17,7 +18,7 @@ function parseDataManaus(value) {
   let dt = DateTime.fromISO(String(value), { setZone: true });
   if (dt.isValid) return dt.setZone('America/Manaus');
 
-  // Tenta formato SQL local
+  // Tenta formato SQL local (assume Manaus já que foi salvo sem offset)
   dt = DateTime.fromSQL(String(value), { zone: 'America/Manaus' });
   if (dt.isValid) return dt;
 
