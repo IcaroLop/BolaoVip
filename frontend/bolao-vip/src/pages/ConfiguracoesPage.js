@@ -1264,7 +1264,8 @@ function AgendadorBox() {
           <div className="cell">Permitido</div>
         </div>
         {agenda.map((a, idx) => {
-          const dt = DateTime.fromISO(a.dataHora, { setZone: true }).setZone('America/Manaus');
+          // O backend já retorna o horário correto em Manaus (com offset -04:00), não aplicar setZone novamente!
+          const dt = DateTime.fromISO(a.dataHora, { setZone: true });
           const dataFmt = dt?.isValid ? dt.toFormat('dd/LL/yyyy') : new Intl.DateTimeFormat('pt-BR', {
             day: '2-digit', month: '2-digit', year: 'numeric',
           }).format(new Date(a.dataHora));

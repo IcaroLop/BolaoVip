@@ -71,7 +71,8 @@ async function atualizarJogosDaRodada(rodada) {
     const partidas = response.data.partidas;
 
     for (const jogo of partidas) {
-      const dataManaus = DateTime.fromISO(jogo.data_realizacao_iso, { zone: 'America/Sao_Paulo' })
+      // Interpreta corretamente o offset fornecido pela API (se houver) e converte para Manaus
+      const dataManaus = DateTime.fromISO(jogo.data_realizacao_iso, { setZone: true })
         .setZone('America/Manaus')
         .toFormat('yyyy-MM-dd HH:mm:ss');
 
