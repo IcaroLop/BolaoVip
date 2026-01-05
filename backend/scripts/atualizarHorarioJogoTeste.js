@@ -33,9 +33,25 @@ async function atualizarHorarioJogoTeste() {
       process.exit(1);
     }
 
-    // Limpar notificações antigas deste jogo
+    // Limpar notificações antigas de AMBAS as tabelas
+    // 1. notificacoes_enviadas_jogos (rastreamento de envios do servidor)
     await pool.query(`DELETE FROM notificacoes_enviadas_jogos WHERE jogo_id = ?`, [partidaId]);
-    console.log('🗑️  Notificações antigas removidas');
+    console.log('🗑️  Notificações de rastreamento removidas');
+
+    // 2. notificacoes_usuarios (notificações já mostradas aos usuários)
+    // Encontrar todas as notificações relacionadas ao jogo de teste e deletar
+    const [notificacoes] = await pool.query(`
+      SELECT id FROM notificacoes_usuarios 
+      WHERE mensagem LIKE '%Time Teste A%' AND tipo = 'sistema'
+    `);
+    
+    if (notificacoes.length > 0) {
+      const ids = notificacoes.map(n => n.id).join(',');
+      await pool.query(`DELETE FROM notificacoes_usuarios WHERE id IN (${ids})`);
+      console.log(`🗑️  ${notificacoes.length} notificações de usuários removidas`);
+    } else {
+      console.log('ℹ️  Nenhuma notificação de usuários para remover');
+    }
 
     console.log(`✅ Horário atualizado com sucesso!`);
     console.log(`\n🔧 Próximos passos:`);
