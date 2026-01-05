@@ -161,7 +161,9 @@ app.get('/debug/jogos-ao-vivo-test', async (req, res) => {
 });
 
 // Ativar scheduler quando finalizar o debug
-// agendarConsultasResultadosPorRodada();
+const { agendarConsultasResultadosPorRodada } = require('./services/scheduler');
+agendarConsultasResultadosPorRodada();
+console.log('[STARTUP] ✅ Scheduler de consultas por rodada ativado');
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
