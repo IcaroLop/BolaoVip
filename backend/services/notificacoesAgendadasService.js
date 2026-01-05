@@ -42,6 +42,100 @@ class NotificacoesAgendadasService {
   }
 
   /**
+   * Busca jogos (da tabela jogos) que estão próximos de começar
+   * e agenda notificações em 60, 30, 15 e 5 minutos antes
+   */
+  async agendarNotificacoesJogos() {
+    try {
+      // Buscar jogos que começam nos próximos 70 minutos
+      const [jogos] = await pool.query(
+        `SELECT 
+          j.id as jogo_id,
+          j.partida_id,
+          j.rodada,
+          j.data,
+          j.time_mandante,
+          j.time_visitante,
+          j.campeonato_id
+         FROM jogos j
+         WHERE j.status = 'agendado'
+           AND j.data BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 70 MINUTE)
+         ORDER BY j.data ASC`
+      );
+
+      if (jogos.length > 0) {
+        console.log(`[NotificacoesAgendadasService] 📋 Encontrados ${jogos.length} jogos próximos`);
+      }
+
+      for (const jogo of jogos) {
+        await this.agendarNotificacoesParaJogo(jogo);
+      }
+    } catch (err) {
+      console.error('[NotificacoesAgendadasService] Erro ao agendar notificações de jogos:', err.message);
+    }
+  }
+
+  /**
+   * Agenda as 4 notificações (60, 30, 15, 5 min) para um jogo específico
+   */
+  async agendarNotificacoesParaJogo(jogo) {
+    const temposAlerta = [60, 30, 15, 5];
+    const conexao = await pool.getConnection();
+
+    try {
+      await conexao.beginTransaction();
+
+      for (const minutos of temposAlerta) {
+        // Verificar se já existe notificação para este jogo e tempo
+        const [existe] = await conexao.query(
+          `SELECT id FROM notificacoes_enviadas_jogos 
+           WHERE jogo_id = ? AND tempo_alerta = ?`,
+          [jogo.jogo_id, minutos]
+        );
+
+        if (existe.length === 0) {
+          const dataEvento = new Date(jogo.data);
+          const dataDisparo = new Date(dataEvento.getTime() - minutos * 60 * 1000);
+
+          // ID único: jogo_id + minutos (ex: 33128 + 60 = 3312860)
+          const notificationId = parseInt(`${jogo.jogo_id}${minutos}`.padEnd(10, '0'), 10);
+
+          await conexao.query(
+            `INSERT INTO notificacoes_enviadas_jogos 
+             (jogo_id, partida_id, rodada, campeonato_id, tempo_alerta, notification_id, data_agendada, status, titulo, mensagem)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'agendada', ?, ?)`,
+            [
+              jogo.jogo_id,
+              jogo.partida_id,
+              jogo.rodada,
+              jogo.campeonato_id,
+              minutos,
+              notificationId,
+              dataDisparo,
+              `${jogo.time_mandante} vs ${jogo.time_visitante}`,
+              `Jogo começa em ${minutos} minutos`
+            ]
+          );
+
+          console.log(
+            `[NotificacoesAgendadasService] ✅ Notificação agendada para jogo ${jogo.partida_id}: ${jogo.time_mandante} vs ${jogo.time_visitante} (${minutos}min antes)`
+          );
+        }
+      }
+
+      await conexao.commit();
+    } catch (err) {
+      await conexao.rollback();
+      console.error(
+        `[NotificacoesAgendadasService] Erro ao agendar para jogo ${jogo.jogo_id}:`,
+        err.message
+      );
+    } finally {
+      conexao.release();
+    }
+  }
+
+  /**
    * Agenda as 4 notificações (60, 30, 15, 5 min) para uma rodada específica
    */
   async agendarNotificacoesParaRodada(rodada) {
@@ -96,7 +190,7 @@ class NotificacoesAgendadasService {
    */
   async dispararNotificacoesPendentes() {
     try {
-      // Buscar notificações que devem disparar agora
+      // Buscar notificações de rodadas que devem disparar agora
       const [notificacoes] = await pool.query(
         `SELECT 
           n.id,
@@ -105,33 +199,63 @@ class NotificacoesAgendadasService {
           n.tempo_alerta,
           n.notification_id,
           r.numero,
-          NULL as campeonato
+          NULL as campeonato,
+          'rodada' as tipo
          FROM notificacoes_enviadas n
          JOIN rodadas r ON n.rodada_id = r.id
          WHERE n.status = 'agendada'
            AND n.data_agendada <= NOW()
          ORDER BY n.data_agendada ASC
-         LIMIT 20`
+         LIMIT 10`
       );
 
-      if (notificacoes.length === 0) {
+      // Buscar notificações de jogos que devem disparar agora
+      const [notificacoesJogos] = await pool.query(
+        `SELECT 
+          n.id,
+          n.jogo_id,
+          n.campeonato_id,
+          n.tempo_alerta,
+          n.notification_id,
+          n.titulo,
+          n.mensagem,
+          'jogo' as tipo
+         FROM notificacoes_enviadas_jogos n
+         WHERE n.status = 'agendada'
+           AND n.data_agendada <= NOW()
+         ORDER BY n.data_agendada ASC
+         LIMIT 10`
+      );
+
+      const todasNotificacoes = [...notificacoes, ...notificacoesJogos];
+
+      if (todasNotificacoes.length === 0) {
         return;
       }
 
       console.log(
-        `[NotificacoesAgendadasService] 🚀 Disparando ${notificacoes.length} notificações...`
+        `[NotificacoesAgendadasService] 🚀 Disparando ${todasNotificacoes.length} notificações...`
       );
 
-      for (const notif of notificacoes) {
+      for (const notif of todasNotificacoes) {
         try {
-          // Disparar via axios (o frontend receberá via Local Notifications)
-          // Este é mais um registro de que a notificação foi processada
-          await this.registrarNotificacaoEnviada(notif.id);
+          if (notif.tipo === 'rodada') {
+            // Disparar via axios (o frontend receberá via Local Notifications)
+            // Este é mais um registro de que a notificação foi processada
+            await this.registrarNotificacaoEnviada(notif.id);
 
-          console.log(
-            `[NotificacoesAgendadasService] ✅ Notificação ${notif.notification_id} processada: ` +
-              `Rodada ${notif.numero} ${notif.tempo_alerta}min antes (${notif.campeonato})`
-          );
+            console.log(
+              `[NotificacoesAgendadasService] ✅ Notificação ${notif.notification_id} processada: ` +
+              `Rodada ${notif.numero} ${notif.tempo_alerta}min antes`
+            );
+          } else if (notif.tipo === 'jogo') {
+            await this.registrarNotificacaoJogoEnviada(notif.id);
+
+            console.log(
+              `[NotificacoesAgendadasService] ✅ Notificação ${notif.notification_id} processada: ` +
+              `${notif.titulo} ${notif.tempo_alerta}min antes`
+            );
+          }
         } catch (err) {
           console.error(
             `[NotificacoesAgendadasService] Erro ao processar notificação ${notif.id}:`,
@@ -155,6 +279,20 @@ class NotificacoesAgendadasService {
       );
     } catch (err) {
       console.error('[NotificacoesAgendadasService] Erro ao registrar envio:', err.message);
+    }
+  }
+
+  /**
+   * Marca notificação de jogo como enviada no banco
+   */
+  async registrarNotificacaoJogoEnviada(notificacao_id) {
+    try {
+      await pool.query(
+        'UPDATE notificacoes_enviadas_jogos SET status = ?, data_enviada = NOW() WHERE id = ?',
+        ['enviada', notificacao_id]
+      );
+    } catch (err) {
+      console.error('[NotificacoesAgendadasService] Erro ao registrar envio de jogo:', err.message);
     }
   }
 

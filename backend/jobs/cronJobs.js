@@ -278,13 +278,16 @@ function iniciarJobExecutarRequisicoes() {
 }
 
 /**
- * Job 6: Agendar notificações para rodadas que estão próximas de começar
+ * Job 6: Agendar notificações para rodadas e jogos que estão próximos de começar
  * Execução: A cada 2 minutos
  */
 function iniciarJobAgendarNotificacoes() {
   cron.schedule('*/2 * * * *', async () => {
     try {
+      // Agendar para rodadas (sistema de rodadas)
       await notificacoesAgendadasService.agendarNotificacoesRodadas();
+      // Agendar para jogos individuais (sistema de jogos)
+      await notificacoesAgendadasService.agendarNotificacoesJogos();
     } catch (err) {
       console.error('❌ [Notificações] Erro ao agendar notificações:', err.message);
     }

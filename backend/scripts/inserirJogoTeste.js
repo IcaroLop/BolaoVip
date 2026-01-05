@@ -11,15 +11,15 @@ async function inserirJogoTeste() {
     const [[config]] = await pool.query(`SELECT rodada_vigente FROM configuracoes ORDER BY id DESC LIMIT 1`);
     const rodadaVigente = config?.rodada_vigente || 21;
 
-    // Calcula horário: agora + 1h15min em America/Manaus
+    // Calcula horário: agora + 40 minutos em America/Manaus (dentro do intervalo de agendamento)
     const agora = DateTime.now().setZone('America/Manaus');
-    const horaJogo = agora.plus({ hours: 1, minutes: 15 });
+    const horaJogo = agora.plus({ minutes: 40 });
     const horaJogoUTC = horaJogo.toUTC();
     const horaJogoDate = horaJogoUTC.toJSDate(); // MySQL precisa de Date object
 
     console.log('📅 Criando jogo de TESTE:');
     console.log(`   Hora servidor (Manaus): ${agora.toISO()}`);
-    console.log(`   Hora do jogo (Manaus): ${horaJogo.toISO()}`);
+    console.log(`   Hora do jogo (Manaus): ${horaJogo.toISO()} (40 minutos à frente)`);
     console.log(`   Hora do jogo (UTC): ${horaJogoUTC.toISO()}`);
     console.log(`   Formato MySQL: ${horaJogoDate}`);
 
