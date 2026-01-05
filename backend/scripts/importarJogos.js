@@ -19,13 +19,18 @@ async function importarRodadas() {
       const partidas = res.data.partidas;
 
       for (const p of partidas) {
-        // Converte para America/Sao_Paulo -> America/Manaus e aplica -4h para Premier League (camp 69)
+        // Corrige timezone: Premier League (69) = UTC; outros = America/Sao_Paulo
         const campeonatoId = res.data?.campeonato?.campeonato_id || null;
-        let dt = DateTime.fromISO(p.data_realizacao_iso, { zone: 'America/Sao_Paulo' }).setZone('America/Manaus');
+        let dt;
         if (campeonatoId === 69) {
-          dt = dt.minus({ hours: 4 });
+          // Premier League: API já envia em UTC
+          dt = DateTime.fromISO(p.data_realizacao_iso, { zone: 'utc' }).setZone('America/Manaus');
+        } else {
+          // Outros campeonatos: API envia em America/Sao_Paulo
+          dt = DateTime.fromISO(p.data_realizacao_iso, { zone: 'America/Sao_Paulo' }).setZone('America/Manaus');
         }
-        const dataHora = dt.toJSDate();
+        // Salva no banco em UTC (ISO string)
+        const dataHora = dt.toUTC().toISO({ suppressMilliseconds: true });
         await pool.query(`
           INSERT INTO jogos (
             partida_id, campeonato_id, rodada, data, time_mandante, time_visitante,
