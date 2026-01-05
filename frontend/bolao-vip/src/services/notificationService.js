@@ -45,6 +45,36 @@ class NotificationService {
   }
 
   /**
+   * Dispara notificação imediata (genérica)
+   * @param {string} titulo - Título da notificação
+   * @param {string} mensagem - Corpo da notificação
+   * @param {number} notificationId - ID único da notificação
+   */
+  async dispararNotificacaoImediata(titulo, mensagem, notificationId) {
+    try {
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            id: notificationId,
+            title: titulo,
+            body: mensagem,
+            schedule: {
+              at: new Date(Date.now() + 1000), // Dispara em 1 segundo (imediato)
+            },
+            actionTypeId: 'NOTIFICACAO_GERAL',
+          },
+        ],
+      });
+
+      console.log(`[NotificationService] ✅ Notificação nativa disparada: ${titulo}`);
+      return true;
+    } catch (error) {
+      console.error('[NotificationService] Erro ao disparar notificação nativa:', error);
+      return false;
+    }
+  }
+
+  /**
    * Agenda uma notificação para um tempo específico
    * @param {number} minutosAteEvento - Minutos até o evento (60, 30, 15, 5)
    * @param {string} rodada - Número da rodada

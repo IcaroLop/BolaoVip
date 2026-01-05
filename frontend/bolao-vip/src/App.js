@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import notificationService from './services/notificationService';
+import notificationPollingService from './services/notificationPollingService';
 import './index.css';
 import LoginPage from './pages/LoginPage';
 import CadastroPage from './pages/CadastroPage';
@@ -28,6 +29,13 @@ function AppContent() {
   useEffect(() => {
     notificationService.init().catch(console.error);
 
+    // Iniciar polling de notificações se usuário estiver logado
+    const token = localStorage.getItem('token');
+    if (token) {
+      console.log('[App] 🔄 Iniciando polling de notificações');
+      notificationPollingService.start(token);
+    }
+
     // Listener para quando usuário clica em notificação
     const handleNotificationClick = (event) => {
       const { rodada } = event.detail;
@@ -39,6 +47,7 @@ function AppContent() {
 
     return () => {
       window.removeEventListener('notificacaoClicada', handleNotificationClick);
+      notificationPollingService.stop();
     };
   }, [navigate]);
 
