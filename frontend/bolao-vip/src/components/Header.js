@@ -386,7 +386,7 @@ const Header = () => {
                   </button>
                 )}
                 {canDev && (<Link className={isActive('/config') ? 'ativo' : ''} to="/config" onClick={fecharMenu}>⚙️ Configurações</Link>)}
-                {canDev && (<Link className={isActive('/debug-polling') ? 'ativo' : ''} to="/debug-polling" onClick={fecharMenu}>🔍 Debug Notificações</Link>)}
+                <Link className={isActive('/debug-polling') ? 'ativo' : ''} to="/debug-polling" onClick={fecharMenu}>🔍 Debug Notificações</Link>
                 {canAdmin && (<Link className={isActive('/usuarios-gerenciar') ? 'ativo' : ''} to="/usuarios-gerenciar" onClick={fecharMenu}>👥 Gerenciar Usuários</Link>)}
                 {canFinanceiro && (<Link className={isActive('/cobrancas') ? 'ativo' : ''} to="/cobrancas" onClick={fecharMenu}>{labelPagamentos}</Link>)}
                 <button className="menu-sair" onClick={() => { handleLogout(); fecharMenu(); }}>🚪 Sair</button>
