@@ -18,13 +18,13 @@ async function inserirJogoTeste() {
     const agoraUTC = DateTime.utc();
     // 2. Converte para Manaus
     const agora = agoraUTC.setZone('America/Manaus');
-    // 3. Adiciona 65 minutos (cobre as 4 notificações 60/30/15/5 dentro da janela de 70min)
-    const horaJogo = agora.plus({ minutes: 65 });
+    // 3. Adiciona 69 minutos (cobre 60/30/15/5 dentro da janela de 70min e dá mais folga)
+    const horaJogo = agora.plus({ minutes: 69 });
     // 4. Converte de volta para UTC para armazenar no MySQL
     const horaJogoUTC = horaJogo.toUTC();
     const horaJogoDate = horaJogoUTC.toJSDate(); // MySQL precisa de Date object
 
-    console.log('📅 Criando jogo de TESTE (65 min à frente):');
+    console.log('📅 Criando jogo de TESTE (69 min à frente):');
     console.log(`   Hora servidor (UTC): ${agoraUTC.toISO()}`);
     console.log(`   Hora servidor (Manaus): ${agora.toISO()}`);
     console.log(`   Hora do jogo (Manaus): ${horaJogo.toISO()}`);
