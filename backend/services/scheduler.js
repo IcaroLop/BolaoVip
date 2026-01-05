@@ -160,6 +160,10 @@ async function agendarConsultasResultadosPorRodada() {
 
         console.log(`📅 Agendado grupo ${idx + 1}/${numGruposNoDia} no dia ${dia} (local ${inicioStr}) → ${reqPorGrupo} requisições em intervalos de ${Math.floor(intervaloMs / 1000)}s`);
 
+        // Log adicional para debug de timezone/agendamento
+        const servidorAgora = DateTime.now();
+        console.log(`🔍 Agendamento detalhes → Servidor agora: ${servidorAgora.toISO()} | Inicio (Manaus): ${inicioManaus.toISO()} | tempoAteInicio_ms: ${tempoAteInicio}`);
+
         const iniciarIntervalo = () => {
           if (isConsultandoRodada) {
             console.log(`⚠️ Ignorando execução duplicada para rodada ${rodada}, já está em andamento.`);
@@ -168,6 +172,8 @@ async function agendarConsultasResultadosPorRodada() {
           isConsultandoRodada = true;
 
           console.log(`🚀 Iniciando consultas do grupo ${idx + 1}/${numGruposNoDia} no dia ${dia} (Rodada ${rodada})`);
+          console.log(`🔔 Disparo agendado → Servidor agora: ${DateTime.now().toISO()} | Inicio agendamento (Manaus): ${inicioManaus.toISO()} | Grupo ${idx + 1}/${numGruposNoDia}`);
+
           let contador = 0;
           const intervalId = setInterval(async () => {
             if (contador >= reqPorGrupo) {
@@ -176,6 +182,7 @@ async function agendarConsultasResultadosPorRodada() {
               console.log(`✅ Grupo ${idx + 1}/${numGruposNoDia} finalizado: ${reqPorGrupo} requisições feitas`);
               return;
             }
+            console.log(`📡 [${contador + 1}/${reqPorGrupo}] Disparando consulta — Servidor agora: ${DateTime.now().toISO()} | Agendamento inicio (Manaus): ${inicioManaus.toISO()}`);
             await consultarResultadosDaRodada(rodada);
             contador++;
           }, intervaloMs);
