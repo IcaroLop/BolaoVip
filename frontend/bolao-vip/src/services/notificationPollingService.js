@@ -8,7 +8,19 @@
 import axios from 'axios';
 import notificationService from './notificationService';
 
-const API = 'http://192.168.56.127:3001';
+// API dinâmica - detecta automaticamente based na window.location ou env
+const getAPIUrl = () => {
+  // Em produção, pega do window.location
+  if (typeof window !== 'undefined' && window.location) {
+    const protocol = window.location.protocol; // http: ou https:
+    const hostname = window.location.hostname; // localhost, 192.168.x.x, dominio.com
+    return `${protocol}//${hostname}:3001`;
+  }
+  // Fallback para ambiente local
+  return 'http://localhost:3001';
+};
+
+const API = getAPIUrl();
 
 class NotificationPollingService {
   constructor() {
@@ -28,7 +40,7 @@ class NotificationPollingService {
     }
 
     this.isRunning = true;
-    console.log('[NotificationPolling] ✅ Iniciado');
+    console.log(`[NotificationPolling] ✅ Iniciado (API: ${API})`);
 
     // Primeira verificação imediata
     await this.checkNewNotifications(token);
@@ -57,17 +69,20 @@ class NotificationPollingService {
   async checkNewNotifications(token) {
     try {
       // Buscar notificações não lidas
+      console.log(`[NotificationPolling] 🔄 Verificando notificações em ${API}...`);
+      
       const res = await axios.get(`${API}/notificacoes/usuario?limite=10`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       const notificacoes = res.data.notificacoes || [];
+      console.log(`[NotificationPolling] 📦 Recebidas ${notificacoes.length} notificações`);
 
       // Filtrar apenas as novas (ID maior que o último verificado)
       const novas = notificacoes.filter(n => n.id > this.lastCheckId && !n.lida);
 
       if (novas.length > 0) {
-        console.log(`[NotificationPolling] 📬 ${novas.length} novas notificações`);
+        console.log(`[NotificationPolling] 📬 ${novas.length} novas notificações detectadas`);
 
         // Atualizar o ID da última verificada
         this.lastCheckId = Math.max(...novas.map(n => n.id));
@@ -76,9 +91,17 @@ class NotificationPollingService {
         for (const notif of novas) {
           await this.dispararNotificacaoNativa(notif);
         }
+      } else {
+        console.log(`[NotificationPolling] ✓ Nenhuma notificação nova`);
       }
     } catch (err) {
-      console.error('[NotificationPolling] Erro ao verificar notificações:', err);
+      console.error('[NotificationPolling] ❌ Erro ao verificar notificações:', {
+        message: err.message,
+        code: err.code,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        url: `${API}/notificacoes/usuario`
+      });
     }
   }
 
@@ -90,6 +113,8 @@ class NotificationPollingService {
       // Gerar ID único baseado no ID da notificação
       const notificationId = notificacao.id;
 
+      console.log(`[NotificationPolling] 📲 Disparando nativa: "${notificacao.titulo}"`);
+
       // Disparar notificação nativa imediatamente
       await notificationService.dispararNotificacaoImediata(
         notificacao.titulo,
@@ -98,10 +123,10 @@ class NotificationPollingService {
       );
 
       console.log(
-        `[NotificationPolling] 🔔 Notificação nativa disparada: "${notificacao.titulo}"`
+        `[NotificationPolling] ✅ Notificação nativa disparada: "${notificacao.titulo}"`
       );
     } catch (err) {
-      console.error('[NotificationPolling] Erro ao disparar notificação nativa:', err);
+      console.error('[NotificationPolling] ❌ Erro ao disparar notificação nativa:', err.message);
     }
   }
 
