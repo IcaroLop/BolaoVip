@@ -304,6 +304,12 @@ cron.schedule('0 2 * * *', async () => {
     const rodadaVigente = await buscarRodadaVigente();
     await atualizarJogosDaRodada(rodadaVigente);
     await agendarConsultasResultadosPorRodada();
+    
+    // Reagendar notificações de jogos após atualizar os dados
+    const notificacoesService = require('./notificacoesAgendadasService');
+    console.log('🔔 Reagendando notificações de jogos após atualização...');
+    await notificacoesService.agendarNotificacoesJogos();
+    console.log('✅ Notificações de jogos reagendadas com sucesso.');
   } catch (err) {
     console.error('❌ Erro na rotina diária:', err.message);
   }

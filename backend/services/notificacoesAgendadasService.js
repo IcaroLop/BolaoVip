@@ -42,12 +42,13 @@ class NotificacoesAgendadasService {
   }
 
   /**
-   * Busca jogos (da tabela jogos) que estão próximos de começar
+   * Busca TODOS os próximos jogos (sem limite de tempo)
    * e agenda notificações em 60, 30, 15 e 5 minutos antes
+   * Exibe log apenas dos 5 próximos jogos
    */
   async agendarNotificacoesJogos() {
     try {
-      // Buscar jogos que começam nos próximos 70 minutos
+      // Buscar TODOS os jogos futuros (agendados)
       const [jogos] = await pool.query(
         `SELECT 
           j.id as jogo_id,
@@ -59,17 +60,29 @@ class NotificacoesAgendadasService {
           j.campeonato_id
          FROM jogos j
          WHERE j.status = 'agendado'
-           AND j.data BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 70 MINUTE)
+           AND j.data >= NOW()
          ORDER BY j.data ASC`
       );
 
-      if (jogos.length > 0) {
-        console.log(`[NotificacoesAgendadasService] 📋 Encontrados ${jogos.length} jogos próximos`);
+      if (jogos.length === 0) {
+        console.log('[NotificacoesAgendadasService] ℹ️ Nenhum jogo agendado para agendar notificações');
+        return;
       }
 
+      // Exibir log apenas dos 5 próximos jogos
+      console.log(`[NotificacoesAgendadasService] 📋 Total de ${jogos.length} jogos encontrados. Próximos 5:`);
+      const proximosCinco = jogos.slice(0, 5);
+      proximosCinco.forEach((jogo, index) => {
+        const dataFormatada = new Date(jogo.data).toLocaleString('pt-BR', { timeZone: 'America/Manaus' });
+        console.log(`  ${index + 1}. ${jogo.time_mandante} vs ${jogo.time_visitante} - ${dataFormatada}`);
+      });
+
+      // Agendar notificações para TODOS os jogos
       for (const jogo of jogos) {
         await this.agendarNotificacoesParaJogo(jogo);
       }
+
+      console.log(`[NotificacoesAgendadasService] ✅ Agendamento concluído para ${jogos.length} jogos`);
     } catch (err) {
       console.error('[NotificacoesAgendadasService] Erro ao agendar notificações de jogos:', err.message);
     }

@@ -227,4 +227,19 @@ app.listen(PORT, () => {
       try { logSistema({ origem: 'startup', nivel: 'error', descricao: `Falha ao replanejar agenda: ${err.message}` }); } catch {}
     }
   }, 2000); // 2s de delay para garantir que jobs/DB estejam prontos
+
+  // Agendar notificações de jogos ao inicializar o backend
+  const notificacoesService = require('./services/notificacoesAgendadasService');
+  setTimeout(async () => {
+    try {
+      console.log('[STARTUP] Agendando notificações de jogos...');
+      try { logSistema({ origem: 'startup', nivel: 'info', descricao: '[STARTUP] Agendando notificações de jogos...' }); } catch {}
+      await notificacoesService.agendarNotificacoesJogos();
+      console.log('[STARTUP] ✅ Notificações de jogos agendadas com sucesso.');
+      try { logSistema({ origem: 'startup', nivel: 'info', descricao: '[STARTUP] Notificações de jogos agendadas com sucesso' }); } catch {}
+    } catch (err) {
+      console.error('[STARTUP] Erro ao agendar notificações:', err.message);
+      try { logSistema({ origem: 'startup', nivel: 'error', descricao: `Erro ao agendar notificações na inicialização: ${err.message}` }); } catch {}
+    }
+  }, 3000); // 3s de delay após agenda estar pronta
 });
