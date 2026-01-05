@@ -1,8 +1,3 @@
-#!/bin/bash
-
-# Script de teste do endpoint de notificações
-# Use: node backend/scripts/testarEndpointNotificacoes.js TOKEN_AQUI
-
 const axios = require('axios');
 
 const token = process.argv[2];
