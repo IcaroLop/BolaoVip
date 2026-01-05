@@ -21,6 +21,7 @@ import NoticiaVisualizarPage from './components/NoticiaVisualizarPage';
 import ConfiguracoesPage from './pages/ConfiguracoesPage';
 import GerenciamentoUsuariosPage from './pages/GerenciamentoUsuariosPage';
 import TestNotificationPollingPage from './pages/TestNotificationPollingPage';
+import DebugPollingPage from './pages/DebugPollingPage';
 
 
 function AppContent() {
@@ -74,6 +75,7 @@ function AppContent() {
           <Route path="/noticias" element={<ProtectedRoute allowedPerfis={["apostador"]} element={<NoticiasPage />} />} />
           <Route path="/noticia/:id" element={<NoticiaVisualizarPage />} />
           <Route path="/test-polling" element={<TestNotificationPollingPage />} />
+          <Route path="/debug-polling" element={<DebugPollingPage />} />
         </Routes>
       </Layout>
     </ErrorBoundary>
