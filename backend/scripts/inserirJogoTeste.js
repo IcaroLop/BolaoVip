@@ -3,7 +3,9 @@ const pool = require('../database/conexao');
 
 /**
  * Insere um jogo de TESTE fictício no banco para validar o agendador
- * Jogo: daqui a 1h15min, usa rodada vigente atual, times fictícios
+ * Jogo: daqui a 40 minutos em America/Manaus, usa rodada vigente atual, times fictícios
+ * 
+ * IMPORTANTE: Este script SEMPRE calcula em America/Manaus, independentemente do timezone do servidor
  */
 async function inserirJogoTeste() {
   try {
@@ -11,17 +13,23 @@ async function inserirJogoTeste() {
     const [[config]] = await pool.query(`SELECT rodada_vigente FROM configuracoes ORDER BY id DESC LIMIT 1`);
     const rodadaVigente = config?.rodada_vigente || 21;
 
-    // Calcula horário: agora + 40 minutos em America/Manaus (dentro do intervalo de agendamento)
-    const agora = DateTime.now().setZone('America/Manaus');
+    // Calcula horário em America/Manaus (força timezone explicitamente)
+    // 1. Pega UTC agora
+    const agoraUTC = DateTime.utc();
+    // 2. Converte para Manaus
+    const agora = agoraUTC.setZone('America/Manaus');
+    // 3. Adiciona 40 minutos (mantém em Manaus)
     const horaJogo = agora.plus({ minutes: 40 });
+    // 4. Converte de volta para UTC para armazenar no MySQL
     const horaJogoUTC = horaJogo.toUTC();
     const horaJogoDate = horaJogoUTC.toJSDate(); // MySQL precisa de Date object
 
-    console.log('📅 Criando jogo de TESTE:');
+    console.log('📅 Criando jogo de TESTE (40 min à frente):');
+    console.log(`   Hora servidor (UTC): ${agoraUTC.toISO()}`);
     console.log(`   Hora servidor (Manaus): ${agora.toISO()}`);
-    console.log(`   Hora do jogo (Manaus): ${horaJogo.toISO()} (40 minutos à frente)`);
+    console.log(`   Hora do jogo (Manaus): ${horaJogo.toISO()}`);
     console.log(`   Hora do jogo (UTC): ${horaJogoUTC.toISO()}`);
-    console.log(`   Formato MySQL: ${horaJogoDate}`);
+    console.log(`   Formato MySQL (UTC): ${horaJogoDate}`);
 
     // Partida fictícia com ID único de teste (999999)
     const partidaId = 999999;
