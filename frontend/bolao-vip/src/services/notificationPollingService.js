@@ -8,19 +8,8 @@
 import axios from 'axios';
 import notificationService from './notificationService';
 
-// API dinâmica - detecta automaticamente based na window.location ou env
-const getAPIUrl = () => {
-  // Em produção, pega do window.location
-  if (typeof window !== 'undefined' && window.location) {
-    const protocol = window.location.protocol; // http: ou https:
-    const hostname = window.location.hostname; // localhost, 192.168.x.x, dominio.com
-    return `${protocol}//${hostname}:3001`;
-  }
-  // Fallback para ambiente local
-  return 'http://localhost:3001';
-};
-
-const API = getAPIUrl();
+// API - servidor de produção
+const API = 'http://191.243.196.240:3001';
 
 class NotificationPollingService {
   constructor() {
