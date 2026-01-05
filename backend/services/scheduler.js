@@ -16,6 +16,9 @@ const CAMPEONATO_ID = 10;
 // Token será obtido dinamicamente via tokenConfig
 const getToken = () => tokenConfig.getToken();
 
+// Flag para modo de teste (DRY_RUN): apenas loga, não dispara requisições reais
+const DRY_RUN = process.env.DRY_RUN === 'true';
+
 let isConsultandoRodada = false;
 let isAtualizandoClassificacao = false;
 
@@ -269,7 +272,11 @@ async function agendarConsultasResultadosPorRodada() {
               return;
             }
             console.log(`📡 [${contador + 1}/${reqPorGrupo}] Disparando consulta — Servidor agora: ${DateTime.now().toISO()} | Agendamento inicio (Manaus): ${inicioManaus.toISO()}`);
-            await consultarResultadosDaRodada(rodada);
+            if (DRY_RUN) {
+              console.log(`🧪 [DRY_RUN] Simulando consulta à rodada ${rodada} (requisição NÃO enviada)`);
+            } else {
+              await consultarResultadosDaRodada(rodada);
+            }
             contador++;
           }, intervaloMs);
         };
