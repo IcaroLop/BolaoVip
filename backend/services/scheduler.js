@@ -134,6 +134,13 @@ async function agendarConsultasResultadosPorRodada() {
     jogos.forEach(jogo => {
       // Interpreta o campo 'data' diretamente como horário de Manaus, evitando conversão implícita para UTC.
       const dataManaus = DateTime.fromSQL(jogo.data, { zone: 'America/Manaus' });
+
+      // Se a data estiver inválida, logamos detalhes e pulamos este jogo (diagnóstico).
+      if (!dataManaus.isValid) {
+        console.warn(`⚠️ Jogo com data inválida - partida_id=${jogo.partida_id} data_raw=${jogo.data} (ignorado no agendamento)`);
+        return; // ignora jogo com data inválida
+      }
+
       const diaStr = dataManaus.toISODate();
       const horaStr = dataManaus.startOf('minute').toFormat('yyyy-MM-dd HH:mm');
 
@@ -141,6 +148,47 @@ async function agendarConsultasResultadosPorRodada() {
       if (!gruposPorDia[diaStr][horaStr]) gruposPorDia[diaStr][horaStr] = [];
       gruposPorDia[diaStr][horaStr].push(jogo);
     });
+
+    // Calcula o próximo agendamento (menor inicio > agora em Manaus)
+    try {
+      const agoraManaus = DateTime.now().setZone('America/Manaus');
+      const inicioCandidatos = [];
+
+      for (const diaKey of Object.keys(gruposPorDia)) {
+        for (const horaKey of Object.keys(gruposPorDia[diaKey])) {
+          const inicio = DateTime.fromFormat(horaKey, 'yyyy-MM-dd HH:mm', { zone: 'America/Manaus' });
+          if (!inicio.isValid) continue; // já tratamos jogos inválidos acima
+          if (inicio > agoraManaus) inicioCandidatos.push(inicio);
+        }
+      }
+
+      if (inicioCandidatos.length > 0) {
+        inicioCandidatos.sort((a, b) => a.toMillis() - b.toMillis());
+        const proximo = inicioCandidatos[0];
+        const servidorAgora = DateTime.now();
+        console.log(`🗓️ Próximo agendamento: ${proximo.toISO()} (America/Manaus) | Servidor agora: ${servidorAgora.toISO()} | Proximo (Servidor TZ): ${proximo.setZone(servidorAgora.zoneName).toISO()}`);
+      } else {
+        // Se nenhum futuro, informa que não há agendamentos futuros ou mostra o mais próximo passado
+        const todosValidos = [];
+        for (const diaKey of Object.keys(gruposPorDia)) {
+          for (const horaKey of Object.keys(gruposPorDia[diaKey])) {
+            const inicio = DateTime.fromFormat(horaKey, 'yyyy-MM-dd HH:mm', { zone: 'America/Manaus' });
+            if (inicio.isValid) todosValidos.push(inicio);
+          }
+        }
+        if (todosValidos.length > 0) {
+          todosValidos.sort((a, b) => a.toMillis() - b.toMillis());
+          const proximo = todosValidos[0];
+          const servidorAgora = DateTime.now();
+          console.log(`ℹ️ Nenhum agendamento futuro encontrado; primeiro agendamento (histórico) = ${proximo.toISO()} (America/Manaus) | Servidor agora: ${servidorAgora.toISO()}`);
+        } else {
+          console.log('ℹ️ Não foi possível determinar o próximo agendamento (nenhuma data válida encontrada nos jogos).');
+        }
+      }
+    } catch (err) {
+      console.error('❌ Erro ao calcular próximo agendamento:', err.message);
+    }
+
 
 
     for (const dia of Object.keys(gruposPorDia)) {
