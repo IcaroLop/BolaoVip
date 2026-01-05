@@ -123,6 +123,9 @@ async function agendarConsultasResultadosPorRodada() {
     const rodada = config.rodada_vigente;
     const limiteDiario = config.limite_requisicoes_dia || 90;
 
+    // Log adicional: exibir rodada vigente e campeonato alvo para facilitar diagnóstico
+    console.log(`🔔 Agendamento ativo → rodada_vigente=${rodada} | campeonato_id=${CAMPEONATO_ID}`);
+
     const [jogos] = await pool.query(`SELECT partida_id, data FROM jogos WHERE rodada = ? AND data >= NOW() ORDER BY data ASC`, [rodada]);
 
     if (jogos.length === 0) {
