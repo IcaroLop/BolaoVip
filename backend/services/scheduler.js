@@ -133,12 +133,47 @@ async function agendarConsultasResultadosPorRodada() {
     const gruposPorDia = {};
     jogos.forEach(jogo => {
       // Interpreta o campo 'data' diretamente como horário de Manaus, evitando conversão implícita para UTC.
-      const dataManaus = DateTime.fromSQL(jogo.data, { zone: 'America/Manaus' });
+      let dataManaus = DateTime.fromSQL(jogo.data, { zone: 'America/Manaus' });
 
-      // Se a data estiver inválida, logamos detalhes e pulamos este jogo (diagnóstico).
+      // Se a data estiver inválida, tentamos um parser permissivo (fallbacks) antes de ignorar o jogo.
+      let usedFallback = false;
       if (!dataManaus.isValid) {
-        console.warn(`⚠️ Jogo com data inválida - partida_id=${jogo.partida_id} data_raw=${jogo.data} (ignorado no agendamento)`);
-        return; // ignora jogo com data inválida
+        // 1) Tentar Date.parse / new Date(raw)
+        try {
+          const maybeDate = new Date(jogo.data);
+          if (!isNaN(maybeDate.getTime())) {
+            dataManaus = DateTime.fromJSDate(maybeDate).setZone('America/Manaus');
+            usedFallback = true;
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // 2) Tentar formatos RFC / HTTP com Luxon
+        if (!dataManaus.isValid) {
+          const tryRfc = DateTime.fromRFC2822(jogo.data, { zone: 'America/Manaus' });
+          if (tryRfc.isValid) {
+            dataManaus = tryRfc;
+            usedFallback = true;
+          }
+        }
+
+        if (!dataManaus.isValid) {
+          const tryHttp = DateTime.fromHTTP(jogo.data, { zone: 'America/Manaus' });
+          if (tryHttp.isValid) {
+            dataManaus = tryHttp;
+            usedFallback = true;
+          }
+        }
+
+        if (!dataManaus.isValid) {
+          console.warn(`⚠️ Jogo com data inválida - partida_id=${jogo.partida_id} data_raw=${jogo.data} (ignorado no agendamento)`);
+          return; // ignora jogo com data inválida
+        }
+
+        if (usedFallback) {
+          console.log(`🛠️ Fallback de parsing aplicado para partida_id=${jogo.partida_id}: parsed=${dataManaus.toISO()} (raw='${jogo.data}')`);
+        }
       }
 
       const diaStr = dataManaus.toISODate();
