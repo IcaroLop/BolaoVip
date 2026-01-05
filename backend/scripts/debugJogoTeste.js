@@ -58,7 +58,7 @@ async function debugJogoTeste() {
 
     // 5. Verificar notificações de usuários
     const [notificacoesUsuarios] = await pool.query(`
-      SELECT id, titulo, tipo, bloqueado, data_criacao
+      SELECT id, titulo, tipo, data_criacao
       FROM notificacoes_usuarios
       WHERE mensagem LIKE '%Time Teste A%'
       ORDER BY data_criacao DESC
@@ -67,7 +67,8 @@ async function debugJogoTeste() {
 
     console.log(`\n👥 Notificações de usuários: ${notificacoesUsuarios.length}`);
     for (const notif of notificacoesUsuarios) {
-      console.log(`   - [${notif.tipo}] ${notif.titulo} (bloqueado: ${notif.bloqueado})`);
+      const dataCriacaoManaus = DateTime.fromJSDate(notif.data_criacao, { zone: 'UTC' }).setZone('America/Manaus');
+      console.log(`   - [${notif.tipo}] ${notif.titulo} (${dataCriacaoManaus.toFormat('HH:mm:ss')})`);
     }
 
     console.log('\n✅ Debug concluído!');
