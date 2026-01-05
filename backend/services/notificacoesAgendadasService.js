@@ -317,7 +317,7 @@ class NotificacoesAgendadasService {
 
         // Buscar TODOS os usuários ativos
         const [usuarios] = await conexao.query(
-          `SELECT id FROM usuarios WHERE ativo = 1 LIMIT 10000`
+          `SELECT id FROM usuarios WHERE bloqueado = 0 LIMIT 10000`
         );
 
         if (usuarios.length === 0) {
