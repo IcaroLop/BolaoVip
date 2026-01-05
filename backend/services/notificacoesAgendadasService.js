@@ -326,9 +326,12 @@ class NotificacoesAgendadasService {
         }
 
         // Inserir notificação para cada usuário na tabela notificacoes_usuarios
+        // TIPOS permitidos em notificacoes_usuarios:
+        // palpite_enviado, pagamento_pendente, pagamento_confirmado, inicio_rodada, resultado_publicado, premio_recebido, sistema
+        // Usaremos 'sistema' para alerta de início de jogo
         const values = usuarios.map(u => [
           u.id,
-          'inicio_jogo', // tipo de notificação
+          'sistema', // tipo permitido na enum
           titulo,
           mensagem,
           JSON.stringify({ jogo_id, tempo_alerta })
