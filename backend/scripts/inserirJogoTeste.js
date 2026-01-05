@@ -3,10 +3,14 @@ const pool = require('../database/conexao');
 
 /**
  * Insere um jogo de TESTE fictício no banco para validar o agendador
- * Jogo: daqui a 1h15min, Premier League (camp 69), times fictícios
+ * Jogo: daqui a 1h15min, usa rodada vigente atual, times fictícios
  */
 async function inserirJogoTeste() {
   try {
+    // Busca rodada vigente no banco
+    const [[config]] = await pool.query(`SELECT rodada_vigente FROM configuracoes ORDER BY id DESC LIMIT 1`);
+    const rodadaVigente = config?.rodada_vigente || 21;
+
     // Calcula horário: agora + 1h15min em America/Manaus
     const agora = DateTime.now().setZone('America/Manaus');
     const horaJogo = agora.plus({ hours: 1, minutes: 15 });
@@ -21,8 +25,8 @@ async function inserirJogoTeste() {
 
     // Partida fictícia com ID único de teste (999999)
     const partidaId = 999999;
-    const campeonatoId = 69; // Premier League
-    const rodada = 99; // Rodada fictícia de teste
+    const campeonatoId = 10; // Brasileirão (mesmo da rodada vigente)
+    const rodada = rodadaVigente; // Usa rodada vigente para o agendador processar
 
     await pool.query(`
       INSERT INTO jogos (

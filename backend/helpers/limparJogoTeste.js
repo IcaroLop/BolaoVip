@@ -8,18 +8,16 @@ async function limparJogoTeste() {
     console.log('🗑️  Removendo jogo de teste...');
 
     const partidaId = 999999;
-    const rodada = 99;
 
-    // Remove o jogo de teste
+    // Remove o jogo de teste (qualquer rodada)
     const [result] = await pool.query(
-      `DELETE FROM jogos WHERE partida_id = ? AND rodada = ?`,
-      [partidaId, rodada]
+      `DELETE FROM jogos WHERE partida_id = ?`,
+      [partidaId]
     );
 
     if (result.affectedRows > 0) {
       console.log(`✅ Jogo de teste removido com sucesso!`);
       console.log(`   partida_id: ${partidaId}`);
-      console.log(`   rodada: ${rodada}`);
       console.log(`   Linhas removidas: ${result.affectedRows}`);
     } else {
       console.log(`⚠️  Nenhum jogo de teste encontrado no banco.`);

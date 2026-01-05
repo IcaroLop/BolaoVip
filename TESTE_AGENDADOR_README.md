@@ -33,8 +33,8 @@ node scripts/inserirJogoTeste.js
    Hora do jogo (UTC): 2026-01-05T16:45:00Z
 ✅ Jogo de teste inserido com sucesso!
    partida_id: 999999
-   rodada: 99
-   campeonato_id: 69
+   rodada: 21 (rodada vigente)
+   campeonato_id: 10
 ```
 
 ### 3️⃣ Verificar Inserção
@@ -80,11 +80,11 @@ pm2 logs
 
 **No horário agendado, você verá:**
 ```
-🚀 Iniciando consultas do grupo 1/1 no dia 2026-01-05 (Rodada 99)
+🚀 Iniciando consultas do grupo X/X no dia 2026-01-05 (Rodada 21)
 📡 [1/1000] Disparando consulta — Servidor agora: ...
-🧪 [DRY_RUN] Simulando consulta à rodada 99 (requisição NÃO enviada)
+🧪 [DRY_RUN] Simulando consulta à rodada 21 (requisição NÃO enviada)
 📡 [2/1000] Disparando consulta — Servidor agora: ...
-🧪 [DRY_RUN] Simulando consulta à rodada 99 (requisição NÃO enviada)
+🧪 [DRY_RUN] Simulando consulta à rodada 21 (requisição NÃO enviada)
 ...
 ```
 
@@ -170,7 +170,10 @@ systemctl restart <seu-servico>
 node helpers/checkProximoJogo.js 999999
 
 # Confirme que o servidor foi reiniciado após inserção
-pm2 logs | grep "rodada 99"
+pm2 logs | grep "partida_id=999999"
+
+# Verifique a rodada vigente
+node -e "require('./database/conexao').query('SELECT rodada_vigente FROM configuracoes').then(r => console.log(r[0]))"
 ```
 
 ### Notificações não foram enviadas
@@ -201,7 +204,7 @@ pm2 restart all
 
 3. **Impacto Zero na Produção:**
    - Requisições à API NÃO são enviadas (DRY_RUN)
-   - Jogo fictício usa rodada 99 (não conflita com rodadas reais)
+   - Jogo fictício usa rodada vigente atual (não conflita, será removido após teste)
    - partida_id 999999 não existe na API real
 
 4. **Limpeza Obrigatória:**
