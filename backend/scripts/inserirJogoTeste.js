@@ -10,12 +10,14 @@ async function inserirJogoTeste() {
     // Calcula horário: agora + 1h15min em America/Manaus
     const agora = DateTime.now().setZone('America/Manaus');
     const horaJogo = agora.plus({ hours: 1, minutes: 15 });
-    const horaJogoUTC = horaJogo.toUTC().toISO({ suppressMilliseconds: true });
+    const horaJogoUTC = horaJogo.toUTC();
+    const horaJogoDate = horaJogoUTC.toJSDate(); // MySQL precisa de Date object
 
     console.log('📅 Criando jogo de TESTE:');
     console.log(`   Hora servidor (Manaus): ${agora.toISO()}`);
     console.log(`   Hora do jogo (Manaus): ${horaJogo.toISO()}`);
-    console.log(`   Hora do jogo (UTC): ${horaJogoUTC}`);
+    console.log(`   Hora do jogo (UTC): ${horaJogoUTC.toISO()}`);
+    console.log(`   Formato MySQL: ${horaJogoDate}`);
 
     // Partida fictícia com ID único de teste (999999)
     const partidaId = 999999;
@@ -34,7 +36,7 @@ async function inserirJogoTeste() {
       partidaId,
       campeonatoId,
       rodada,
-      horaJogoUTC,
+      horaJogoDate,
       'Time Teste A',
       'Time Teste B',
       'https://via.placeholder.com/50',

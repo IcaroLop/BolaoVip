@@ -29,8 +29,8 @@ async function importarRodadas() {
           // Outros campeonatos: API envia em America/Sao_Paulo
           dt = DateTime.fromISO(p.data_realizacao_iso, { zone: 'America/Sao_Paulo' }).setZone('America/Manaus');
         }
-        // Salva no banco em UTC (ISO string)
-        const dataHora = dt.toUTC().toISO({ suppressMilliseconds: true });
+        // Salva no banco em UTC (Date object para MySQL)
+        const dataHora = dt.toUTC().toJSDate();
         await pool.query(`
           INSERT INTO jogos (
             partida_id, campeonato_id, rodada, data, time_mandante, time_visitante,
