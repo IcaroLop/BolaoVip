@@ -249,7 +249,16 @@ class NotificacoesAgendadasService {
               `Rodada ${notif.numero} ${notif.tempo_alerta}min antes`
             );
           } else if (notif.tipo === 'jogo') {
+            // Registrar como enviada no banco de agendamento
             await this.registrarNotificacaoJogoEnviada(notif.id);
+
+            // **NOVO**: Enviar notificação para todos os usuários (para aparecer no APP)
+            await this.enviarNotificacaoParaTodosUsuarios(
+              notif.titulo,
+              notif.mensagem,
+              notif.jogo_id,
+              notif.tempo_alerta
+            );
 
             console.log(
               `[NotificacoesAgendadasService] ✅ Notificação ${notif.notification_id} processada: ` +
@@ -293,6 +302,68 @@ class NotificacoesAgendadasService {
       );
     } catch (err) {
       console.error('[NotificacoesAgendadasService] Erro ao registrar envio de jogo:', err.message);
+    }
+  }
+
+  /**
+   * Envia notificação para TODOS os usuários (para aparecer no APP)
+   * Esta é a parte que integra com o sistema de notificações do usuário
+   */
+  async enviarNotificacaoParaTodosUsuarios(titulo, mensagem, jogo_id, tempo_alerta) {
+    try {
+      const conexao = await pool.getConnection();
+      try {
+        await conexao.beginTransaction();
+
+        // Buscar TODOS os usuários ativos
+        const [usuarios] = await conexao.query(
+          `SELECT id FROM usuarios WHERE ativo = 1 LIMIT 10000`
+        );
+
+        if (usuarios.length === 0) {
+          console.log('[NotificacoesAgendadasService] ℹ️  Nenhum usuário ativo para notificar');
+          return;
+        }
+
+        // Inserir notificação para cada usuário na tabela notificacoes_usuarios
+        const values = usuarios.map(u => [
+          u.id,
+          'inicio_jogo', // tipo de notificação
+          titulo,
+          mensagem,
+          JSON.stringify({ jogo_id, tempo_alerta })
+        ]);
+
+        // Inserir em lotes para melhor performance
+        const chunkSize = 100;
+        for (let i = 0; i < values.length; i += chunkSize) {
+          const chunk = values.slice(i, i + chunkSize);
+          const placeholders = chunk.map(() => '(?, ?, ?, ?, ?)').join(',');
+          const flatValues = chunk.flat();
+
+          await conexao.query(
+            `INSERT INTO notificacoes_usuarios (usuario_id, tipo, titulo, mensagem, dados_json) 
+             VALUES ${placeholders}`,
+            flatValues
+          );
+        }
+
+        await conexao.commit();
+        console.log(
+          `[NotificacoesAgendadasService] 📢 Notificação enviada para ${usuarios.length} usuários: "${titulo}"`
+        );
+
+      } catch (err) {
+        await conexao.rollback();
+        throw err;
+      } finally {
+        conexao.release();
+      }
+    } catch (err) {
+      console.error(
+        '[NotificacoesAgendadasService] Erro ao enviar notificação para usuários:',
+        err.message
+      );
     }
   }
 
