@@ -20,6 +20,7 @@ import NoticiasPage from './pages/noticiasPage';
 import NoticiaVisualizarPage from './components/NoticiaVisualizarPage';
 import ConfiguracoesPage from './pages/ConfiguracoesPage';
 import GerenciamentoUsuariosPage from './pages/GerenciamentoUsuariosPage';
+import TestNotificationPollingPage from './pages/TestNotificationPollingPage';
 
 
 function AppContent() {
@@ -72,6 +73,7 @@ function AppContent() {
           <Route path="/usuarios-gerenciar" element={<ProtectedRoute allowedPerfis={["administrador"]} element={<GerenciamentoUsuariosPage />} />} />
           <Route path="/noticias" element={<ProtectedRoute allowedPerfis={["apostador"]} element={<NoticiasPage />} />} />
           <Route path="/noticia/:id" element={<NoticiaVisualizarPage />} />
+          <Route path="/test-polling" element={<TestNotificationPollingPage />} />
         </Routes>
       </Layout>
     </ErrorBoundary>
