@@ -144,17 +144,17 @@ async function verificar() {
       const [notificacoes] = await pool.query(`
         SELECT 
           n.id,
-          n.jogo_id,
-          n.minutos_antes,
-          n.horario_envio,
-          n.enviada,
-          n.erro,
+          n.partida_id,
+          n.tempo_alerta,
+          n.data_agendada,
+          n.status,
+          n.data_enviada,
           j.time_mandante,
           j.time_visitante
-        FROM notificacoes_usuarios n
-        JOIN jogos j ON n.jogo_id = j.partida_id
-        WHERE n.jogo_id IN (?)
-        ORDER BY n.horario_envio ASC
+        FROM notificacoes_enviadas_jogos n
+        JOIN jogos j ON n.partida_id = j.partida_id
+        WHERE n.partida_id IN (?)
+        ORDER BY n.data_agendada ASC
       `, [idsJogos]);
       
       if (notificacoes.length === 0) {
@@ -162,10 +162,10 @@ async function verificar() {
       } else {
         console.log(`      Total: ${notificacoes.length} notificações agendadas`);
         
-        // Agrupar por minutos_antes
+        // Agrupar por tempo_alerta
         const porMinutos = new Map();
         notificacoes.forEach(n => {
-          const key = n.minutos_antes;
+          const key = n.tempo_alerta;
           if (!porMinutos.has(key)) porMinutos.set(key, []);
           porMinutos.get(key).push(n);
         });
@@ -181,9 +181,9 @@ async function verificar() {
           } else {
             console.log(`\n      ✅ Notificações ${min} min antes: ${notifs.length} agendadas`);
             notifs.slice(0, 3).forEach(n => {
-              const dt = DateTime.fromJSDate(new Date(n.horario_envio), { zone: 'America/Manaus' });
-              const status = n.enviada ? '✅ Enviada' : (n.erro ? '❌ Erro' : '⏳ Pendente');
-              console.log(`         - ${dt.toFormat('HH:mm:ss')} | ${n.time_mandante} vs ${n.time_visitante} | ${status}`);
+              const dt = DateTime.fromJSDate(new Date(n.data_agendada), { zone: 'America/Manaus' });
+              const statusEmoji = n.status === 'enviada' ? '✅' : (n.status === 'cancelada' ? '❌' : '⏳');
+              console.log(`         - ${dt.toFormat('HH:mm:ss')} | ${n.time_mandante} vs ${n.time_visitante} | ${statusEmoji} ${n.status}`);
             });
             if (notifs.length > 3) {
               console.log(`         ... e mais ${notifs.length - 3} notificações`);
