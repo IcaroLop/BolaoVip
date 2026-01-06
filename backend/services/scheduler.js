@@ -253,13 +253,11 @@ async function agendarConsultasResultadosPorRodada() {
       horarios.forEach((horaIso, idx) => {
         // Mantém o horário em Manaus e calcula o delta em ms sem depender do timezone do servidor.
         const inicioManaus = DateTime.fromFormat(horaIso, 'yyyy-MM-dd HH:mm', { zone: 'America/Manaus' });
-        const inicioExecManaus = inicioManaus.plus({ minutes: 130 });
         const agoraManaus = DateTime.now().setZone('America/Manaus');
-        const tempoAteExecucao = inicioExecManaus.diff(agoraManaus).as('milliseconds');
+        const tempoAteInicio = inicioManaus.diff(agoraManaus).as('milliseconds');
         const inicioStr = inicioManaus.toFormat('dd/MM/yyyy HH:mm');
-        const inicioExecStr = inicioExecManaus.toFormat('dd/MM/yyyy HH:mm');
 
-        console.log(`📅 Agendado grupo ${idx + 1}/${numGruposNoDia} no dia ${dia} (local ${inicioStr}) → INÍCIO DAS REQUISIÇÕES ${inicioExecStr} (+130min) | ${reqPorGrupo} requisições em intervalos de ${Math.floor(intervaloMs / 1000)}s`);
+        console.log(`📅 Agendado grupo ${idx + 1}/${numGruposNoDia} no dia ${dia} (local ${inicioStr}) → ${reqPorGrupo} requisições em intervalos de ${Math.floor(intervaloMs / 1000)}s durante 130min`);
 
         // Log detalhado para debug de timezone/agendamento
         const servidorAgora = DateTime.now();
@@ -267,9 +265,9 @@ async function agendarConsultasResultadosPorRodada() {
         console.log(`   Servidor agora: ${servidorAgora.toISO()} (${servidorAgora.zoneName})`);
         console.log(`   Agora Manaus: ${agoraManaus.toISO()}`);
         console.log(`   Inicio jogo (Manaus): ${inicioManaus.toISO()}`);
-        console.log(`   Inicio exec (+130min) (Manaus): ${inicioExecManaus.toISO()}`);
-        console.log(`   Tempo até início da execução: ${Math.floor(tempoAteExecucao / 1000)}s (${Math.floor(tempoAteExecucao / 60000)}min)`);
+        console.log(`   Tempo até início: ${Math.floor(tempoAteInicio / 1000)}s (${Math.floor(tempoAteInicio / 60000)}min)`);
         console.log(`   Intervalo entre req: ${Math.floor(intervaloMs / 1000)}s`);
+        console.log(`   Duração total: 130min`);
 
         const iniciarIntervalo = () => {
           if (isConsultandoRodada) {
@@ -299,15 +297,14 @@ async function agendarConsultasResultadosPorRodada() {
           }, intervaloMs);
         };
 
-        if (tempoAteExecucao > 0) {
-          setTimeout(iniciarIntervalo, tempoAteExecucao);
+        if (tempoAteInicio > 0) {
+          setTimeout(iniciarIntervalo, tempoAteInicio);
         } else {
           iniciarIntervalo();
         }
 
-        // Atualizações de classificação após o início da execução (+130min do início do jogo)
-        setTimeout(atualizarClassificacaoAutomatico, Math.max(tempoAteExecucao, 0) + 60 * 60 * 1000); // +1h após início da execução
-        setTimeout(atualizarClassificacaoAutomatico, Math.max(tempoAteExecucao, 0) + 130 * 60 * 1000); // +130min após início da execução
+        setTimeout(atualizarClassificacaoAutomatico, Math.max(tempoAteInicio, 0) + 60 * 60 * 1000); // +1h
+        setTimeout(atualizarClassificacaoAutomatico, Math.max(tempoAteInicio, 0) + 130 * 60 * 1000); // +130min
       });
     }
   } catch (err) {

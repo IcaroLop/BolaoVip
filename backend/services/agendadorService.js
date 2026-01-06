@@ -454,10 +454,8 @@ exports.planejarPersistirAgenda = async () => {
         if (disparos <= 0) continue;
         const intervaloCalculado = 130 / disparos;
         const intervaloMin = Math.max(0.5, intervaloCalculado); // Mínimo 30 segundos
-        // Iniciar os disparos somente após 130 minutos do início do jogo
-        const dtExecStart = g.dataHora.plus({ minutes: 130 });
         for (let k = 0; k < disparos; k++) {
-          const dtExec = dtExecStart.plus({ minutes: intervaloMin * k });
+          const dtExec = g.dataHora.plus({ minutes: intervaloMin * k });
           const grupoChave = `${g.dataHora.toFormat('yyyy-LL-dd HH:mm')}-placar-${k + 1}/${disparos}`;
           await conn.query(
             `INSERT INTO agendador_requisicoes (data_hora, campeonato_id, rodada, grupo_chave, requests_previstos, tipo, status)
@@ -514,29 +512,6 @@ exports.executarDevidos = async () => {
           try { await logSistema({ origem: 'agendadorService', nivel: 'info', descricao: `Executado classificação camp=${grupo.campeonato_id} rodada=${grupo.rodada}` }); } catch {}
         } else {
           // Disparo da consulta de rodada específica (placares) - APENAS 1 REQUISIÇÃO POR RODADA
-          // Salvaguarda: só executar após início do jogo +130min. Caso contrário, reagendar para o horário permitido.
-          try {
-            const [[minRow]] = await conn.query(
-              `SELECT MIN(data) AS inicio
-               FROM jogos
-               WHERE campeonato_id = ? AND rodada = ?`,
-              [grupo.campeonato_id, grupo.rodada]
-            );
-            const inicioManaus = parseDataManaus(minRow?.inicio);
-            if (inicioManaus && inicioManaus.isValid) {
-              const permitido = inicioManaus.plus({ minutes: 130 });
-              if (agora < permitido) {
-                await conn.query(
-                  `UPDATE agendador_requisicoes SET data_hora = ?, updated_at = CURRENT_TIMESTAMP WHERE id IN (?)`,
-                  [permitido.toSQL({ includeOffset: false }), grupo.ids]
-                );
-                try { await logSistema({ origem: 'agendadorService', nivel: 'info', descricao: `Execução adiada: camp=${grupo.campeonato_id} rodada=${grupo.rodada} para ${permitido.toISO()}` }); } catch {}
-                continue; // não executar agora
-              }
-            }
-          } catch (chkErr) {
-            try { await logSistema({ origem: 'agendadorService', nivel: 'warn', descricao: `Falha na checagem de horário permitido: ${chkErr.message}` }); } catch {}
-          }
           const jwt = require('jsonwebtoken');
           const tokenSistema = jwt.sign(
             { id: 0, nome: 'SISTEMA_AGENDADOR', tipo: 'sistema' },
