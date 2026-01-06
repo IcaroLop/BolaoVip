@@ -454,9 +454,11 @@ exports.planejarPersistirAgenda = async () => {
         if (disparos <= 0) continue;
         const intervaloCalculado = 130 / disparos;
         const intervaloMin = Math.max(0.5, intervaloCalculado); // Mínimo 30 segundos
+        // Iniciar os disparos somente após 130 minutos do início do jogo
+        const dtExecStart = g.dataHora.plus({ minutes: 130 });
         for (let k = 0; k < disparos; k++) {
-          const dtExec = g.dataHora.plus({ minutes: intervaloMin * k });
-          const grupoChave = `${g.dataHora.toFormat('yyyy-LL-dd HH:mm')}-${k + 1}/${disparos}`;
+          const dtExec = dtExecStart.plus({ minutes: intervaloMin * k });
+          const grupoChave = `${g.dataHora.toFormat('yyyy-LL-dd HH:mm')}-placar-${k + 1}/${disparos}`;
           await conn.query(
             `INSERT INTO agendador_requisicoes (data_hora, campeonato_id, rodada, grupo_chave, requests_previstos, tipo, status)
              VALUES (?, ?, ?, ?, 1, 'placar', 'planejado')
