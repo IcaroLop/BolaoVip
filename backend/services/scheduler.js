@@ -239,8 +239,15 @@ async function agendarConsultasResultadosPorRodada() {
       const grupos = gruposPorDia[dia];
       const horarios = [...new Set(Object.keys(grupos))];
       const numGruposNoDia = horarios.length;
-      const reqPorGrupo = Math.floor(limiteDiario / numGruposNoDia);
-      const duracaoMs = 130 * 60 * 1000;
+      const duracaoMs = 130 * 60 * 1000; // 130 minutos
+      const intervaloMinimoMs = 30 * 1000; // 30 segundos mínimo
+      
+      // Calcular número máximo de requisições respeitando intervalo mínimo
+      const reqMaximoPorGrupo = Math.floor(duracaoMs / intervaloMinimoMs); // 130min / 30s = 260 req
+      const reqDesejadoPorGrupo = Math.floor(limiteDiario / numGruposNoDia);
+      const reqPorGrupo = Math.min(reqMaximoPorGrupo, reqDesejadoPorGrupo);
+      
+      // Calcular intervalo real (sempre >= 30s)
       const intervaloMs = Math.floor(duracaoMs / reqPorGrupo);
 
       horarios.forEach((horaIso, idx) => {
@@ -252,9 +259,14 @@ async function agendarConsultasResultadosPorRodada() {
 
         console.log(`📅 Agendado grupo ${idx + 1}/${numGruposNoDia} no dia ${dia} (local ${inicioStr}) → ${reqPorGrupo} requisições em intervalos de ${Math.floor(intervaloMs / 1000)}s`);
 
-        // Log adicional para debug de timezone/agendamento
+        // Log detalhado para debug de timezone/agendamento
         const servidorAgora = DateTime.now();
-        console.log(`🔍 Agendamento detalhes → Servidor agora: ${servidorAgora.toISO()} | Inicio (Manaus): ${inicioManaus.toISO()} | tempoAteInicio_ms: ${tempoAteInicio}`);
+        console.log(`🔍 Debug agendamento:`);
+        console.log(`   Servidor agora: ${servidorAgora.toISO()} (${servidorAgora.zoneName})`);
+        console.log(`   Agora Manaus: ${agoraManaus.toISO()}`);
+        console.log(`   Inicio jogo (Manaus): ${inicioManaus.toISO()}`);
+        console.log(`   Tempo até início: ${Math.floor(tempoAteInicio / 1000)}s (${Math.floor(tempoAteInicio / 60000)}min)`);
+        console.log(`   Intervalo entre req: ${Math.floor(intervaloMs / 1000)}s`);
 
         const iniciarIntervalo = () => {
           if (isConsultandoRodada) {
