@@ -145,10 +145,13 @@ async function agendarConsultasResultadosPorRodada() {
       let usedFallback = false;
       if (!dataManaus.isValid) {
         // 1) Tentar Date.parse / new Date(raw)
+        // IMPORTANTE: MySQL retorna Date em UTC, mas o valor armazenado já está em Manaus
+        // Por isso usamos { zone: 'utc' } e depois keepLocalTime: true
         try {
           const maybeDate = new Date(jogo.data);
           if (!isNaN(maybeDate.getTime())) {
-            dataManaus = DateTime.fromJSDate(maybeDate).setZone('America/Manaus');
+            // Interpretar como se o horário UTC fosse o horário de Manaus (manter números iguais)
+            dataManaus = DateTime.fromJSDate(maybeDate, { zone: 'utc' }).setZone('America/Manaus', { keepLocalTime: true });
             usedFallback = true;
           }
         } catch (e) {
