@@ -276,15 +276,34 @@ async function agendarConsultasResultadosPorRodada() {
           }
           isConsultandoRodada = true;
 
+          // Se o jogo já começou (tempoAteInicio <= 0), calcular quantas requisições já deveriam ter sido feitas
+          let contadorInicial = 0;
+          let reqRestantes = reqPorGrupo;
+          
+          if (tempoAteInicio <= 0) {
+            const tempoDecorrido = Math.abs(tempoAteInicio); // ms desde o início
+            const requisicoesJaFeitas = Math.floor(tempoDecorrido / intervaloMs);
+            contadorInicial = Math.min(requisicoesJaFeitas, reqPorGrupo);
+            reqRestantes = Math.max(0, reqPorGrupo - contadorInicial);
+            
+            if (reqRestantes === 0) {
+              console.log(`⏭️ Grupo ${idx + 1}/${numGruposNoDia}: janela de 130min já expirou. Nenhuma requisição será feita.`);
+              isConsultandoRodada = false;
+              return;
+            }
+            
+            console.log(`⚠️ Jogo já iniciado há ${Math.floor(tempoDecorrido / 60000)}min. Requisições esperadas: ${contadorInicial}. Restantes: ${reqRestantes}`);
+          }
+
           console.log(`🚀 Iniciando consultas do grupo ${idx + 1}/${numGruposNoDia} no dia ${dia} (Rodada ${rodada})`);
           console.log(`🔔 Disparo agendado → Servidor agora: ${DateTime.now().toISO()} | Inicio agendamento (Manaus): ${inicioManaus.toISO()} | Grupo ${idx + 1}/${numGruposNoDia}`);
 
-          let contador = 0;
+          let contador = contadorInicial;
           const intervalId = setInterval(async () => {
             if (contador >= reqPorGrupo) {
               clearInterval(intervalId);
               isConsultandoRodada = false;
-              console.log(`✅ Grupo ${idx + 1}/${numGruposNoDia} finalizado: ${reqPorGrupo} requisições feitas`);
+              console.log(`✅ Grupo ${idx + 1}/${numGruposNoDia} finalizado: ${contador} requisições feitas (${contadorInicial} puladas)`);
               return;
             }
             console.log(`📡 [${contador + 1}/${reqPorGrupo}] Disparando consulta — Servidor agora: ${DateTime.now().toISO()} | Agendamento inicio (Manaus): ${inicioManaus.toISO()}`);
