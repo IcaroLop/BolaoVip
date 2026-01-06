@@ -72,8 +72,13 @@ class NotificacoesAgendadasService {
       // Exibir log apenas dos 5 próximos jogos
       console.log(`[NotificacoesAgendadasService] 📋 Total de ${jogos.length} jogos encontrados. Próximos 5:`);
       const proximosCinco = jogos.slice(0, 5);
+      const { DateTime } = require('luxon');
       proximosCinco.forEach((jogo, index) => {
-        const dataFormatada = new Date(jogo.data).toLocaleString('pt-BR', { timeZone: 'America/Manaus' });
+        // MySQL retorna em UTC, mas o valor armazenado já está em Manaus
+        // Usar keepLocalTime para manter os números sem conversão
+        const dataManaus = DateTime.fromJSDate(new Date(jogo.data), { zone: 'utc' })
+          .setZone('America/Manaus', { keepLocalTime: true });
+        const dataFormatada = dataManaus.toFormat('dd/MM/yyyy, HH:mm:ss');
         console.log(`  ${index + 1}. ${jogo.time_mandante} vs ${jogo.time_visitante} - ${dataFormatada}`);
       });
 
