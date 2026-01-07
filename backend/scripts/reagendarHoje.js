@@ -50,9 +50,9 @@ async function reagendarHoje() {
     const porHorario = new Map();
     const parseDataManaus = (dateValue) => {
       if (!dateValue) return null;
-      // Trate sempre como horário local de Manaus; nada de subtrair horas
+      // Interpreta DATETIME como hora local de Manaus (sem deslocar)
       if (dateValue instanceof Date) {
-        return DateTime.fromJSDate(dateValue).setZone('America/Manaus');
+        return DateTime.fromJSDate(dateValue, { zone: 'America/Manaus' });
       }
       return DateTime.fromISO(String(dateValue), { zone: 'America/Manaus', setZone: true });
     };

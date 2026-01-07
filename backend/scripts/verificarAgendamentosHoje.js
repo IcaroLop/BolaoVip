@@ -10,20 +10,16 @@ const { DateTime } = require('luxon');
 function parseDataManaus(dateValue) {
   if (!dateValue) return null;
   
-  // Se é MySQL DATETIME (naive), trata como Manaus local
+  // Interpreta DATETIME como hora local de Manaus (sem deslocar)
   if (dateValue instanceof Date) {
-    // MySQL retorna UTC, precisa converter
-    const iso = dateValue.toISOString(); // ex: "2026-01-07T10:30:00.000Z"
-    // Subtrai 3 horas (porque a data foi salva como se fosse local Manaus)
-    const dt = DateTime.fromISO(iso).minus({ hours: 3 });
-    return dt;
+    return DateTime.fromJSDate(dateValue, { zone: 'America/Manaus' });
   }
   
   if (typeof dateValue === 'string') {
-    return DateTime.fromISO(dateValue);
+    return DateTime.fromISO(dateValue, { zone: 'America/Manaus', setZone: true });
   }
   
-  return DateTime.fromJSDate(dateValue);
+  return DateTime.fromJSDate(dateValue, { zone: 'America/Manaus' });
 }
 
 async function verificarAgendamentosHoje() {
