@@ -10,16 +10,16 @@ const { DateTime } = require('luxon');
 function parseDataManaus(dateValue) {
   if (!dateValue) return null;
   
-  // Interpreta DATETIME como hora local de Manaus (sem deslocar)
+  // Trate Date como instante em UTC e converta para Manaus (evita adiantamento de 4h)
   if (dateValue instanceof Date) {
-    return DateTime.fromJSDate(dateValue, { zone: 'America/Manaus' });
+    return DateTime.fromJSDate(dateValue, { zone: 'utc' }).setZone('America/Manaus');
   }
   
   if (typeof dateValue === 'string') {
     return DateTime.fromISO(dateValue, { zone: 'America/Manaus', setZone: true });
   }
   
-  return DateTime.fromJSDate(dateValue, { zone: 'America/Manaus' });
+  return DateTime.fromJSDate(dateValue, { zone: 'utc' }).setZone('America/Manaus');
 }
 
 async function verificarAgendamentosHoje() {

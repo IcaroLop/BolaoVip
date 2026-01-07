@@ -50,9 +50,9 @@ async function reagendarHoje() {
     const porHorario = new Map();
     const parseDataManaus = (dateValue) => {
       if (!dateValue) return null;
-      // Interpreta DATETIME como hora local de Manaus (sem deslocar)
+      // Converte o instante vindo do MySQL para Manaus, evitando deslocamento duplicado
       if (dateValue instanceof Date) {
-        return DateTime.fromJSDate(dateValue, { zone: 'America/Manaus' });
+        return DateTime.fromJSDate(dateValue, { zone: 'utc' }).setZone('America/Manaus');
       }
       return DateTime.fromISO(String(dateValue), { zone: 'America/Manaus', setZone: true });
     };

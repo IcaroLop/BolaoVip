@@ -7,18 +7,10 @@ const { logSistema } = require('./logService');
 function parseDataManaus(value) {
   if (!value) return null;
 
-  // Se veio como objeto Date do MySQL (DATETIME), INTERPRETAR os campos como hora local de Manaus
-  // (não converter a partir do instante UTC, pois MySQL DATETIME é 'naive')
+  // Trate Date como instante (UTC) e converta para Manaus para evitar deslocamentos duplos
   if (value instanceof Date) {
-    const dtObj = DateTime.fromObject({
-      year: value.getFullYear(),
-      month: value.getMonth() + 1,
-      day: value.getDate(),
-      hour: value.getHours(),
-      minute: value.getMinutes(),
-      second: value.getSeconds(),
-    }, { zone: 'America/Manaus' });
-    return dtObj.isValid ? dtObj : null;
+    const dt = DateTime.fromJSDate(value, { zone: 'utc' }).setZone('America/Manaus');
+    return dt.isValid ? dt : null;
   }
 
   // Tenta ISO com offset/Z
@@ -434,11 +426,12 @@ exports.planejarPersistirAgenda = async () => {
         if (saldoDia <= 0) break;
         const dtExecClass = g.dataHora.plus({ minutes: 130 });
         const grupoChaveClass = `${g.dataHora.toFormat('yyyy-LL-dd HH:mm')}-classificacao`;
+        const dataClassLocal = dtExecClass.setZone('America/Manaus').toFormat('yyyy-LL-dd HH:mm:ss');
         await conn.query(
           `INSERT INTO agendador_requisicoes (data_hora, campeonato_id, rodada, grupo_chave, requests_previstos, tipo, status)
            VALUES (?, ?, ?, ?, 1, 'classificacao', 'planejado')
            ON DUPLICATE KEY UPDATE data_hora=VALUES(data_hora), status='planejado', updated_at=CURRENT_TIMESTAMP`,
-          [dtExecClass.toSQL({ includeOffset: false }), g.campeonatoId, g.rodada, grupoChaveClass]
+          [dataClassLocal, g.campeonatoId, g.rodada, grupoChaveClass]
         );
         saldoDia -= 1;
         planejados += 1;
@@ -459,11 +452,12 @@ exports.planejarPersistirAgenda = async () => {
         for (let k = 0; k < disparos; k++) {
           const dtExec = g.dataHora.plus({ minutes: intervaloMin * k });
           const grupoChave = `${g.dataHora.toFormat('yyyy-LL-dd HH:mm')}-placar-${k + 1}/${disparos}`;
+          const dataHoraLocal = dtExec.setZone('America/Manaus').toFormat('yyyy-LL-dd HH:mm:ss');
           await conn.query(
             `INSERT INTO agendador_requisicoes (data_hora, campeonato_id, rodada, grupo_chave, requests_previstos, tipo, status)
              VALUES (?, ?, ?, ?, 1, 'placar', 'planejado')
              ON DUPLICATE KEY UPDATE data_hora=VALUES(data_hora), status='planejado', updated_at=CURRENT_TIMESTAMP`,
-            [dtExec.toSQL({ includeOffset: false }), g.campeonatoId, g.rodada, grupoChave]
+            [dataHoraLocal, g.campeonatoId, g.rodada, grupoChave]
           );
           planejados += 1;
         }

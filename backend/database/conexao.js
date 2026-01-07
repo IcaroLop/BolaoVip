@@ -13,4 +13,9 @@ const pool = mysql.createPool({
   enableKeepAlive: true
 });
 
+// Garante que todas as sessões MySQL usem o fuso de Manaus para NOW()/DATETIME
+pool.on('connection', (conn) => {
+  conn.query("SET time_zone = '-04:00'").catch(() => {});
+});
+
 module.exports = pool;
