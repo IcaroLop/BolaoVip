@@ -37,6 +37,15 @@ async function reagendarHoje() {
 
     console.log(`✅ Encontrados ${jogos.length} jogos para reagendar:\n`);
 
+    // Apaga qualquer agendamento de placar de hoje (evita duplicar ao rodar mais de uma vez)
+    await conexao.query(
+      `DELETE FROM agendador_requisicoes 
+       WHERE tipo = 'placar' 
+         AND DATE(data_hora) = ?
+         AND campeonato_id = 69`,
+      [hojeKey]
+    );
+
     // Agrupar por horário (hora de Manaus)
     const porHorario = new Map();
     const parseDataManaus = (dateValue) => {
@@ -95,7 +104,7 @@ async function reagendarHoje() {
            ON DUPLICATE KEY UPDATE 
            data_hora = VALUES(data_hora), status = 'planejado', updated_at = CURRENT_TIMESTAMP`,
           [
-            dtExec.toSQL({ includeOffset: false }),
+            dtExec.toUTC().toSQL({ includeOffset: false }),
             jogosGrupo[0].campeonato_id,
             jogosGrupo[0].rodada,
             grupoChave
