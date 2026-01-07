@@ -136,7 +136,7 @@ async function verificarAgendamentosHoje() {
       const [notificacoes] = await conexao.query(`
         SELECT n.*, j.time_mandante, j.time_visitante
         FROM notificacoes_enviadas_jogos n
-        JOIN jogos j ON n.partida_id = j.id
+        JOIN jogos j ON n.jogo_id = j.id
         WHERE DATE(j.data) = ?
         AND j.campeonato_id = 69
         AND n.tempo_alerta IN (60, 30, 15, 5)

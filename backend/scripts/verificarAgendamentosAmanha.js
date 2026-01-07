@@ -166,8 +166,8 @@ async function verificar() {
           j.time_mandante,
           j.time_visitante
         FROM notificacoes_enviadas_jogos n
-        JOIN jogos j ON n.partida_id = j.partida_id
-        WHERE n.partida_id IN (?)
+        JOIN jogos j ON n.jogo_id = j.id
+        WHERE j.partida_id IN (?)
         ORDER BY n.data_agendada ASC
       `, [idsJogos]);
       
