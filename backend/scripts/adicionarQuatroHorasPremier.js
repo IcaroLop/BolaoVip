@@ -57,7 +57,7 @@ async function corrigir() {
     await conexao.commit();
     
     console.log(`\n✅ Total corrigido: ${corrigidos} jogos (+4 horas)`);
-    console.log('\n⚠️  PRÓXIMOS PASSOS:`);
+    console.log('\n⚠️  PRÓXIMOS PASSOS:');
     console.log('   1. node scripts/testarPlanejamento.js');
     console.log('   2. pm2 restart bolaovip-backend');
     console.log('   3. node scripts/verificarAgendamentosAmanha.js\n');
