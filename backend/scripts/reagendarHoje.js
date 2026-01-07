@@ -50,12 +50,11 @@ async function reagendarHoje() {
     const porHorario = new Map();
     const parseDataManaus = (dateValue) => {
       if (!dateValue) return null;
+      // Trate sempre como horário local de Manaus; nada de subtrair horas
       if (dateValue instanceof Date) {
-        // MySQL entrega Date assumindo UTC; subtrai 3h para alinhar ao horário salvo
-        const iso = dateValue.toISOString();
-        return DateTime.fromISO(iso).minus({ hours: 3 });
+        return DateTime.fromJSDate(dateValue).setZone('America/Manaus');
       }
-      return DateTime.fromISO(dateValue, { setZone: true }).setZone('America/Manaus');
+      return DateTime.fromISO(String(dateValue), { zone: 'America/Manaus', setZone: true });
     };
 
     for (const jogo of jogos) {
