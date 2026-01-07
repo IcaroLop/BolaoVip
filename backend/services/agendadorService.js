@@ -444,13 +444,15 @@ exports.planejarPersistirAgenda = async () => {
         planejados += 1;
       }
 
-      // Distribui saldo restante entre placares
-      const base = lista.length > 0 ? Math.floor(saldoDia / lista.length) : 0;
+      // Distribui saldo restante entre placares, limitando a 260 requisições por grupo (130min a cada 30s)
+      const MAX_REQ_POR_GRUPO = 260;
+      const base = lista.length > 0 ? Math.min(MAX_REQ_POR_GRUPO, Math.floor(saldoDia / lista.length)) : 0;
       const resto = lista.length > 0 ? saldoDia % lista.length : 0;
 
       for (let idx = 0; idx < lista.length; idx++) {
         const g = lista[idx];
-        const disparos = base + (idx < resto ? 1 : 0);
+        let disparos = base + (idx < resto ? 1 : 0);
+        disparos = Math.min(MAX_REQ_POR_GRUPO, disparos); // Garante que não ultrapasse 260
         if (disparos <= 0) continue;
         const intervaloCalculado = 130 / disparos;
         const intervaloMin = Math.max(0.5, intervaloCalculado); // Mínimo 30 segundos
