@@ -11,19 +11,9 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
-  timezone: 'Z',
   supportBigNumbers: true,
-  bigNumberStrings: true
+  bigNumberStrings: true,
+  initializationQuery: "SET time_zone = '-04:00'"
 });
 
-// Função helper para garantir time_zone de Manaus em cada conexão
-async function setManausTimeZone(conn) {
-  try {
-    await conn.query("SET time_zone = '-04:00'");
-  } catch (err) {
-    console.error('Aviso: Não foi possível setar time_zone:', err.message);
-  }
-}
-
 module.exports = pool;
-module.exports.setManausTimeZone = setManausTimeZone;

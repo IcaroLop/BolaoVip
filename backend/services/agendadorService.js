@@ -7,8 +7,11 @@ const { logSistema } = require('./logService');
 function parseDataManaus(value) {
   if (!value) return null;
 
-  // Trate Date como instante (UTC) e converta para Manaus para evitar deslocamentos duplos
+  // Se veio como Date do MySQL, o driver retorna como timestamp UTC
+  // Mas como MySQL session time_zone é -04:00 (Manaus), a string "2026-01-07 11:30:00" 
+  // é interpretada como Manaus local e retornada como Date equivalente a 15:30 UTC
   if (value instanceof Date) {
+    // Converte esse instante UTC de volta para a zona Manaus
     const dt = DateTime.fromJSDate(value, { zone: 'utc' }).setZone('America/Manaus');
     return dt.isValid ? dt : null;
   }

@@ -160,19 +160,6 @@ app.get('/debug/jogos-ao-vivo-test', async (req, res) => {
   }
 });
 
-// Garantir que todas as conexões usam time_zone de Manaus
-const { setManausTimeZone } = require('./database/conexao');
-(async () => {
-  try {
-    const conn = await pool.getConnection();
-    await setManausTimeZone(conn);
-    conn.release();
-    console.log('[STARTUP] ✅ Time zone de Manaus configurado no pool');
-  } catch (err) {
-    console.error('[STARTUP] Aviso: Erro ao configurar time_zone:', err.message);
-  }
-})();
-
 // Ativar scheduler quando finalizar o debug
 const { agendarConsultasResultadosPorRodada } = require('./services/scheduler');
 agendarConsultasResultadosPorRodada();
