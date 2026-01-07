@@ -83,8 +83,15 @@ class NotificacoesAgendadasService {
       });
 
       // Agendar notificações para TODOS os jogos
+      let processados = 0;
       for (const jogo of jogos) {
         await this.agendarNotificacoesParaJogo(jogo);
+        processados++;
+        
+        // Mostrar progresso a cada 20 jogos
+        if (processados % 20 === 0 || processados === jogos.length) {
+          console.log(`[NotificacoesAgendadasService] 📊 Progresso: ${processados}/${jogos.length} jogos processados`);
+        }
       }
 
       console.log(`[NotificacoesAgendadasService] ✅ Agendamento concluído para ${jogos.length} jogos`);
@@ -138,9 +145,7 @@ class NotificacoesAgendadasService {
             ]
           );
 
-          console.log(
-            `[NotificacoesAgendadasService] ✅ Notificação agendada para jogo ${jogo.partida_id}: ${jogo.time_mandante} vs ${jogo.time_visitante} (${minutos}min antes)`
-          );
+          // Log removido para não poluir saída com 788 mensagens
         }
       }
 
