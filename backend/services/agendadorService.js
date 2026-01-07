@@ -7,12 +7,13 @@ const { logSistema } = require('./logService');
 function parseDataManaus(value) {
   if (!value) return null;
 
-  // Com time_zone = '-04:00' no MySQL, o driver retorna a Data como instante UTC
-  // que representa a hora Manaus. Precisamos converter de volta.
-  // Ex: string "2026-01-07 11:30:00" com time_zone Manaus vira instante 15:30 UTC
-  // Quando o driver retorna como Date, é 15:30 UTC, que convertido para Manaus é 11:30
+  // Com time_zone = '-04:00' no MySQL, o driver retorna a Data 4h ANTES do correto
+  // Ex: String '2026-01-07 11:30:00' (Manaus) é retornada como Date('2026-01-07T11:30:00Z')
+  // quando deveria ser Date('2026-01-07T15:30:00Z')
+  // Solução: adicionar 4h ao valor UTC para corrigir
   if (value instanceof Date) {
-    const dt = DateTime.fromJSDate(value, { zone: 'utc' }).setZone('America/Manaus');
+    const dtUTC = DateTime.fromJSDate(value, { zone: 'utc' }).plus({ hours: 4 });
+    const dt = dtUTC.setZone('America/Manaus');
     return dt.isValid ? dt : null;
   }
 
