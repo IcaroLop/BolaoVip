@@ -104,7 +104,7 @@ async function reagendarHoje() {
            ON DUPLICATE KEY UPDATE 
            data_hora = VALUES(data_hora), status = 'planejado', updated_at = CURRENT_TIMESTAMP`,
           [
-            dtExec.toUTC().toSQL({ includeOffset: false }),
+            dtExec.setZone('America/Manaus').toFormat('yyyy-LL-dd HH:mm:ss'),
             jogosGrupo[0].campeonato_id,
             jogosGrupo[0].rodada,
             grupoChave
