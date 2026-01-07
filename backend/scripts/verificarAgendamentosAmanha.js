@@ -6,6 +6,26 @@
 const pool = require('../database/conexao');
 const { DateTime } = require('luxon');
 
+// Função para parsear data do MySQL mantendo hora local (mesmo do agendadorService)
+function parseDataManaus(value) {
+  if (!value) return null;
+  
+  // Se veio como objeto Date do MySQL (DATETIME), INTERPRETAR os campos como hora local de Manaus
+  if (value instanceof Date) {
+    const dtObj = DateTime.fromObject({
+      year: value.getFullYear(),
+      month: value.getMonth() + 1,
+      day: value.getDate(),
+      hour: value.getHours(),
+      minute: value.getMinutes(),
+      second: value.getSeconds(),
+    }, { zone: 'America/Manaus' });
+    return dtObj.isValid ? dtObj : null;
+  }
+  
+  return null;
+}
+
 async function verificar() {
   try {
     const agora = DateTime.now().setZone('America/Manaus');
@@ -44,7 +64,8 @@ async function verificar() {
     // Agrupar por horário
     const gruposPorHorario = new Map();
     jogos.forEach(j => {
-      const dt = DateTime.fromJSDate(new Date(j.data), { zone: 'America/Manaus' });
+      const dt = parseDataManaus(j.data);
+      if (!dt) return;
       const horario = dt.toFormat('HH:mm');
       if (!gruposPorHorario.has(horario)) {
         gruposPorHorario.set(horario, []);
@@ -95,8 +116,8 @@ async function verificar() {
       if (placares.length === 0) {
         console.log(`      ⚠️  Nenhum agendamento de placar encontrado`);
       } else {
-        const primeiro = DateTime.fromJSDate(new Date(placares[0].data_hora), { zone: 'America/Manaus' });
-        const ultimo = DateTime.fromJSDate(new Date(placares[placares.length - 1].data_hora), { zone: 'America/Manaus' });
+        const primeiro = parseDataManaus(placares[0].data_hora);
+        const ultimo = parseDataManaus(placares[placares.length - 1].data_hora);
         
         console.log(`      Total agendado: ${placares.length} requisições`);
         console.log(`      Primeira: ${primeiro.toFormat('dd/MM/yyyy HH:mm:ss')}`);
@@ -121,7 +142,7 @@ async function verificar() {
         // Mostrar primeiros 5 e últimos 5
         console.log(`\n      Primeiros 5 agendamentos:`);
         placares.slice(0, 5).forEach((p, idx) => {
-          const dt = DateTime.fromJSDate(new Date(p.data_hora), { zone: 'America/Manaus' });
+          const dt = parseDataManaus(p.data_hora);
           console.log(`         ${idx + 1}. ${dt.toFormat('HH:mm:ss')} - ${p.status} - ${p.grupo_chave}`);
         });
         
@@ -131,7 +152,7 @@ async function verificar() {
         
         console.log(`\n      Últimos 5 agendamentos:`);
         placares.slice(-5).forEach((p, idx) => {
-          const dt = DateTime.fromJSDate(new Date(p.data_hora), { zone: 'America/Manaus' });
+          const dt = parseDataManaus(p.data_hora);
           console.log(`         ${idx + 1}. ${dt.toFormat('HH:mm:ss')} - ${p.status} - ${p.grupo_chave}`);
         });
       }
@@ -181,7 +202,7 @@ async function verificar() {
           } else {
             console.log(`\n      ✅ Notificações ${min} min antes: ${notifs.length} agendadas`);
             notifs.slice(0, 3).forEach(n => {
-              const dt = DateTime.fromJSDate(new Date(n.data_agendada), { zone: 'America/Manaus' });
+              const dt = parseDataManaus(n.data_agendada);
               const statusEmoji = n.status === 'enviada' ? '✅' : (n.status === 'cancelada' ? '❌' : '⏳');
               console.log(`         - ${dt.toFormat('HH:mm:ss')} | ${n.time_mandante} vs ${n.time_visitante} | ${statusEmoji} ${n.status}`);
             });
