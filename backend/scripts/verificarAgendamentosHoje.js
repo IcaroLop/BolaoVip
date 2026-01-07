@@ -10,16 +10,19 @@ const { DateTime } = require('luxon');
 function parseDataManaus(dateValue) {
   if (!dateValue) return null;
   
-  // Trate Date como instante em UTC e converta para Manaus (evita adiantamento de 4h)
+  // Driver retorna datas 4h antes quando time_zone = '-04:00'
+  // Adicionar 4h para compensar o bug
   if (dateValue instanceof Date) {
-    return DateTime.fromJSDate(dateValue, { zone: 'utc' }).setZone('America/Manaus');
+    const dtUTC = DateTime.fromJSDate(dateValue, { zone: 'utc' }).plus({ hours: 4 });
+    return dtUTC.setZone('America/Manaus');
   }
   
   if (typeof dateValue === 'string') {
     return DateTime.fromISO(dateValue, { zone: 'America/Manaus', setZone: true });
   }
   
-  return DateTime.fromJSDate(dateValue, { zone: 'utc' }).setZone('America/Manaus');
+  const dtUTC = DateTime.fromJSDate(dateValue, { zone: 'utc' }).plus({ hours: 4 });
+  return dtUTC.setZone('America/Manaus');
 }
 
 async function verificarAgendamentosHoje() {

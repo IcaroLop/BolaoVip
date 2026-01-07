@@ -10,17 +10,10 @@ const { DateTime } = require('luxon');
 function parseDataManaus(value) {
   if (!value) return null;
   
-  // Se veio como objeto Date do MySQL (DATETIME), INTERPRETAR os campos como hora local de Manaus
+  // Driver retorna datas 4h antes quando time_zone = '-04:00', adicionar 4h para compensar
   if (value instanceof Date) {
-    const dtObj = DateTime.fromObject({
-      year: value.getFullYear(),
-      month: value.getMonth() + 1,
-      day: value.getDate(),
-      hour: value.getHours(),
-      minute: value.getMinutes(),
-      second: value.getSeconds(),
-    }, { zone: 'America/Manaus' });
-    return dtObj.isValid ? dtObj : null;
+    const dtUTC = DateTime.fromJSDate(value, { zone: 'utc' }).plus({ hours: 4 });
+    return dtUTC.setZone('America/Manaus');
   }
   
   return null;

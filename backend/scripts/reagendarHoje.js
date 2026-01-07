@@ -50,9 +50,10 @@ async function reagendarHoje() {
     const porHorario = new Map();
     const parseDataManaus = (dateValue) => {
       if (!dateValue) return null;
-      // Converte o instante vindo do MySQL para Manaus, evitando deslocamento duplicado
+      // Driver retorna datas 4h antes quando time_zone = '-04:00', compensar
       if (dateValue instanceof Date) {
-        return DateTime.fromJSDate(dateValue, { zone: 'utc' }).setZone('America/Manaus');
+        const dtUTC = DateTime.fromJSDate(dateValue, { zone: 'utc' }).plus({ hours: 4 });
+        return dtUTC.setZone('America/Manaus');
       }
       return DateTime.fromISO(String(dateValue), { zone: 'America/Manaus', setZone: true });
     };
