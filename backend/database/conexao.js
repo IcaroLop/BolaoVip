@@ -10,12 +10,20 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  enableKeepAlive: true
+  enableKeepAlive: true,
+  timezone: 'Z',
+  supportBigNumbers: true,
+  bigNumberStrings: true
 });
 
-// Garante que todas as sessões MySQL usem o fuso de Manaus para NOW()/DATETIME
-pool.on('connection', (conn) => {
-  conn.query("SET time_zone = '-04:00'").catch(() => {});
-});
+// Função helper para garantir time_zone de Manaus em cada conexão
+async function setManausTimeZone(conn) {
+  try {
+    await conn.query("SET time_zone = '-04:00'");
+  } catch (err) {
+    console.error('Aviso: Não foi possível setar time_zone:', err.message);
+  }
+}
 
 module.exports = pool;
+module.exports.setManausTimeZone = setManausTimeZone;
