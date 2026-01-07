@@ -12,8 +12,20 @@ const pool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   supportBigNumbers: true,
-  bigNumberStrings: true,
-  initializationQuery: "SET time_zone = '-04:00'"
+  bigNumberStrings: true
 });
+
+// Wrapper para getConnection que configura timezone automaticamente
+const originalGetConnection = pool.getConnection.bind(pool);
+pool.getConnection = async function() {
+  const conn = await originalGetConnection();
+  try {
+    await conn.query("SET time_zone = '-04:00'");
+  } catch (err) {
+    console.error('[DB] Aviso: Não foi possível setar time_zone:', err.message);
+    // Continua mesmo se falhar, para não bloquear
+  }
+  return conn;
+};
 
 module.exports = pool;
