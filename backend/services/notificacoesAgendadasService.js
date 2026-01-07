@@ -112,7 +112,10 @@ class NotificacoesAgendadasService {
         );
 
         if (existe.length === 0) {
-          const dataEvento = new Date(jogo.data);
+          // Aplicar fix de +4h para compensar bug do driver mysql2 com timezone
+          const { DateTime } = require('luxon');
+          const dataEventoUTC = DateTime.fromJSDate(new Date(jogo.data), { zone: 'utc' }).plus({ hours: 4 });
+          const dataEvento = dataEventoUTC.toJSDate();
           const dataDisparo = new Date(dataEvento.getTime() - minutos * 60 * 1000);
 
           // ID único: jogo_id + minutos (ex: 33128 + 60 = 3312860)
