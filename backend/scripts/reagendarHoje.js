@@ -22,8 +22,7 @@ async function reagendarHoje() {
         j.time_mandante,
         j.time_visitante,
         j.rodada,
-        j.campeonato_id,
-        DATE_FORMAT(j.data, '%Y-%m-%d %H:%i') as grupo_key
+        j.campeonato_id
       FROM jogos j
       WHERE DATE(j.data) = ?
       AND j.campeonato_id = 69
@@ -38,13 +37,25 @@ async function reagendarHoje() {
 
     console.log(`✅ Encontrados ${jogos.length} jogos para reagendar:\n`);
 
-    // Agrupar por horário
+    // Agrupar por horário (hora de Manaus)
     const porHorario = new Map();
-    for (const jogo of jogos) {
-      if (!porHorario.has(jogo.grupo_key)) {
-        porHorario.set(jogo.grupo_key, []);
+    const parseDataManaus = (dateValue) => {
+      if (!dateValue) return null;
+      if (dateValue instanceof Date) {
+        // MySQL entrega Date assumindo UTC; subtrai 3h para alinhar ao horário salvo
+        const iso = dateValue.toISOString();
+        return DateTime.fromISO(iso).minus({ hours: 3 });
       }
-      porHorario.get(jogo.grupo_key).push(jogo);
+      return DateTime.fromISO(dateValue, { setZone: true }).setZone('America/Manaus');
+    };
+
+    for (const jogo of jogos) {
+      const dtManaus = parseDataManaus(jogo.data);
+      const chaveHorario = dtManaus.toFormat('yyyy-LL-dd HH:mm');
+      if (!porHorario.has(chaveHorario)) {
+        porHorario.set(chaveHorario, []);
+      }
+      porHorario.get(chaveHorario).push({ ...jogo, dtManaus, chaveHorario });
     }
 
     await conexao.beginTransaction();
@@ -52,9 +63,9 @@ async function reagendarHoje() {
     let planejados = 0;
 
     // Para cada grupo de horário
-    for (const [grupoKey, jogosGrupo] of porHorario.entries()) {
-      const dataBaseStr = jogosGrupo[0].grupo_key; // "2026-01-07 15:30"
-      const dt = DateTime.fromFormat(dataBaseStr, 'yyyy-LL-dd HH:mm', { zone: 'America/Manaus' });
+    for (const [chaveHorario, jogosGrupo] of porHorario.entries()) {
+      const dataBaseStr = chaveHorario; // "2026-01-07 15:30" em Manaus
+      const dt = jogosGrupo[0].dtManaus;
 
       console.log(`Grupo ${dt.toFormat('HH:mm')} (${jogosGrupo.length} jogos):`);
       console.log(`  ${jogosGrupo.map(j => `${j.time_mandante} vs ${j.time_visitante}`).join(', ')}`);
