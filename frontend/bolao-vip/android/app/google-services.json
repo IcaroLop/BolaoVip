@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "115306753148",
+    "project_id": "bolaovip-5d6a3",
+    "storage_bucket": "bolaovip-5d6a3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:115306753148:android:45f94bfd73046d718eadf9",
+        "android_client_info": {
+          "package_name": "com.bolaovip.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtjfctNmZfzjZwjA5tqOAsPAV3ofOw444"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
