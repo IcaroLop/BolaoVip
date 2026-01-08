@@ -133,18 +133,33 @@ class FCMService {
 
         // Enviar para cada token
         const tokenList = tokens.map(t => t.fcm_token);
-        const response = await admin.messaging().sendMulticast({
-          ...message,
-          tokens: tokenList
-        });
+        let successCount = 0;
+        let failureCount = 0;
+        const failedTokens = [];
 
-        console.log(`[FCMService] ✅ Push enviado para usuário ${usuarioId}: ${response.successCount} sucesso, ${response.failureCount} falhas`);
+        // Enviar push para cada token individualmente
+        for (const fcmToken of tokenList) {
+          try {
+            const messageWithToken = {
+              ...message,
+              token: fcmToken
+            };
+            
+            await admin.messaging().send(messageWithToken);
+            successCount++;
+          } catch (tokenError) {
+            failureCount++;
+            // Se o token é inválido, marcar para remover
+            if (tokenError.code === 'messaging/invalid-registration-token' ||
+                tokenError.code === 'messaging/registration-token-not-registered') {
+              failedTokens.push(fcmToken);
+            }
+          }
+        }
+
+        console.log(`[FCMService] ✅ Push enviado para usuário ${usuarioId}: ${successCount} sucesso, ${failureCount} falhas`);
 
         // Remover tokens que falharam permanentemente
-        const failedTokens = response.responses
-          .map((resp, idx) => resp.success ? null : tokenList[idx])
-          .filter(t => t !== null);
-
         if (failedTokens.length > 0) {
           await conexao.query(
             `DELETE FROM usuarios_fcm_tokens WHERE fcm_token IN (${failedTokens.map(() => '?').join(',')})`,
@@ -152,7 +167,7 @@ class FCMService {
           );
         }
 
-        return response.successCount > 0;
+        return successCount > 0;
       } finally {
         conexao.release();
       }
