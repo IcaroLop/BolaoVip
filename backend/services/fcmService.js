@@ -7,36 +7,45 @@
 
 const admin = require('firebase-admin');
 const pool = require('../database/conexao');
+const path = require('path');
+const fs = require('fs');
 
-// Inicializar Firebase Admin SDK (usar credenciais de variável de ambiente)
+// Inicializar Firebase Admin SDK
 let firebaseInitialized = false;
 
 function initializeFirebase() {
   if (firebaseInitialized) return;
 
   try {
-    const firebaseConfig = {
-      apiKey: process.env.FIREBASE_API_KEY,
-      authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.FIREBASE_APP_ID,
-      serviceAccountKey: process.env.FIREBASE_SERVICE_ACCOUNT_KEY ? 
-        JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY) : null
-    };
-
-    // Se serviceAccountKey estiver configurado, usar como Admin SDK
-    if (firebaseConfig.serviceAccountKey) {
-      admin.initializeApp({
-        credential: admin.credential.cert(firebaseConfig.serviceAccountKey),
-        databaseURL: `https://${firebaseConfig.projectId}.firebaseio.com`
-      });
-      firebaseInitialized = true;
-      console.log('[FCMService] ✅ Firebase Admin SDK inicializado');
-    } else {
-      console.warn('[FCMService] ⚠️ FIREBASE_SERVICE_ACCOUNT_KEY não configurado. Push notifications desabilitadas.');
+    // Buscar caminho do arquivo de credenciais
+    const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+    
+    if (!serviceAccountPath) {
+      console.warn('[FCMService] ⚠️ FIREBASE_SERVICE_ACCOUNT_PATH não configurado. Push notifications desabilitadas.');
+      return;
     }
+
+    // Resolver caminho relativo ou absoluto
+    const absolutePath = path.isAbsolute(serviceAccountPath) 
+      ? serviceAccountPath 
+      : path.join(process.cwd(), serviceAccountPath);
+
+    // Verificar se arquivo existe
+    if (!fs.existsSync(absolutePath)) {
+      console.error(`[FCMService] ❌ Arquivo Firebase não encontrado: ${absolutePath}`);
+      return;
+    }
+
+    // Carregar credenciais do arquivo
+    const serviceAccount = require(absolutePath);
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+    });
+    
+    firebaseInitialized = true;
+    console.log(`[FCMService] ✅ Firebase Admin SDK inicializado (arquivo: ${absolutePath})`);
   } catch (err) {
     console.error('[FCMService] ❌ Erro ao inicializar Firebase:', err.message);
   }

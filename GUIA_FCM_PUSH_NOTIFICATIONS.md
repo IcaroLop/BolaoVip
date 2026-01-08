@@ -20,20 +20,20 @@ npm install firebase-admin
 Adicionar ao `.env`:
 
 ```env
-# Firebase Cloud Messaging
-FIREBASE_API_KEY=seu_api_key
-FIREBASE_AUTH_DOMAIN=seu_project.firebaseapp.com
-FIREBASE_PROJECT_ID=seu_project_id
-FIREBASE_STORAGE_BUCKET=seu_project.appspot.com
-FIREBASE_MESSAGING_SENDER_ID=seu_sender_id
-FIREBASE_APP_ID=seu_app_id
-FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"..."}
+# Firebase Cloud Messaging - Usar caminho do arquivo
+FIREBASE_SERVICE_ACCOUNT_PATH=/home/jelastic/ROOT/backend/config/firebase-adminsdk.json
 ```
 
-**Onde obter essas credenciais:**
+**Ou (caminho relativo):**
+```env
+FIREBASE_SERVICE_ACCOUNT_PATH=./config/firebase-adminsdk.json
+```
+
+**Onde obter:**
 1. Firebase Console → Seu Projeto → Configurações → Contas de Serviço
 2. Gerar nova chave privada (JSON)
-3. Copiar o conteúdo completo do JSON para `FIREBASE_SERVICE_ACCOUNT_KEY`
+3. Salvar arquivo em local seguro (ex: `/home/jelastic/ROOT/backend/config/firebase-adminsdk.json`)
+4. Definir permissões: `chmod 600 firebase-adminsdk.json`
 
 ### 3. Criar Tabela de Tokens
 
@@ -172,13 +172,19 @@ await fcmService.enviarAlertaJogo(usuarioIds, jogoData, minutosAlerta);
 ## ⚙️ Variáveis de Ambiente Necessárias
 
 ```env
-# Frontend (.env)
-REACT_APP_FCM_ENABLED=true
-REACT_APP_API_BASE=http://seu_backend:3001
-
 # Backend (.env)
-FIREBASE_PROJECT_ID=seu_project
-FIREBASE_SERVICE_ACCOUNT_KEY={...json...}
+FIREBASE_SERVICE_ACCOUNT_PATH=/caminho/para/firebase-adminsdk.json
+```
+
+**No servidor (recomendado):**
+```bash
+# Copiar arquivo Firebase para diretório seguro
+mkdir -p /home/jelastic/ROOT/backend/config
+cp firebase-adminsdk.json /home/jelastic/ROOT/backend/config/
+chmod 600 /home/jelastic/ROOT/backend/config/firebase-adminsdk.json
+
+# Adicionar ao .env
+echo "FIREBASE_SERVICE_ACCOUNT_PATH=/home/jelastic/ROOT/backend/config/firebase-adminsdk.json" >> .env
 ```
 
 ---
@@ -186,7 +192,9 @@ FIREBASE_SERVICE_ACCOUNT_KEY={...json...}
 ## 🐛 Troubleshooting
 
 ### "Firebase não inicializado"
-- Verifique se `FIREBASE_SERVICE_ACCOUNT_KEY` está preenchido no `.env`
+- Verifique se `FIREBASE_SERVICE_ACCOUNT_PATH` está preenchido no `.env`
+- Confirme que o arquivo existe no caminho especificado
+- Verifique permissões: `ls -la /path/to/firebase-adminsdk.json`
 - Reinicie o backend: `pm2 restart all --update-env`
 
 ### "Nenhum token FCM encontrado"
