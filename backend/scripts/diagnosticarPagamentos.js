@@ -58,7 +58,7 @@ async function main() {
     if (usuarioId) {
       // 4) Saldo do usuário
       const [saldo] = await pool.query(
-        `SELECT usuario_id, saldo_atual, saldo_disponivel, saldo_bloqueado, ultima_atualizacao
+        `SELECT usuario_id, saldo_atual, saldo_bloqueado, ultima_atualizacao
          FROM saldo_usuario WHERE usuario_id = ?`,
         [usuarioId]
       );
