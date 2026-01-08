@@ -7,6 +7,7 @@
 
 const pool = require('../database/conexao');
 const axios = require('axios');
+const fcmService = require('./fcmService');
 
 class NotificacoesAgendadasService {
   /**
@@ -278,7 +279,15 @@ class NotificacoesAgendadasService {
             // Registrar como enviada no banco de agendamento
             await this.registrarNotificacaoJogoEnviada(notif.id);
 
-            // **NOVO**: Enviar notificação para todos os usuários (para aparecer no APP)
+            // Enviar via Push Notifications (FCM)
+            await this.enviarPushNotificacaoJogo(
+              notif.titulo,
+              notif.mensagem,
+              notif.jogo_id,
+              notif.tempo_alerta
+            );
+
+            // FALLBACK: Enviar notificação para todos os usuários (para aparecer no APP via polling)
             await this.enviarNotificacaoParaTodosUsuarios(
               notif.titulo,
               notif.mensagem,
@@ -328,6 +337,55 @@ class NotificacoesAgendadasService {
       );
     } catch (err) {
       console.error('[NotificacoesAgendadasService] Erro ao registrar envio de jogo:', err.message);
+    }
+  }
+
+  /**
+   * Envia Push Notification (FCM) para TODOS os usuários com tokens registrados
+   */
+  async enviarPushNotificacaoJogo(titulo, mensagem, jogo_id, tempo_alerta) {
+    try {
+      const conexao = await pool.getConnection();
+      try {
+        // Buscar todos os usuários com tokens FCM ativos
+        const [usuarios] = await conexao.query(
+          `SELECT DISTINCT usuario_id 
+           FROM usuarios_fcm_tokens 
+           WHERE ativo = 1 
+             AND data_registro > DATE_SUB(NOW(), INTERVAL 90 DAY)`
+        );
+
+        if (usuarios.length === 0) {
+          console.log('[NotificacoesAgendadasService] ℹ️ Nenhum usuário com FCM token ativo');
+          return;
+        }
+
+        const usuarioIds = usuarios.map(u => u.usuario_id);
+        
+        // Enviar push notification via FCM
+        const notificationData = {
+          titulo: titulo,
+          mensagem: mensagem,
+          dadosExtras: {
+            tipo: 'alerta_jogo',
+            jogo_id: String(jogo_id),
+            tempo_alerta: String(tempo_alerta)
+          }
+        };
+
+        const totalEnviado = await fcmService.enviarPushEmLote(usuarioIds, notificationData);
+        
+        console.log(
+          `[NotificacoesAgendadasService] 📲 Push FCM enviado para ${totalEnviado}/${usuarioIds.length} usuários`
+        );
+      } finally {
+        conexao.release();
+      }
+    } catch (err) {
+      console.error(
+        '[NotificacoesAgendadasService] Erro ao enviar push FCM:',
+        err.message
+      );
     }
   }
 
