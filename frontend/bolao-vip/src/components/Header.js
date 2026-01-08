@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AlignJustify } from 'lucide-react';
 import axios from 'axios';
 import storage from '../utils/storage';
+import fcmService from '../services/fcmService';
 import SaldoDropdown from './SaldoDropdown';
 import TimeFavoritoModal from './TimeFavoritoModal';
 import API_BASE_URL from '../config';
@@ -300,6 +301,9 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
+      // Remove token FCM antes de fazer logout
+      await fcmService.removerToken();
+      
       // Chama endpoint de logout no backend
       if (token) {
         await axios.post(

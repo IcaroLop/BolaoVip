@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import storage from '../utils/storage';
 import API_BASE_URL from '../config';
 import TrocarSenhaModal from '../components/TrocarSenhaModal';
+import fcmService from '../services/fcmService';
 import './LoginPage.css';
 
 function LoginPage() {
@@ -38,6 +39,9 @@ function LoginPage() {
       }
       
       setMensagem('✅ Login realizado com sucesso!');
+      
+      // Inicializar FCM para push notifications
+      fcmService.init(res.data.token);
       
       // Disparar evento para notificar Layout sobre mudança de autenticação
       window.dispatchEvent(new Event('authChange'));

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import storage from './storage';
+import fcmService from '../services/fcmService';
 
 let isRefreshing = false;
 let isRedirecting = false; // Flag para evitar múltiplos redirecionamentos
@@ -90,6 +91,7 @@ const setupInterceptor = (apiBaseUrl) => {
           console.log('[Interceptor] Sem refreshToken, redirecionando para login');
           if (!isRedirecting) {
             isRedirecting = true;
+            fcmService.removerToken(); // Remove FCM token
             storage.removeItem('token');
             storage.removeItem('refreshToken');
             storage.removeItem('grupoId');
@@ -139,6 +141,7 @@ const setupInterceptor = (apiBaseUrl) => {
           
           if (!isRedirecting) {
             isRedirecting = true;
+            fcmService.removerToken(); // Remove FCM token
             storage.removeItem('token');
             storage.removeItem('refreshToken');
             storage.removeItem('grupoId');
