@@ -49,10 +49,24 @@ async function buscarRodadaVigente() {
       headers: { Authorization: `Bearer ${getToken()}` }
     });
 
-    const rodadaVigente = response.data.find(r => r.status === 'agendada');
-    if (!rodadaVigente) throw new Error('Nenhuma rodada agendada encontrada na API.');
+    // Prioridade: rodada em andamento > rodada agendada
+    let rodadaVigente = response.data.find(r => r.status === 'em_andamento');
+    
+    if (!rodadaVigente) {
+      // Se nenhuma em andamento, buscar agendada
+      rodadaVigente = response.data.find(r => r.status === 'agendada');
+    }
+    
+    if (!rodadaVigente) {
+      // Fallback: buscar a primeira rodada não encerrada
+      rodadaVigente = response.data.find(r => r.status !== 'encerrada');
+    }
+    
+    if (!rodadaVigente) {
+      throw new Error('Nenhuma rodada vigente encontrada na API.');
+    }
 
-    console.log(`✅ Rodada vigente encontrada: ${rodadaVigente.rodada}`);
+    console.log(`✅ Rodada vigente encontrada: ${rodadaVigente.rodada} (status: ${rodadaVigente.status})`);
 
     await pool.query(`UPDATE configuracoes SET rodada_vigente = ?, data_atualizacao_rodada = NOW()`, [rodadaVigente.rodada]);
 

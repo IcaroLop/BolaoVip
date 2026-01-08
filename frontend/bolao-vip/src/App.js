@@ -5,6 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import notificationService from './services/notificationService';
 import notificationPollingService from './services/notificationPollingService';
+import fcmService from './services/fcmService';
 import './index.css';
 import LoginPage from './pages/LoginPage';
 import CadastroPage from './pages/CadastroPage';
@@ -31,10 +32,13 @@ function AppContent() {
   useEffect(() => {
     notificationService.init().catch(console.error);
 
-    // Iniciar polling de notificações se usuário estiver logado
+    // Inicializar FCM para push notifications
     const token = localStorage.getItem('token');
     if (token) {
-      console.log('[App] 🔄 Iniciando polling de notificações');
+      console.log('[App] 🚀 Inicializando FCM para push notifications');
+      fcmService.init(token).catch(console.error);
+      
+      console.log('[App] 🔄 Iniciando polling de notificações (fallback)');
       notificationPollingService.start(token);
     }
 
@@ -45,10 +49,27 @@ function AppContent() {
       navigate(`/palpites?rodada=${rodada}`);
     };
 
+    // Listeners para FCM
+    const handleFCMClicked = (event) => {
+      const { rodada } = event.detail;
+      if (rodada) {
+        console.log('[App] 📲 FCM: Redirecionando para palpites da rodada:', rodada);
+        navigate(`/palpites?rodada=${rodada}`);
+      }
+    };
+
+    const handleFCMReceived = (event) => {
+      console.log('[App] 📬 FCM: Notificação recebida em foreground', event.detail);
+    };
+
     window.addEventListener('notificacaoClicada', handleNotificationClick);
+    window.addEventListener('fcmNotificationClicked', handleFCMClicked);
+    window.addEventListener('fcmNotificationReceived', handleFCMReceived);
 
     return () => {
       window.removeEventListener('notificacaoClicada', handleNotificationClick);
+      window.removeEventListener('fcmNotificationClicked', handleFCMClicked);
+      window.removeEventListener('fcmNotificationReceived', handleFCMReceived);
       notificationPollingService.stop();
     };
   }, [navigate]);

@@ -34,6 +34,7 @@ const configRoutes = require('./routes/configRoutes');
 const saldoRoutes = require('./routes/saldoRoutes');
 const notificacoesRoutes = require('./routes/notificacoesRoutes');
 const notificacoesAgendadasRoutes = require('./routes/notificacoesAgendadasRoutes');
+const fcmRoutes = require('./routes/fcmRoutes');
 
 const timeRoutes = require('./routes/timeRoutes');
 const app = express();
@@ -69,6 +70,7 @@ app.use('/usuarios', usuariosRoutes);
 app.use('/saldo', saldoRoutes);
 app.use('/notificacoes', notificacoesRoutes);
 app.use('/notificacoes-agendadas', notificacoesAgendadasRoutes);
+app.use('/fcm', fcmRoutes);
 app.use('/api/partidas', partidasCampeonatoRoutes);
 app.use('/times', timeRoutes);
 app.use('/api/config', configRoutes);
