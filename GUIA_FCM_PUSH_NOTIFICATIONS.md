@@ -20,20 +20,21 @@ npm install firebase-admin
 Adicionar ao `.env`:
 
 ```env
-# Firebase Cloud Messaging - Usar caminho do arquivo
-FIREBASE_SERVICE_ACCOUNT_PATH=/home/jelastic/ROOT/backend/config/firebase-adminsdk.json
+# Firebase Cloud Messaging - Arquivo de credenciais
+FIREBASE_SERVICE_ACCOUNT_PATH=/home/jelastic/ROOT/frontend/bolao-vip/android/app/bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json
 ```
 
-**Ou (caminho relativo):**
-```env
-FIREBASE_SERVICE_ACCOUNT_PATH=./config/firebase-adminsdk.json
+**Arquivo local (para referência):**
+```
+C:\BolaoVIP\frontend\bolao-vip\android\app\bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json
 ```
 
-**Onde obter:**
-1. Firebase Console → Seu Projeto → Configurações → Contas de Serviço
-2. Gerar nova chave privada (JSON)
-3. Salvar arquivo em local seguro (ex: `/home/jelastic/ROOT/backend/config/firebase-adminsdk.json`)
-4. Definir permissões: `chmod 600 firebase-adminsdk.json`
+**Arquivo no servidor:**
+```
+/home/jelastic/ROOT/frontend/bolao-vip/android/app/bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json
+```
+
+(Já está sincronizado via Git)
 
 ### 3. Criar Tabela de Tokens
 
@@ -171,20 +172,22 @@ await fcmService.enviarAlertaJogo(usuarioIds, jogoData, minutosAlerta);
 
 ## ⚙️ Variáveis de Ambiente Necessárias
 
+**Backend (.env) - Arquivo Firebase:**
 ```env
-# Backend (.env)
-FIREBASE_SERVICE_ACCOUNT_PATH=/caminho/para/firebase-adminsdk.json
+FIREBASE_SERVICE_ACCOUNT_PATH=/home/jelastic/ROOT/frontend/bolao-vip/android/app/bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json
 ```
 
-**No servidor (recomendado):**
+**No servidor:**
 ```bash
-# Copiar arquivo Firebase para diretório seguro
-mkdir -p /home/jelastic/ROOT/backend/config
-cp firebase-adminsdk.json /home/jelastic/ROOT/backend/config/
-chmod 600 /home/jelastic/ROOT/backend/config/firebase-adminsdk.json
+# O arquivo já está sincronizado via Git
+# Apenas certifique-se de que tem as permissões corretas
+chmod 600 /home/jelastic/ROOT/frontend/bolao-vip/android/app/bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json
 
 # Adicionar ao .env
-echo "FIREBASE_SERVICE_ACCOUNT_PATH=/home/jelastic/ROOT/backend/config/firebase-adminsdk.json" >> .env
+echo "FIREBASE_SERVICE_ACCOUNT_PATH=/home/jelastic/ROOT/frontend/bolao-vip/android/app/bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json" >> .env
+
+# Restart backend
+pm2 restart all --update-env
 ```
 
 ---
@@ -192,9 +195,10 @@ echo "FIREBASE_SERVICE_ACCOUNT_PATH=/home/jelastic/ROOT/backend/config/firebase-
 ## 🐛 Troubleshooting
 
 ### "Firebase não inicializado"
-- Verifique se `FIREBASE_SERVICE_ACCOUNT_PATH` está preenchido no `.env`
-- Confirme que o arquivo existe no caminho especificado
-- Verifique permissões: `ls -la /path/to/firebase-adminsdk.json`
+- Verifique se `FIREBASE_SERVICE_ACCOUNT_PATH` está preenchido corretamente no `.env`
+- Confirme que o arquivo existe: `/home/jelastic/ROOT/frontend/bolao-vip/android/app/bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json`
+- Verifique permissões: `ls -la /home/jelastic/ROOT/frontend/bolao-vip/android/app/bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json`
+- Deve ter permissões `600`: `chmod 600 /home/jelastic/ROOT/frontend/bolao-vip/android/app/bolaovip-5d6a3-firebase-adminsdk-fbsvc-60f4dd32d0.json`
 - Reinicie o backend: `pm2 restart all --update-env`
 
 ### "Nenhum token FCM encontrado"
