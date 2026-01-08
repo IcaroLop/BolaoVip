@@ -76,11 +76,13 @@ exports.testarNotificacao = async (req, res) => {
       return res.status(401).json({ erro: 'Usuário não autenticado.' });
     }
 
-    const { titulo, mensagem } = req.body;
+    // Usar dados do body ou valores padrão
+    const titulo = req.body?.titulo || '🧪 Teste de Notificação';
+    const mensagem = req.body?.mensagem || 'Esta é uma notificação de teste do Bolão VIP';
 
     const sucesso = await fcmService.enviarPushParaUsuario(usuarioId, {
-      titulo: titulo || '🧪 Teste de Notificação',
-      mensagem: mensagem || 'Esta é uma notificação de teste do Bolão VIP'
+      titulo,
+      mensagem
     });
 
     if (sucesso) {
