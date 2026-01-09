@@ -5,7 +5,14 @@
 
 USE `bolaovip`;
 
--- Criar tabela pix_depositos
+-- Verificar se tabela usuario existe
+SET @usuario_exists = (
+    SELECT COUNT(*) 
+    FROM information_schema.TABLES 
+    WHERE TABLE_SCHEMA = 'bolaovip' AND TABLE_NAME = 'usuario'
+);
+
+-- Criar tabela pix_depositos SEM Foreign Key primeiro
 CREATE TABLE IF NOT EXISTS `pix_depositos` (
   `id` int NOT NULL AUTO_INCREMENT,
   `id_usuario` int NOT NULL,
@@ -33,13 +40,24 @@ CREATE TABLE IF NOT EXISTS `pix_depositos` (
   KEY `idx_status_pagamento` (`status_pagamento`),
   KEY `idx_data_pagamento` (`data_pagamento`),
   KEY `idx_created_at` (`created_at`),
-  CONSTRAINT `fk_pix_depositos_usuario` FOREIGN KEY (`id_usuario`) 
-    REFERENCES `usuario` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `idx_depositos_pendentes` (status_pagamento, webhook_recebido, created_at),
+  KEY `idx_depositos_usuario_status` (id_usuario, status_pagamento)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Criar índices para otimizar queries de fallback
-CREATE INDEX idx_depositos_pendentes ON pix_depositos(status_pagamento, webhook_recebido, created_at);
-CREATE INDEX idx_depositos_usuario_status ON pix_depositos(id_usuario, status_pagamento);
+-- Tentar adicionar Foreign Key (só funciona se tabela usuario existir)
+-- Se der erro, ignore e adicione manualmente depois
+SET @add_fk = CONCAT(
+    'ALTER TABLE `pix_depositos` ',
+    'ADD CONSTRAINT `fk_pix_depositos_usuario` ',
+    'FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id`) ',
+    'ON DELETE CASCADE'
+);
+
+-- Executar apenas se usuario existir
+SET @skip_fk = IF(@usuario_exists > 0, @add_fk, 'SELECT "AVISO: Tabela usuario não existe. FK não adicionada." AS aviso');
+PREPARE stmt FROM @skip_fk;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Verificação
 SELECT COUNT(*) AS total_tables_pix_depositos 
