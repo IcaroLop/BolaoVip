@@ -71,10 +71,21 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
       });
 
       console.log('[DepositoModal] ✅ Depósito PIX gerado com sucesso:', response.data);
+      console.log('[DepositoModal] Estrutura recebida:', {
+        sucesso: response.data.sucesso,
+        deposito_id: response.data.deposito_id,
+        txid: response.data.txid,
+        valor: response.data.valor,
+        pix_copiaecola: response.data.pix_copiaecola ? `✅ (${response.data.pix_copiaecola.length} chars)` : '❌ MISSING',
+        qrcode_url: response.data.qrcode_url ? `✅ (${response.data.qrcode_url.length} chars)` : '❌ MISSING',
+        calendario_expiracao: response.data.calendario_expiracao
+      });
       
+      console.log('[DepositoModal] Atualizando estado: depositoData e etapa=qrcode');
       setDepositoData(response.data);
       setEtapa('qrcode');
       
+      console.log('[DepositoModal] Estados atualizados. Iniciando polling...');
       // Iniciar polling para verificar confirmação
       iniciarPolling(response.data.deposito_id, token);
       
@@ -125,6 +136,12 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
 
     setIntervalId(id);
   };
+
+  // Monitorar mudanças de etapa
+  useEffect(() => {
+    console.log(`[DepositoModal] ETAPA MUDOU: ${etapa}`);
+    console.log(`[DepositoModal] depositoData atual:`, depositoData);
+  }, [etapa, depositoData]);
 
   // Parar polling quando modal fecha
   useEffect(() => {
