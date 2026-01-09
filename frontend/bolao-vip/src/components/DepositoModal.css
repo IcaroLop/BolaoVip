@@ -394,3 +394,191 @@ form {
     margin-top: 4px;
   }
 }
+
+/* Novas seções para depósito PIX */
+.deposito-qrcode-container,
+.deposito-aguardando-container {
+  padding: 24px;
+}
+
+.deposito-info {
+  background: rgba(61, 242, 157, 0.1);
+  border-left: 3px solid #3df29d;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.deposito-info p {
+  margin: 6px 0;
+  font-size: 0.95rem;
+  color: #e8e8e8;
+}
+
+.deposito-info strong {
+  color: #3df29d;
+}
+
+/* QRCode Section */
+.qrcode-section {
+  text-align: center;
+  margin: 20px 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.qrcode-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  color: #e8e8e8;
+}
+
+.qrcode-display {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.qrcode-display canvas {
+  border-radius: 4px;
+}
+
+/* CopiaECola Section */
+.copiaecola-section {
+  margin: 20px 0;
+}
+
+.copiaecola-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #e8e8e8;
+}
+
+.copiaecola-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.copiaecola-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(61, 242, 157, 0.3);
+  border-radius: 6px;
+  color: #e8e8e8;
+  padding: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  resize: none;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.copiaecola-input:focus {
+  outline: none;
+  border-color: #3df29d;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.btn-copy {
+  background: #3df29d;
+  color: #142337;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  height: auto;
+}
+
+.btn-copy:hover {
+  background: #2dd98f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(61, 242, 157, 0.3);
+}
+
+.btn-copy:active {
+  transform: translateY(0);
+}
+
+/* Polling Indicator */
+.polling-indicator {
+  text-align: center;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(61, 242, 157, 0.2);
+  border-top-color: #3df29d;
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  animation: spin 1s linear infinite;
+}
+
+.spinner.atualizando {
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.polling-indicator p {
+  color: #3df29d;
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Info Box Variations */
+.info-box.info-warning {
+  background: rgba(255, 193, 7, 0.1);
+  border-left-color: #ffc107;
+}
+
+.info-box.info-warning p {
+  color: #ffe082;
+}
+
+.info-box.info-warning strong {
+  color: #ffc107;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .deposito-qrcode-container,
+  .deposito-aguardando-container {
+    padding: 16px;
+  }
+
+  .copiaecola-container {
+    flex-direction: column;
+  }
+
+  .btn-copy {
+    width: 100%;
+  }
+
+  .qrcode-display {
+    padding: 12px;
+  }
+
+  .qrcode-display canvas {
+    width: 150px !important;
+    height: 150px !important;
+  }
+}
+

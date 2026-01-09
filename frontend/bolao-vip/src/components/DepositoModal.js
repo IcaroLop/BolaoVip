@@ -1,16 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config';
 import './DepositoModal.css';
 
+// Importar QRCode - se disponível
+let QRCode;
+try {
+  QRCode = require('qrcode.react').default;
+} catch (e) {
+  console.warn('[DepositoModal] qrcode.react não encontrado, usando fallback');
+  QRCode = null;
+}
+
 function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
+  const [etapa, setEtapa] = useState('valor'); // 'valor', 'qrcode', 'aguardando'
   const [valor, setValor] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
+  
+  // Dados do PIX gerado
+  const [depositoData, setDepositoData] = useState(null);
+  const [statusPolling, setStatusPolling] = useState('ativo');
+  const [mensagemPolling, setMensagemPolling] = useState('Aguardando pagamento...');
+  
+  // Polling interval
+  const [intervalId, setIntervalId] = useState(null);
 
-  const handleSubmit = async (e) => {
+  // Copiar para clipboard
+  const copiarParaClipboard = (texto) => {
+    navigator.clipboard.writeText(texto).then(() => {
+      alert('✅ Código PIX copiado para a área de transferência!');
+    });
+  };
+
+  // Solicitar depósito PIX
+  const handleSolicitarDeposito = async (e) => {
     e.preventDefault();
     setErro('');
     setSucesso('');
@@ -34,11 +60,9 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
     try {
       const token = localStorage.getItem('token');
       
-      // Detectar ambiente: usar deposito-dev em desenvolvimento, deposito em produção
-      const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
-      const endpoint = isDevelopment ? '/saldo/deposito-dev' : '/saldo/deposito';
+      console.log('[DepositoModal] Solicitando depósito PIX...', { valor: parseFloat(valor) });
       
-      const response = await axios.post(`${API_BASE_URL}${endpoint}`, {
+      const response = await axios.post(`${API_BASE_URL}/saldo/deposito`, {
         valor: parseFloat(valor)
       }, {
         headers: {
@@ -46,74 +70,249 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         }
       });
 
-      setSucesso(`✅ Depósito de R$ ${parseFloat(valor).toFixed(2)} confirmado com sucesso!`);
-      setValor('');
+      console.log('[DepositoModal] ✅ Depósito PIX gerado com sucesso:', response.data);
       
-      setTimeout(() => {
-        if (onDepositoSucesso) {
-          onDepositoSucesso(response.data.movimentacao_id || response.data.deposito_id);
-        }
-        onClose();
-      }, 2000);
+      setDepositoData(response.data);
+      setEtapa('qrcode');
+      
+      // Iniciar polling para verificar confirmação
+      iniciarPolling(response.data.deposito_id, token);
+      
     } catch (err) {
+      console.error('[DepositoModal] ❌ Erro ao solicitar depósito:', err);
       setErro(err.response?.data?.erro || 'Erro ao solicitar depósito. Tente novamente.');
     } finally {
       setCarregando(false);
     }
   };
 
+  // Função para verificar status do depósito (polling)
+  const verificarStatusDeposito = async (depositoId, token) => {
+    try {
+      setStatusPolling('atualizando');
+      setMensagemPolling('Verificando pagamento...');
+
+      // Buscar dados atualizados do saldo
+      await axios.get(`${API_BASE_URL}/saldo/usuario`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      console.log('[DepositoModal] Polling: Ainda aguardando confirmação...');
+      setStatusPolling('ativo');
+      setMensagemPolling('Aguardando confirmação do pagamento...');
+      
+    } catch (error) {
+      console.error('[DepositoModal] Erro no polling:', error.message);
+      setStatusPolling('ativo');
+    }
+  };
+
+  // Iniciar polling a cada 10 segundos
+  const iniciarPolling = (depositoId, token) => {
+    console.log('[DepositoModal] Iniciando polling para verificar confirmação...');
+    
+    setEtapa('aguardando');
+    
+    // Primeiro polling imediato
+    verificarStatusDeposito(depositoId, token);
+
+    // Polling a cada 10 segundos
+    const id = setInterval(() => {
+      verificarStatusDeposito(depositoId, token);
+    }, 10000);
+
+    setIntervalId(id);
+  };
+
+  // Parar polling quando modal fecha
+  useEffect(() => {
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [intervalId]);
+
+  const handleFecharModal = () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      setIntervalId(null);
+    }
+    
+    // Resetar estados
+    setEtapa('valor');
+    setValor('');
+    setErro('');
+    setSucesso('');
+    setDepositoData(null);
+    setStatusPolling('ativo');
+    setMensagemPolling('Aguardando pagamento...');
+    
+    // Chamar callback para atualizar saldo
+    if (onDepositoSucesso && depositoData) {
+      onDepositoSucesso(depositoData.deposito_id);
+    }
+    
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={() => {}}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>💰 Depositar Saldo</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
+          <h2>💰 Depositar Saldo via PIX</h2>
+          <button className="close-button" onClick={handleFecharModal}>&times;</button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="valor">Valor do Depósito (R$)</label>
-            <div className="input-wrapper">
-              <span className="currency-prefix">R$</span>
-              <input
-                id="valor"
-                type="number"
-                min="10"
-                max="50000"
-                step="0.01"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                placeholder="0,00"
-                disabled={carregando}
-                autoFocus
-              />
+        {/* ETAPA 1: Inserir Valor */}
+        {etapa === 'valor' && (
+          <form onSubmit={handleSolicitarDeposito}>
+            <div className="form-group">
+              <label htmlFor="valor">Valor do Depósito (R$)</label>
+              <div className="input-wrapper">
+                <span className="currency-prefix">R$</span>
+                <input
+                  id="valor"
+                  type="number"
+                  min="10"
+                  max="50000"
+                  step="0.01"
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                  placeholder="0,00"
+                  disabled={carregando}
+                  autoFocus
+                />
+              </div>
+              <small className="input-hint">Mínimo: R$ 10,00 | Máximo: R$ 50.000,00</small>
             </div>
-            <small className="input-hint">Mínimo: R$ 10,00 | Máximo: R$ 50.000,00</small>
+
+            {erro && <div className="alert alert-error">{erro}</div>}
+            {sucesso && <div className="alert alert-success">{sucesso}</div>}
+
+            <div className="modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={handleFecharModal} disabled={carregando}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={carregando}>
+                {carregando ? 'Gerando QRCode...' : 'Gerar PIX'}
+              </button>
+            </div>
+
+            <div className="info-box">
+              <p>
+                <strong>ℹ️ Como funciona:</strong><br />
+                1. Digite o valor desejado<br />
+                2. Clique em "Gerar PIX"<br />
+                3. Escanneie o QRCode com seu banco<br />
+                4. Confirme o pagamento<br />
+                5. Seu saldo será creditado automaticamente (em até 5 minutos)
+              </p>
+            </div>
+          </form>
+        )}
+
+        {/* ETAPA 2: QRCode e CopiaECola */}
+        {etapa === 'qrcode' && depositoData && (
+          <div className="deposito-qrcode-container">
+            <div className="deposito-info">
+              <p><strong>Valor:</strong> R$ {depositoData.valor.toFixed(2)}</p>
+              <p><strong>Válido por:</strong> {depositoData.calendario_expiracao} segundos</p>
+            </div>
+
+            {/* CopiaECola */}
+            <div className="copiaecola-section">
+              <h3>📋 Copie o código PIX:</h3>
+              <div className="copiaecola-container">
+                <textarea
+                  value={depositoData.pix_copiaecola || ''}
+                  readOnly
+                  className="copiaecola-input"
+                  rows="4"
+                />
+                <button
+                  type="button"
+                  className="btn btn-copy"
+                  onClick={() => copiarParaClipboard(depositoData.pix_copiaecola)}
+                >
+                  📋 Copiar Código
+                </button>
+              </div>
+            </div>
+
+            {/* Botões de ação */}
+            <div className="modal-actions">
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => {
+                  if (intervalId) clearInterval(intervalId);
+                  setEtapa('valor');
+                  setDepositoData(null);
+                }}
+              >
+                ← Voltar
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => setEtapa('aguardando')}
+              >
+                ✅ Já Pagou - Aguardar
+              </button>
+            </div>
+
+            <div className="info-box">
+              <p>
+                <strong>💡 Dica:</strong><br />
+                Cole o código PIX no seu aplicativo bancário e confirme o pagamento.
+                O sistema verificará a cada 5 minutos automaticamente.
+              </p>
+            </div>
           </div>
+        )}
 
-          {erro && <div className="alert alert-error">{erro}</div>}
-          {sucesso && <div className="alert alert-success">{sucesso}</div>}
+        {/* ETAPA 3: Aguardando Confirmação */}
+        {etapa === 'aguardando' && (
+          <div className="deposito-aguardando-container">
+            <div className="polling-indicator">
+              <div className={`spinner ${statusPolling === 'atualizando' ? 'atualizando' : ''}`}></div>
+              <p>{mensagemPolling}</p>
+            </div>
 
-          <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={carregando}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={carregando}>
-              {carregando ? 'Processando...' : 'Confirmar'}
-            </button>
+            <div className="deposito-info">
+              <p><strong>Valor do Depósito:</strong> R$ {depositoData?.valor.toFixed(2)}</p>
+              <p><strong>Status:</strong> Aguardando Confirmação...</p>
+              <p style={{ fontSize: '0.9em', color: '#666' }}>
+                O sistema verificará a cada 5 minutos. Você receberá uma notificação quando o PIX for confirmado.
+              </p>
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={handleFecharModal}
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="info-box info-warning">
+              <p>
+                <strong>⏳ Importante:</strong><br />
+                • Pode levar até 5 minutos para confirmar<br />
+                • Você pode fechar este modal<br />
+                • Receberá uma notificação quando confirmado<br />
+                • Seu saldo será creditado automaticamente
+              </p>
+            </div>
           </div>
-        </form>
-
-        <div className="info-box">
-          <p>
-            <strong>ℹ️ Como funciona:</strong><br />
-            1. Digite o valor desejado<br />
-            2. Clique em "Confirmar"<br />
-            3. Seu saldo será creditado instantaneamente (modo desenvolvimento)
-          </p>
-        </div>
+        )}
       </div>
     </div>,
     document.body

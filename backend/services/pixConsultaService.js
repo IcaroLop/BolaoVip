@@ -191,8 +191,40 @@ async function verificarCobrancasPendentes() {
   }
 }
 
+/**
+ * Verifica TANTO cobranças quanto depósitos pendentes
+ * @returns {Promise<Object>} - Estatísticas combinadas
+ */
+async function verificarTodosPendentes() {
+  try {
+    console.log('[PIX Consulta] 🔍 Iniciando verificação de COBRANÇAS e DEPÓSITOS pendentes...');
+
+    const resultadoCobrancas = await verificarCobrancasPendentes();
+    
+    // Importar função de depósitos dinamicamente para evitar dependência circular
+    const { verificarDepositosPendentes } = require('./depositoPixService');
+    const resultadoDepositos = await verificarDepositosPendentes();
+
+    const resultado = {
+      timestamp: new Date().toISOString(),
+      cobracas: resultadoCobrancas,
+      depositos: resultadoDepositos,
+      total_verificadas: (resultadoCobrancas.verificadas || 0) + (resultadoDepositos.verificados || 0),
+      total_atualizadas: (resultadoCobrancas.atualizadas || 0) + (resultadoDepositos.atualizados || 0)
+    };
+
+    console.log('[PIX Consulta] ✅ Verificação combinada concluída:', resultado);
+    return resultado;
+
+  } catch (error) {
+    console.error('[PIX Consulta] ❌ Erro na verificação combinada:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   consultarCobrancaEfi,
   verificarEAtualizarCobranca,
-  verificarCobrancasPendentes
+  verificarCobrancasPendentes,
+  verificarTodosPendentes
 };

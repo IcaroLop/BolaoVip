@@ -1,11 +1,11 @@
 const cron = require('node-cron');
-const { verificarCobrancasPendentes } = require('../services/pixConsultaService');
+const { verificarTodosPendentes } = require('../services/pixConsultaService');
 
 let isVerificando = false;
 let cronTask = null;
 
 /**
- * Tarefa cron que verifica cobranças PIX pendentes
+ * Tarefa cron que verifica COBRANÇAS e DEPÓSITOS PIX pendentes
  * Executa a cada 5 minutos
  */
 async function executarVerificacao() {
@@ -17,14 +17,11 @@ async function executarVerificacao() {
 
   try {
     isVerificando = true;
-    console.log('[Cron PIX Fallback] 🚀 Iniciando verificação de cobranças pendentes...');
+    console.log('[Cron PIX Fallback] 🚀 Iniciando verificação de COBRANÇAS e DEPÓSITOS pendentes...');
 
-    const resultado = await verificarCobrancasPendentes();
+    const resultado = await verificarTodosPendentes();
 
-    console.log('[Cron PIX Fallback] ✅ Verificação concluída:', {
-      timestamp: new Date().toISOString(),
-      ...resultado
-    });
+    console.log('[Cron PIX Fallback] ✅ Verificação concluída:', resultado);
 
   } catch (error) {
     console.error('[Cron PIX Fallback] ❌ Erro na verificação:', error.message);

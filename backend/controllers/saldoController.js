@@ -43,25 +43,41 @@ exports.obterExtrato = async (req, res) => {
 };
 
 /**
- * POST /saldo/deposito - Inicia um depósito
+ * POST /saldo/deposito - Cria depósito PIX via EFI (gera QRCode + CopiaECola)
+ * Modo PRODUÇÃO: Gera PIX pendente, aguarda confirmação via webhook ou fallback
  */
 exports.criarDeposito = async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
     const { valor } = req.body;
 
+    // Validações
     if (!valor || valor <= 0) {
       return res.status(400).json({ erro: 'Valor inválido' });
     }
 
-    const resultado = await saldoService.criarDeposito(usuarioId, valor, 'Depósito via PIX');
+    if (valor < 10) {
+      return res.status(400).json({ erro: 'Valor mínimo de depósito é R$ 10,00' });
+    }
+
+    if (valor > 50000) {
+      return res.status(400).json({ erro: 'Valor máximo de depósito é R$ 50.000,00' });
+    }
+
+    console.log(`[saldoController.criarDeposito] Iniciando depósito PIX. usuario=${usuarioId}, valor=${valor}`);
+
+    // Usar o novo serviço de depósito PIX
+    const { criarDepositoPix } = require('../services/depositoPixService');
+    const resultado = await criarDepositoPix(usuarioId, valor);
     
+    console.log(`[saldoController.criarDeposito] ✅ Depósito PIX criado com sucesso. deposito_id=${resultado.deposito_id}`);
     res.json(resultado);
   } catch (err) {
-    console.error('Erro ao criar depósito:', err);
-    res.status(500).json({ erro: 'Erro ao criar depósito' });
+    console.error('[saldoController.criarDeposito] ❌ Erro ao criar depósito:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao criar depósito' });
   }
 };
+
 
 /**
  * POST /saldo/deposito-dev - Depósito instantâneo para desenvolvimento (cria e confirma automaticamente)
