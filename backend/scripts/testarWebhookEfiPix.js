@@ -26,9 +26,12 @@ async function testarWebhookEfiPix() {
 
     const rodadaAlvo = process.env.TEST_RODADA || '6';
 
-    // 1) Buscar cobrança pendente (prioriza Maria Souza, mas pega qualquer pendente da rodada)
-    console.log(`1️⃣  Buscando cobrança pendente na rodada ${rodadaAlvo}...`);
-    const [cobrancas] = await pool.query(`
+    // 1) Buscar cobrança pendente (prioriza Maria Souza). Se não houver rodada no payload, faz fallback para qualquer pendente.
+    console.log(`1️⃣  Buscando cobrança pendente (rodada alvo: ${rodadaAlvo}, origem='premios')...`);
+
+    let cobrancas;
+    // Tenta filtrar pela rodada quando existir no payload
+    [cobrancas] = await pool.query(`
       SELECT 
         id, 
         id_usuario, 
@@ -38,14 +41,37 @@ async function testarWebhookEfiPix() {
         payload_raw
       FROM pix_cobrancas
       WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'premios'
-        AND JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = ?
         AND status_pagamento = 'PENDENTE'
+        AND (
+          JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = ?
+          OR JSON_EXTRACT(payload_raw,'$.rodada') IS NULL
+          OR JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = ''
+        )
       ORDER BY (id_usuario = 4) DESC, id DESC
       LIMIT 1
     `, [rodadaAlvo]);
 
+    // Se não achou nada, pega qualquer pendente de origem premios
     if (!cobrancas || cobrancas.length === 0) {
-      console.error(`❌ Nenhuma cobrança pendente encontrada para rodada ${rodadaAlvo}!`);
+      console.log('   Nenhuma cobrança com rodada informada. Fazendo fallback para qualquer pendente de origem="premios"...');
+      [cobrancas] = await pool.query(`
+        SELECT 
+          id, 
+          id_usuario, 
+          txid, 
+          valor_original, 
+          status_pagamento,
+          payload_raw
+        FROM pix_cobrancas
+        WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'premios'
+          AND status_pagamento = 'PENDENTE'
+        ORDER BY (id_usuario = 4) DESC, id DESC
+        LIMIT 1
+      `);
+    }
+
+    if (!cobrancas || cobrancas.length === 0) {
+      console.error(`❌ Nenhuma cobrança pendente encontrada (rodada alvo: ${rodadaAlvo}).`);
       process.exit(1);
     }
 
@@ -57,7 +83,7 @@ async function testarWebhookEfiPix() {
     console.log(`   Valor: R$ ${cobranca.valor_original.toFixed(2)}`);
     console.log(`   Status Atual: ${cobranca.status_pagamento}`);
     const payloadInfo = JSON.parse(cobranca.payload_raw || '{}');
-    console.log(`   Origem: ${payloadInfo.origem || 'N/A'} | Tipo: ${payloadInfo.tipo_premio || 'N/A'}\n`);
+    console.log(`   Origem: ${payloadInfo.origem || 'N/A'} | Tipo: ${payloadInfo.tipo_premio || 'N/A'} | RodadaPayload: ${payloadInfo.rodada || 'N/A'}\n`);
 
     // 2) Preparar payload do webhook (simulando resposta da EFI)
     console.log('2️⃣  Preparando payload do webhook EFI...');
