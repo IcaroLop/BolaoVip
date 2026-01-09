@@ -44,7 +44,7 @@ const CobrancasPendentesPage = () => {
       
       const premiosHist = (resPremios.data || []).map(p => ({
         ...p,
-        tipo: 'Premiação',
+        tipo: p.tipo_operacao || 'Premiação',
         rodada: p.rodada || '-',
         data_ref: p.data_pagamento,
         status: p.status_pagamento,

@@ -247,11 +247,13 @@ router.get('/pagamentos/premios/historico', async (req, res) => {
               ABS(p.valor) AS valor,
               p.status_pagamento,
               p.data_pagamento,
-              p.rodada,
+              rd.numero AS rodada,
               p.tipo_premio,
-              p.observacao_pagamento
+              p.observacao_pagamento,
+              CASE WHEN p.valor > 0 THEN 'Premiação' ELSE 'Cobrança' END AS tipo_operacao
          FROM premios p
          JOIN usuarios u ON p.usuario_id = u.id
+         LEFT JOIN rodadas rd ON p.rodada = rd.id
         WHERE ${filtros.join(' AND ')}
         ORDER BY p.data_pagamento DESC`,
       params
