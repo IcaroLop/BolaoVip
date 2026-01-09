@@ -5,7 +5,7 @@
  */
 
 const db = require('../database/conexao');
-const { calcularPontosUsuario } = require('../services/pontuacaoService');
+const { calcularPontuacao } = require('../services/pontuacaoService');
 
 (async () => {
   try {
@@ -100,11 +100,9 @@ const { calcularPontosUsuario } = require('../services/pontuacaoService');
 
     let pontosTotal = 0;
     pontosCalculados.forEach((row, idx) => {
-      const pontos = calcularPontosUsuario(
-        row.palpite_mandante,
-        row.palpite_visitante,
-        row.placar_mandante,
-        row.placar_visitante
+      const pontos = calcularPontuacao(
+        { placar_casa: row.palpite_mandante, placar_fora: row.palpite_visitante },
+        { placar_mandante: row.placar_mandante, placar_visitante: row.placar_visitante }
       );
       pontosTotal += pontos;
       console.log(`  Jogo ${idx + 1}: ${row.palpite_mandante}x${row.palpite_visitante} vs ${row.placar_mandante}x${row.placar_visitante} = ${pontos} pts`);
