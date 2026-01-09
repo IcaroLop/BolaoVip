@@ -98,10 +98,11 @@ async function testarWebhookEfiPix() {
 
     const cobranca = cobrancas[0];
     console.log(`✅ Cobrança encontrada:`);
+    const valorOriginal = Number(cobranca.valor_original || 0);
     console.log(`   ID: ${cobranca.id}`);
     console.log(`   Usuario ID: ${cobranca.id_usuario}`);
     console.log(`   TXID: ${cobranca.txid}`);
-    console.log(`   Valor: R$ ${cobranca.valor_original.toFixed(2)}`);
+    console.log(`   Valor: R$ ${valorOriginal.toFixed(2)}`);
     console.log(`   Status Atual: ${cobranca.status_pagamento}`);
     const payloadInfo = JSON.parse(cobranca.payload_raw || '{}');
     console.log(`   Origem: ${payloadInfo.origem || 'N/A'} | Tipo: ${payloadInfo.tipo_premio || 'N/A'} | RodadaPayload: ${payloadInfo.rodada || 'N/A'}\n`);
@@ -113,7 +114,7 @@ async function testarWebhookEfiPix() {
         {
           txid: cobranca.txid,
           status: 'CONCLUIDA',  // ✅ Indicador de pagamento recebido
-          valor: cobranca.valor_original,
+          valor: Number(cobranca.valor_original || 0),
           pagador: {
             cpf: '12345678901',
             nome: 'Apostador'
