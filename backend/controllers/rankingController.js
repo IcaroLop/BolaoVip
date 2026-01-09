@@ -69,6 +69,19 @@ async function calcularRankingRodada(rodada, campeonatoId = null, grupoId = null
       }
     });
 
+    // Obter o ID da rodada (FK para ranking_rodada)
+    const [rodadaRecord] = await pool.query(
+      'SELECT id FROM rodadas WHERE numero = ?',
+      [rodadaNum]
+    );
+
+    if (!rodadaRecord.length) {
+      console.error(`❌ Rodada com número ${rodadaNum} não encontrada na tabela rodadas`);
+      return;
+    }
+
+    const rodadaId = rodadaRecord[0].id;
+
     const rankingArray = Object.entries(pontuacaoPorUsuario)
       .map(([id_usuario, pontosTotais]) => ({
         id_usuario: Number(id_usuario),
@@ -86,7 +99,7 @@ async function calcularRankingRodada(rodada, campeonatoId = null, grupoId = null
           grupo_id = VALUES(grupo_id),
           pontos_totais = VALUES(pontos_totais),
           posicao = VALUES(posicao)
-      `, [r.id_usuario, rodadaNum, campeonatoFiltro, grupoIdNum, r.pontosTotais, posicao]);
+      `, [r.id_usuario, rodadaId, campeonatoFiltro, grupoIdNum, r.pontosTotais, posicao]);
       posicao++;
     }
 
