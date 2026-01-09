@@ -137,7 +137,7 @@ async function getRankingRodada(rodada, campeonatoId = null, grupoId = null) {
     params.push(campeonatoFiltro);
 
     if (grupoIdNum) {
-      filtros.push('r.grupo_id = ?');
+      filtros.push('(r.grupo_id = ? OR r.grupo_id IS NULL)');
       params.push(grupoIdNum);
     }
 
@@ -207,7 +207,8 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
     paramsPremios.push(campeonatoFiltro);
 
     if (grupoIdNum) {
-      filtroPremios.push('grupo_id = ?');
+      // Compatibilidade: considerar prêmios com grupo específico ou gerais (NULL)
+      filtroPremios.push('(grupo_id = ? OR grupo_id IS NULL)');
       paramsPremios.push(grupoIdNum);
     }
 
@@ -318,7 +319,7 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
               `INSERT INTO extrato_movimentacao 
                (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [d.usuario_id, 'premio_debitado', valorDebitado, saldoAnt, saldoAnt - valorDebitado, `${descricaoDebito} (parcial)`, d.id, 'premio', 'confirmado']
+              [d.usuario_id, 'saque', valorDebitado, saldoAnt, saldoAnt - valorDebitado, `${descricaoDebito} (parcial)`, d.id, 'premio', 'confirmado']
             );
 
             await conexao.commit();
