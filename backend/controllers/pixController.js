@@ -124,63 +124,71 @@ async function webhookCobranca (req, res) {
     }
 
     for (const pix of pixArray) {
-      const txid = pix.txid;
-      const status = pix.status;
+      try {
+        const txid = pix.txid;
+        const status = pix.status;
+        const valorPago = Number(pix.valor || 0);
 
-      if (txid && status) {
-        if (status === 'CONCLUIDA') {
-          // Registra data_pagamento quando EFI confirma em produção
-          await db.query(
-            'UPDATE pix_cobrancas SET status = ?, status_pagamento = ?, webhook_recebido = ?, webhook_payload = ?, data_pagamento = NOW() WHERE txid = ?',
-            [status, 'PAGO', true, JSON.stringify(pix), txid]
-          );
-          await db.query(
-            'UPDATE palpites SET status_pagamento = ?, data_pagamento = NOW() WHERE codigo_envio = ?',
-            ['PAGO', txid]
-          );
+        if (txid && status) {
+          if (status === 'CONCLUIDA') {
+            // Registra data_pagamento quando EFI confirma em produção
+            await db.query(
+              'UPDATE pix_cobrancas SET status = ?, status_pagamento = ?, webhook_recebido = ?, webhook_payload = ?, data_pagamento = NOW() WHERE txid = ?',
+              [status, 'PAGO', true, JSON.stringify(pix), txid]
+            );
+            await db.query(
+              'UPDATE palpites SET status_pagamento = ?, data_pagamento = NOW() WHERE codigo_envio = ?',
+              ['PAGO', txid]
+            );
 
-          // ✅ NOTIFICAÇÃO: Pagamento Confirmado
-          const [cobrancaRows] = await db.query('SELECT id_usuario, codigo_envio, valor_original FROM pix_cobrancas WHERE txid = ?', [txid]);
-          if (cobrancaRows && cobrancaRows.length > 0) {
-            const { id_usuario, codigo_envio, valor_original } = cobrancaRows[0];
-            const valorNum = Number(valor_original || 0);
-            
-            const dadosNotificacao = {
-              txid,
-              codigo_envio,
-              valor: valorNum,
-              data_pagamento: new Date(),
-              status: 'CONFIRMADO'
-            };
+            // ✅ NOTIFICAÇÃO: Pagamento Confirmado
+            const [cobrancaRows] = await db.query('SELECT id_usuario, codigo_envio, valor_original FROM pix_cobrancas WHERE txid = ?', [txid]);
+            if (cobrancaRows && cobrancaRows.length > 0) {
+              const { id_usuario, codigo_envio, valor_original } = cobrancaRows[0];
+              const valorNum = Number(valor_original || valorPago || 0);
+              
+              const dadosNotificacao = {
+                txid,
+                codigo_envio,
+                valor: valorNum,
+                data_pagamento: new Date(),
+                status: 'CONFIRMADO'
+              };
 
-            const tituloNotificacao = '✅ Pagamento Confirmado';
-            const mensagemNotificacao = `Seu pagamento de R$ ${valorNum.toFixed(2)} foi confirmado! Referência: ${codigo_envio}`;
+              const tituloNotificacao = '✅ Pagamento Confirmado';
+              const mensagemNotificacao = `Seu pagamento de R$ ${valorNum.toFixed(2)} foi confirmado! Referência: ${codigo_envio}`;
 
-            await criarNotificacao(
-              id_usuario,
-              'pagamento_confirmado',
-              tituloNotificacao,
-              mensagemNotificacao,
-              dadosNotificacao
-            ).catch(err => {
-              console.error('Erro ao criar notificação de pagamento confirmado:', err);
-            });
+              await criarNotificacao(
+                id_usuario,
+                'pagamento_confirmado',
+                tituloNotificacao,
+                mensagemNotificacao,
+                dadosNotificacao
+              ).catch(err => {
+                console.error('Erro ao criar notificação de pagamento confirmado:', err);
+              });
+            }
+
+            console.log(`✅ Palpites atualizados para PAGO → codigo_envio: ${txid}`);
+          } else {
+            await db.query(
+              'UPDATE pix_cobrancas SET status = ?, status_pagamento = ?, webhook_recebido = ?, webhook_payload = ? WHERE txid = ?',
+              [status, status === 'CONCLUIDA' ? 'PAGO' : 'PENDENTE', true, JSON.stringify(pix), txid]
+            );
           }
-
-          console.log(`✅ Palpites atualizados para PAGO → codigo_envio: ${txid}`);
-        } else {
-          await db.query(
-            'UPDATE pix_cobrancas SET status = ?, status_pagamento = ?, webhook_recebido = ?, webhook_payload = ? WHERE txid = ?',
-            [status, status === 'CONCLUIDA' ? 'PAGO' : 'PENDENTE', true, JSON.stringify(pix), txid]
-          );
         }
+      } catch (innerErr) {
+        console.error('Erro ao processar pix do webhook:', innerErr);
+        console.error('Pix payload com erro:', pix);
+        throw innerErr; // repropaga para cair no catch geral
       }
     }
 
     res.status(200).send('OK');
   } catch (error) {
-    console.error('Erro no webhook Pix:', error);
-    res.status(500).send('Erro no webhook');
+    console.error('Erro no webhook Pix:', error?.message || error);
+    console.error('Stack:', error?.stack);
+    res.status(500).json({ erro: 'Erro no webhook', detalhe: error?.message || String(error) });
   }
 }
 
