@@ -11,7 +11,7 @@ async function calcularRankingRodada(rodada, campeonatoId = null, grupoId = null
     }
 
     const campeonatoIdNum = campeonatoId ? Number(campeonatoId) : null;
-    const campeonatoFiltro = campeonatoIdNum || 10;
+    let campeonatoFiltro = campeonatoIdNum || 10;
     const grupoIdNum = grupoId ? Number(grupoId) : null;
 
     console.log(`⚙️ Calculando ranking da rodada ${rodadaNum}...`);
@@ -178,6 +178,21 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
       params.push(grupoIdNum);
     }
 
+    // Se nenhum campeonatoId foi fornecido, tentar descobrir pelo ranking já calculado
+    if (!campeonatoIdNum) {
+      const [descCamp] = await pool.query(
+        `SELECT DISTINCT r.campeonato_id AS camp
+         FROM ranking_rodada r
+         JOIN rodadas rd ON r.rodada = rd.id
+         WHERE rd.numero = ?
+         LIMIT 1`,
+        [rodadaNum]
+      );
+      if (descCamp.length && descCamp[0].camp) {
+        campeonatoFiltro = Number(descCamp[0].camp);
+      }
+    }
+
     const [ranking] = await pool.query(`
       SELECT r.id_usuario, r.pontos_totais FROM ranking_rodada r
       JOIN rodadas rd ON r.rodada = rd.id
@@ -194,6 +209,19 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
     const viceId = ranking[1].id_usuario;
     const lanternaId = ranking[ranking.length - 1].id_usuario;
 
+    // Obter o ID da rodada (FK para premios)
+    const [rodadaRecord] = await pool.query(
+      'SELECT id FROM rodadas WHERE numero = ?',
+      [rodadaNum]
+    );
+
+    if (!rodadaRecord.length) {
+      console.error(`❌ Rodada com número ${rodadaNum} não encontrada na tabela rodadas`);
+      return;
+    }
+
+    const rodadaId = rodadaRecord[0].id;
+
     // Premiação fixa configurada: campeão 120, vice 10, lanterna -20, demais -10
     const valorCampeao = 120.00;
     const valorVice = 10.00;
@@ -201,7 +229,7 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
     const valorDemais = -10.00;
 
     const filtroPremios = ['rodada = ?'];
-    const paramsPremios = [rodadaNum];
+    const paramsPremios = [rodadaId];
 
     filtroPremios.push('campeonato_id = ?');
     paramsPremios.push(campeonatoFiltro);
@@ -217,17 +245,17 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
     await pool.query(`
       INSERT INTO premios (usuario_id, rodada, campeonato_id, grupo_id, tipo_premio, valor, status_pagamento)
       VALUES (?, ?, ?, ?, 'campeao', ?, 'pendente')
-    `, [campeaoId, rodadaNum, campeonatoFiltro, grupoIdNum, valorCampeao]);
+    `, [campeaoId, rodadaId, campeonatoFiltro, grupoIdNum, valorCampeao]);
 
     await pool.query(`
       INSERT INTO premios (usuario_id, rodada, campeonato_id, grupo_id, tipo_premio, valor, status_pagamento)
       VALUES (?, ?, ?, ?, 'vice', ?, 'pendente')
-    `, [viceId, rodadaNum, campeonatoFiltro, grupoIdNum, valorVice]);
+    `, [viceId, rodadaId, campeonatoFiltro, grupoIdNum, valorVice]);
 
     await pool.query(`
       INSERT INTO premios (usuario_id, rodada, campeonato_id, grupo_id, tipo_premio, valor, status_pagamento)
       VALUES (?, ?, ?, ?, 'lanterna', ?, 'pendente')
-    `, [lanternaId, rodadaNum, campeonatoFiltro, grupoIdNum, valorLanterna]);
+    `, [lanternaId, rodadaId, campeonatoFiltro, grupoIdNum, valorLanterna]);
 
     // Demais participantes pagam -10
     if (ranking.length > 3) {
@@ -236,7 +264,7 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
         await pool.query(`
           INSERT INTO premios (usuario_id, rodada, campeonato_id, grupo_id, tipo_premio, valor, status_pagamento)
           VALUES (?, ?, ?, ?, 'outro', ?, 'pendente')
-        `, [r.id_usuario, rodadaNum, campeonatoFiltro, grupoIdNum, valorDemais]);
+        `, [r.id_usuario, rodadaId, campeonatoFiltro, grupoIdNum, valorDemais]);
       }
     }
 
