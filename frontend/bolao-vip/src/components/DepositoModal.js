@@ -123,9 +123,10 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   // Iniciar polling a cada 10 segundos
   const iniciarPolling = (depositoId, token) => {
     console.log('[DepositoModal] Iniciando polling para verificar confirmação...');
-    
-    setEtapa('aguardando');
-    
+
+    // Mantém etapa 'qrcode' para exibir QR e CopiaECola; mudança para 'aguardando'
+    // só ocorre quando o usuário clicar em "Já Pagou - Aguardar"
+
     // Primeiro polling imediato
     verificarStatusDeposito(depositoId, token);
 
