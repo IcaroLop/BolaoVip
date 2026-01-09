@@ -35,7 +35,7 @@ async function executarVerificacao() {
 
 /**
  * Inicia o job de verificação de cobranças pendentes
- * Executa a cada 5 minutos: */5 * * * *
+ * Executa a cada 5 minutos (cron: a cada 5 minutos)
  */
 function iniciarJob() {
   if (cronTask) {
