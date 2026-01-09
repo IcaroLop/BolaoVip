@@ -16,6 +16,7 @@ const CobrancasPendentesPage = () => {
   const authHeader = useMemo(() => (token ? { headers: { Authorization: `Bearer ${token}` } } : {}), [token]);
   const nomesPerfis = (perfisUsuario || []).map((p) => (p.nome || '').toLowerCase());
   const isAdminFinance = nomesPerfis.includes('administrador') || nomesPerfis.includes('financeiro');
+  const isApostador = !isAdminFinance && !nomesPerfis.includes('desenvolvedor');
   
   // Polling automático
   const intervalRef = useRef(null);
@@ -189,22 +190,8 @@ const CobrancasPendentesPage = () => {
     }
   };
 
-  const marcarComoPago = async (codigo_envio) => {
-    try {
-      await axios.post(`${API_BASE_URL}/admin/pagamentos/cobrancas/${codigo_envio}/pagar`, {}, authHeader);
-        setMensagemCobrancas('Cobrança marcada como paga.');
-
-      // Atualiza status localmente
-      setCobrancas(prev =>
-        prev.map(cob =>
-          cob.codigo_envio === codigo_envio ? { ...cob, status_pagamento: 'PAGO' } : cob
-        )
-      );
-    } catch (err) {
-      console.error('Erro ao marcar como pago:', err);
-        setMensagemCobrancas('Erro ao marcar cobrança como paga.');
-    }
-  };
+  // FUNÇÃO REMOVIDA: marcarComoPago - Substituída por fallback automático
+  // Sistema verifica pagamentos automaticamente a cada 5 minutos
 
   const pagarPremiacao = async (premioId) => {
     if (!isAdminFinance) {
@@ -391,7 +378,7 @@ const CobrancasPendentesPage = () => {
                       )}
                       
                       {/* Botão Gerar PIX - texto muda se expirado */}
-                      {cob.pode_gerar_pix && (
+                      {cob.pode_gerar_pix && isAdminFinance && (
                         <button 
                           onClick={() => gerarPix(cob.codigo_envio)}
                           className="btn-gerar-pix"
@@ -399,9 +386,6 @@ const CobrancasPendentesPage = () => {
                           {cob.pix_status === 'expirado' ? '🔄 Gerar Novo PIX' : '💳 Gerar PIX'}
                         </button>
                       )}
-                      
-                      <br />
-                      <button onClick={() => marcarComoPago(cob.codigo_envio)}>✅ Marcar Pago</button>
                     </>
                   ) : (
                     <span style={{ color: '#00AA00', fontWeight: 'bold' }}>✓ Pago</span>

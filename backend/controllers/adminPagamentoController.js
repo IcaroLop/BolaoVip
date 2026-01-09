@@ -21,6 +21,19 @@ async function isAdminOuFinanceiro(usuarioId) {
   return perfis.includes('administrador') || perfis.includes('financeiro');
 }
 
+async function isDesenvolvedor(usuarioId) {
+  const perfis = await obterPerfisUsuario(usuarioId);
+  return perfis.includes('desenvolvedor');
+}
+
+async function getUserGroupId(usuarioId) {
+  const [rows] = await db.query(
+    'SELECT grupo_id FROM usuarios WHERE id = ?',
+    [usuarioId]
+  );
+  return rows && rows.length > 0 ? rows[0].grupo_id : null;
+}
+
 // GET cobranças pendentes (campo status)
 router.get('/pagamentos/cobrancas', async (req, res) => {
   try {
@@ -56,13 +69,23 @@ router.get('/pagamentos/cobrancas/pendentes', async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
     const isPrivilegiado = await isAdminOuFinanceiro(usuarioId);
+    const isDev = await isDesenvolvedor(usuarioId);
     const filtros = ["c.status_pagamento = 'PENDENTE'"];
     const params = [];
 
-    if (!isPrivilegiado) {
+    if (!isPrivilegiado && !isDev) {
+      // Apostador: apenas suas próprias cobranças
       filtros.push('c.id_usuario = ?');
       params.push(usuarioId);
+    } else if (isPrivilegiado && !isDev) {
+      // Admin/Financeiro: apenas do mesmo grupo
+      const grupoId = await getUserGroupId(usuarioId);
+      if (grupoId) {
+        filtros.push('u.grupo_id = ?');
+        params.push(grupoId);
+      }
     }
+    // Desenvolvedor: sem filtro (vê todos os grupos)
 
     const [rows] = await db.query(
       `SELECT c.id, c.codigo_envio, c.id_usuario, u.nome AS nome_usuario,
@@ -124,41 +147,12 @@ router.get('/pagamentos/cobrancas/pendentes', async (req, res) => {
   }
 });
 
-// POST marcar cobrança como paga
+// POST marcar cobrança como paga (ROTA REMOVIDA - Fallback automático substitui)
+// Mantida apenas para compatibilidade, mas retorna erro 410 Gone
 router.post('/pagamentos/cobrancas/:codigo_envio/pagar', async (req, res) => {
-  const { codigo_envio } = req.params;
-  const usuarioId = req.usuario.id;
-
-  try {
-    const isPrivilegiado = await isAdminOuFinanceiro(usuarioId);
-    const [cobrancas] = await db.query(
-      `SELECT id_usuario FROM pix_cobrancas WHERE codigo_envio = ? LIMIT 1`,
-      [codigo_envio]
-    );
-
-    if (cobrancas.length === 0) {
-      return res.status(404).json({ message: 'Cobrança não encontrada.' });
-    }
-
-    if (!isPrivilegiado && cobrancas[0].id_usuario !== usuarioId) {
-      return res.status(403).json({ message: 'Sem permissão para marcar esta cobrança.' });
-    }
-
-    const isProd = process.env.EFI_PIX_SANDBOX !== 'true';
-    const updateQuery = isProd
-      ? 'UPDATE pix_cobrancas SET status_pagamento = ?, status = ? WHERE codigo_envio = ?'
-      : 'UPDATE pix_cobrancas SET status_pagamento = ?, status = ?, data_pagamento = NOW() WHERE codigo_envio = ?';
-    
-    const params = isProd
-      ? ['PAGO', 'pago', codigo_envio]
-      : ['PAGO', 'pago', codigo_envio];
-
-    await db.query(updateQuery, params);
-    res.json({ message: 'Cobrança marcada como paga.' });
-  } catch (error) {
-    console.error('Erro ao marcar cobrança como paga:', error);
-    res.status(500).json({ message: 'Erro ao marcar cobrança como paga.' });
-  }
+  return res.status(410).json({ 
+    message: 'Esta funcionalidade foi removida. O sistema de fallback automático verifica pagamentos a cada 5 minutos.' 
+  });
 });
 
 // GET prêmios pendentes (com filtros opcionais por campeonato/grupo)
@@ -166,6 +160,7 @@ router.get('/pagamentos/premios', async (req, res) => {
   const { campeonatoId, campeonato_id, grupoId, grupo_id } = req.query;
   const usuarioId = req.usuario.id;
   const isPrivilegiado = await isAdminOuFinanceiro(usuarioId);
+  const isDev = await isDesenvolvedor(usuarioId);
 
   const filtros = ['status_pagamento = ?'];
   const params = ['pendente'];
@@ -180,10 +175,19 @@ router.get('/pagamentos/premios', async (req, res) => {
     params.push(Number(grupoId || grupo_id));
   }
 
-  if (!isPrivilegiado) {
+  if (!isPrivilegiado && !isDev) {
+    // Apostador: apenas seus prêmios
     filtros.push('usuario_id = ?');
     params.push(usuarioId);
+  } else if (isPrivilegiado && !isDev) {
+    // Admin/Financeiro: apenas do mesmo grupo
+    const grupoId = await getUserGroupId(usuarioId);
+    if (grupoId) {
+      filtros.push('(grupo_id = ? OR grupo_id IS NULL)');
+      params.push(grupoId);
+    }
   }
+  // Desenvolvedor: sem filtro adicional
 
   try {
     const [rows] = await db.query(
@@ -234,13 +238,23 @@ router.get('/pagamentos/premios/historico', async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
     const isPrivilegiado = await isAdminOuFinanceiro(usuarioId);
+    const isDev = await isDesenvolvedor(usuarioId);
     const filtros = ["p.status_pagamento = 'pago'"];
     const params = [];
 
-    if (!isPrivilegiado) {
+    if (!isPrivilegiado && !isDev) {
+      // Apostador: apenas seus prêmios
       filtros.push('p.usuario_id = ?');
       params.push(usuarioId);
+    } else if (isPrivilegiado && !isDev) {
+      // Admin/Financeiro: apenas do mesmo grupo
+      const grupoId = await getUserGroupId(usuarioId);
+      if (grupoId) {
+        filtros.push('u.grupo_id = ?');
+        params.push(grupoId);
+      }
     }
+    // Desenvolvedor: sem filtro
 
     const [rows] = await db.query(
       `SELECT p.id, p.usuario_id, u.nome AS nome_usuario,
@@ -270,13 +284,23 @@ router.get('/pagamentos/cobrancas/historico', async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
     const isPrivilegiado = await isAdminOuFinanceiro(usuarioId);
+    const isDev = await isDesenvolvedor(usuarioId);
     const filtros = [];
     const params = [];
 
-    if (!isPrivilegiado) {
+    if (!isPrivilegiado && !isDev) {
+      // Apostador: apenas suas cobranças
       filtros.push('c.id_usuario = ?');
       params.push(usuarioId);
+    } else if (isPrivilegiado && !isDev) {
+      // Admin/Financeiro: apenas do mesmo grupo
+      const grupoId = await getUserGroupId(usuarioId);
+      if (grupoId) {
+        filtros.push('u.grupo_id = ?');
+        params.push(grupoId);
+      }
     }
+    // Desenvolvedor: sem filtro
 
     const where = filtros.length ? `WHERE ${filtros.join(' AND ')}` : '';
 
