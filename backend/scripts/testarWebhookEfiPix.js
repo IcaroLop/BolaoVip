@@ -7,7 +7,7 @@
  * Uso: node backend/scripts/testarWebhookEfiPix.js
  * 
  * Este script irá:
- * 1. Buscar a cobrança pendente de Maria Souza (rodada 6)
+ * 1. Buscar a cobrança pendente de Maria Souza (rodada 6) ou outra pendente na mesma rodada
  * 2. Simular um webhook da EFI com status='CONCLUIDA'
  * 3. Enviar para o endpoint POST /pix/webhook
  * 4. Verificar se o status foi atualizado para 'PAGO'
@@ -24,8 +24,10 @@ async function testarWebhookEfiPix() {
     console.log('\n🧪 TESTE DE WEBHOOK EFI PIX');
     console.log('=====================================\n');
 
-    // 1) Buscar cobrança pendente de Maria Souza (rodada 6)
-    console.log('1️⃣  Buscando cobrança de Maria Souza (rodada 6)...');
+    const rodadaAlvo = process.env.TEST_RODADA || '6';
+
+    // 1) Buscar cobrança pendente (prioriza Maria Souza, mas pega qualquer pendente da rodada)
+    console.log(`1️⃣  Buscando cobrança pendente na rodada ${rodadaAlvo}...`);
     const [cobrancas] = await pool.query(`
       SELECT 
         id, 
@@ -36,13 +38,14 @@ async function testarWebhookEfiPix() {
         payload_raw
       FROM pix_cobrancas
       WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'premios'
-        AND JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = '6'
+        AND JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = ?
         AND status_pagamento = 'PENDENTE'
+      ORDER BY (id_usuario = 4) DESC, id DESC
       LIMIT 1
-    `);
+    `, [rodadaAlvo]);
 
     if (!cobrancas || cobrancas.length === 0) {
-      console.error('❌ Nenhuma cobrança pendente encontrada para rodada 6!');
+      console.error(`❌ Nenhuma cobrança pendente encontrada para rodada ${rodadaAlvo}!`);
       process.exit(1);
     }
 
@@ -52,7 +55,9 @@ async function testarWebhookEfiPix() {
     console.log(`   Usuario ID: ${cobranca.id_usuario}`);
     console.log(`   TXID: ${cobranca.txid}`);
     console.log(`   Valor: R$ ${cobranca.valor_original.toFixed(2)}`);
-    console.log(`   Status Atual: ${cobranca.status_pagamento}\n`);
+    console.log(`   Status Atual: ${cobranca.status_pagamento}`);
+    const payloadInfo = JSON.parse(cobranca.payload_raw || '{}');
+    console.log(`   Origem: ${payloadInfo.origem || 'N/A'} | Tipo: ${payloadInfo.tipo_premio || 'N/A'}\n`);
 
     // 2) Preparar payload do webhook (simulando resposta da EFI)
     console.log('2️⃣  Preparando payload do webhook EFI...');
