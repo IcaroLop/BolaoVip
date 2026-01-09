@@ -104,7 +104,7 @@ async function criarDepositoPix(usuarioId, valor) {
 
     await criarNotificacao(
       usuarioId,
-      'deposito_pendente',
+      'deposito',
       tituloNotificacao,
       mensagemNotificacao,
       dadosNotificacao
