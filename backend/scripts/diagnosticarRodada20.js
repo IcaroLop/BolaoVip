@@ -118,10 +118,10 @@ const pool = require('../database/conexao');
 
     // 8. Verificar extrato de movimentação para user 7
     const [extrato] = await pool.query(`
-      SELECT tipo, valor, saldo_anterior, saldo_novo, data_movimentacao 
+      SELECT tipo, valor, saldo_anterior, saldo_novo, created_at 
       FROM extrato_movimentacao 
-      WHERE usuario_id=7 AND data_movimentacao >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
-      ORDER BY data_movimentacao DESC
+      WHERE usuario_id=7 AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+      ORDER BY created_at DESC
       LIMIT 5
     `);
     
@@ -130,7 +130,7 @@ const pool = require('../database/conexao');
       console.log('Sem movimentações nas últimas 24h');
     } else {
       extrato.forEach(m => {
-        console.log(`  ${m.data_movimentacao} - ${m.tipo}: R$ ${m.valor} (${m.saldo_anterior} -> ${m.saldo_novo})`);
+        console.log(`  ${m.created_at} - ${m.tipo}: R$ ${m.valor} (${m.saldo_anterior} -> ${m.saldo_novo})`);
       });
     }
     console.log();
