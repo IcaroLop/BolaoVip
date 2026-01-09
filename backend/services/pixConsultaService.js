@@ -143,13 +143,17 @@ async function verificarCobrancasPendentes() {
   try {
     console.log('[PIX Fallback] 🔍 Iniciando verificação de cobranças pendentes...');
 
-    // Buscar cobranças pendentes criadas há mais de 2 minutos
+    // Buscar cobranças pendentes criadas há mais de 2 minutos E não expiradas
     const [cobrancas] = await db.query(
-      `SELECT id, txid, id_usuario, codigo_envio, valor_original, created_at
+      `SELECT id, txid, id_usuario, codigo_envio, valor_original, created_at, calendario_expiracao
        FROM pix_cobrancas
        WHERE status_pagamento = 'PENDENTE'
          AND webhook_recebido = false
          AND created_at < DATE_SUB(NOW(), INTERVAL 2 MINUTE)
+         AND (
+           calendario_expiracao IS NULL 
+           OR DATE_ADD(created_at, INTERVAL calendario_expiracao SECOND) > NOW()
+         )
        ORDER BY created_at DESC
        LIMIT 20`
     );

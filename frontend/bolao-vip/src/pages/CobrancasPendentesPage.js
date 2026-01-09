@@ -368,29 +368,14 @@ const CobrancasPendentesPage = () => {
                 <td>
                   {cob.status_pagamento.toUpperCase() !== 'PAGO' ? (
                     <>
-                      {cob.pix_copiaecola && (
-                        <>
-                          <button onClick={() => copiarCodigoPix(cob.pix_copiaecola)}>📋 Copiar Código PIX</button>
-                          <br />
-                        </>
-                      )}
-                      
-                      {/* Botão Gerar PIX com lógica de validação */}
-                      {cob.pode_gerar_pix ? (
-                        <button 
-                          onClick={() => gerarPix(cob.codigo_envio)}
-                          className="btn-gerar-pix"
-                        >
-                          💳 Gerar PIX
-                        </button>
-                      ) : cob.pix_status === 'valido' ? (
+                      {/* PIX Válido: Mostrar botão para copiar */}
+                      {cob.pix_status === 'valido' && cob.pix_copiaecola && (
                         <div className="pix-bloqueado-info">
                           <button 
-                            disabled 
-                            className="btn-gerar-pix-disabled"
-                            title={`PIX válido até ${cob.proximo_pix_em ? new Date(cob.proximo_pix_em).toLocaleString('pt-BR') : 'data não disponível'}`}
+                            onClick={() => copiarCodigoPix(cob.pix_copiaecola)}
+                            className="btn-copiar-pix-atual"
                           >
-                            ⏳ PIX Válido
+                            📋 Copiar Código PIX
                           </button>
                           <small className="pix-info-texto">
                             Válido até {cob.proximo_pix_em ? new Date(cob.proximo_pix_em).toLocaleString('pt-BR', { 
@@ -400,18 +385,20 @@ const CobrancasPendentesPage = () => {
                               minute: '2-digit' 
                             }) : 'N/A'}
                             <br />
-                            Novo PIX em {Math.ceil(cob.segundos_restantes / 60)} min
+                            Expira em {Math.ceil(cob.segundos_restantes / 60)} min
                           </small>
-                          {cob.pix_copiaecola && (
-                            <button 
-                              onClick={() => copiarCodigoPix(cob.pix_copiaecola)}
-                              className="btn-copiar-pix-atual"
-                            >
-                              📋 Copiar PIX Atual
-                            </button>
-                          )}
                         </div>
-                      ) : null}
+                      )}
+                      
+                      {/* Botão Gerar PIX - texto muda se expirado */}
+                      {cob.pode_gerar_pix && (
+                        <button 
+                          onClick={() => gerarPix(cob.codigo_envio)}
+                          className="btn-gerar-pix"
+                        >
+                          {cob.pix_status === 'expirado' ? '🔄 Gerar Novo PIX' : '💳 Gerar PIX'}
+                        </button>
+                      )}
                       
                       <br />
                       <button onClick={() => marcarComoPago(cob.codigo_envio)}>✅ Marcar Pago</button>
