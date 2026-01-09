@@ -130,7 +130,7 @@ async function getRankingRodada(rodada, campeonatoId = null, grupoId = null) {
       return [];
     }
 
-    const filtros = ['r.rodada = ?'];
+    const filtros = ['rd.numero = ?'];
     const params = [rodadaNum];
 
     filtros.push('r.campeonato_id = ?');
@@ -145,6 +145,7 @@ async function getRankingRodada(rodada, campeonatoId = null, grupoId = null) {
       SELECT DISTINCT r.posicao, u.id as id_usuario, u.nome AS nome_apostador, r.pontos_totais
       FROM ranking_rodada r
       JOIN usuarios u ON r.id_usuario = u.id
+      JOIN rodadas rd ON r.rodada = rd.id
       WHERE ${filtros.join(' AND ')}
       ORDER BY r.posicao ASC
     `, params);
@@ -166,21 +167,22 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
 
     console.log(`🏆 Gerando premiações para a rodada ${rodadaNum}${campeonatoIdNum ? ` (campeonato ${campeonatoIdNum})` : ''}${grupoIdNum ? ` grupo ${grupoIdNum}` : ''}...`);
 
-    const filtros = ['rodada = ?'];
+    const filtros = ['rd.numero = ?'];
     const params = [rodadaNum];
 
-    filtros.push('campeonato_id = ?');
+    filtros.push('r.campeonato_id = ?');
     params.push(campeonatoFiltro);
 
     if (grupoIdNum) {
-      filtros.push('grupo_id = ?');
+      filtros.push('r.grupo_id = ?');
       params.push(grupoIdNum);
     }
 
     const [ranking] = await pool.query(`
-      SELECT id_usuario, pontos_totais FROM ranking_rodada
+      SELECT r.id_usuario, r.pontos_totais FROM ranking_rodada r
+      JOIN rodadas rd ON r.rodada = rd.id
       WHERE ${filtros.join(' AND ')}
-      ORDER BY pontos_totais DESC
+      ORDER BY r.pontos_totais DESC
     `, params);
 
     if (ranking.length < 3) {
