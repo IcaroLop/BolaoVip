@@ -242,6 +242,28 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               <p><strong>Válido por:</strong> {depositoData.calendario_expiracao} segundos</p>
             </div>
 
+            {/* QRCode (usa qrcode.react se disponível; senão, imagem do loc_location) */}
+            <div className="qrcode-section">
+              <h3>📷 Escaneie o QRCode:</h3>
+              {QRCode && depositoData.pix_copiaecola ? (
+                <div className="qrcode-display">
+                  <QRCode value={depositoData.pix_copiaecola} size={220} includeMargin={true} />
+                </div>
+              ) : depositoData.qrcode_url ? (
+                <div className="qrcode-display">
+                  <img
+                    src={`https://${depositoData.qrcode_url}`}
+                    alt="QRCode PIX"
+                    className="qrcode-image"
+                  />
+                </div>
+              ) : (
+                <div className="qrcode-display">
+                  <p>⚠️ Não foi possível gerar o QRCode. Use o código Copia-e-Cola abaixo.</p>
+                </div>
+              )}
+            </div>
+
             {/* CopiaECola */}
             <div className="copiaecola-section">
               <h3>📋 Copie o código PIX:</h3>
