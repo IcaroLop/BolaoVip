@@ -28,11 +28,7 @@ SELECT 'Prêmios deletados' AS step3;
 -- 4) Deletar movimentações de saldo relacionadas aos prêmios das rodadas 1-21
 DELETE FROM extrato_movimentacao 
 WHERE usuario_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9) 
-  AND tipo IN ('premio_recebido', 'lancamento_premio')
-  AND id NOT IN (
-    SELECT id FROM extrato_movimentacao 
-    LIMIT 0 -- Modifique conforme necessário para histórico
-  );
+  AND tipo IN ('premio_recebido', 'lancamento_premio');
 
 SELECT 'Movimentações de prêmios deletadas' AS step4;
 
