@@ -33,12 +33,12 @@ WHERE usuario_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9)
 SELECT 'Movimentações de prêmios deletadas' AS step4;
 
 -- 5) Resetar saldo de todos os 9 usuários para R$ 300.00 (AMBAS as tabelas)
--- Tabela 1: usuarios
+-- Tabela 1: usuarios (coluna: saldo)
 UPDATE usuarios SET saldo = 300.00 
 WHERE id IN (1, 2, 3, 4, 5, 6, 7, 8, 9);
 
--- Tabela 2: saldo_usuario
-UPDATE saldo_usuario SET saldo = 300.00 
+-- Tabela 2: saldo_usuario (coluna: saldo_atual)
+UPDATE saldo_usuario SET saldo_atual = 300.00 
 WHERE usuario_id IN (1, 2, 3, 4, 5, 6, 7, 8, 9);
 
 SELECT 'Saldos resetados para R$ 300.00 (usuarios + saldo_usuario)' AS step5;
@@ -62,7 +62,7 @@ SELECT COUNT(*) AS premios_restantes
 FROM premios WHERE rodada BETWEEN 1 AND 21 AND campeonato_id = 69;
 
 -- Verificar saldos em ambas as tabelas
-SELECT u.id, u.nome, u.saldo as saldo_usuarios, su.saldo as saldo_usuario_tabela
+SELECT u.id, u.nome, u.saldo as saldo_usuarios, su.saldo_atual as saldo_usuario_tabela
 FROM usuarios u
 LEFT JOIN saldo_usuario su ON u.id = su.usuario_id
 WHERE u.id IN (1, 2, 3, 4, 5, 6, 7, 8, 9)

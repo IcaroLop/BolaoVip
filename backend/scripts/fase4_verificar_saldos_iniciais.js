@@ -16,7 +16,7 @@ const pool = require('../database/conexao');
 
     // 1. Verificar saldos atuais de todos os usuários (AMBAS as tabelas)
     const [usuarios] = await pool.query(
-      'SELECT u.id, u.nome, u.saldo as saldo_usuarios, su.saldo as saldo_usuario_tabela FROM usuarios u LEFT JOIN saldo_usuario su ON u.id = su.usuario_id WHERE u.id IN (1,2,3,4,5,6,7,8,9) ORDER BY u.id'
+      'SELECT u.id, u.nome, u.saldo as saldo_usuarios, su.saldo_atual as saldo_usuario_tabela FROM usuarios u LEFT JOIN saldo_usuario su ON u.id = su.usuario_id WHERE u.id IN (1,2,3,4,5,6,7,8,9) ORDER BY u.id'
     );
 
     console.log('=== SALDOS ATUAIS DOS USUÁRIOS ===\n');
