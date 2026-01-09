@@ -167,6 +167,11 @@ const { agendarConsultasResultadosPorRodada } = require('./services/scheduler');
 agendarConsultasResultadosPorRodada();
 console.log('[STARTUP] ✅ Scheduler de consultas por rodada ativado');
 
+// Ativar job de fallback PIX (verificação de cobranças pendentes)
+const { iniciarJob: iniciarPixFallback } = require('./jobs/verificarCobrancasPendentesJob');
+iniciarPixFallback();
+console.log('[STARTUP] ✅ Job de fallback PIX ativado (verificação a cada 5 minutos)');
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
