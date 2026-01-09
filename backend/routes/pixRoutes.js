@@ -4,6 +4,7 @@ const pixController = require('../controllers/pixController');
 
 router.post('/cobranca', pixController.gerarCobranca);
 
-router.post('/pix/webhook', pixController.webhookCobranca);
+// Webhook EFI PIX: prefix '/pix' já vem do server.js; aqui basta '/webhook'
+router.post('/webhook', pixController.webhookCobranca);
 
 module.exports = router;
