@@ -6,7 +6,6 @@
 
 const db = require('../database/conexao');
 const { calcularPontosUsuario } = require('../services/pontuacaoService');
-const { formatarDataManaus } = require('../helpers/dataHelper');
 
 (async () => {
   try {
