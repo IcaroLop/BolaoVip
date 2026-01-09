@@ -118,3 +118,6 @@ WHERE JSON_UNQUOTE(JSON_EXTRACT(pc.payload_raw,'$.rodada')) = CAST(@rodada AS CH
 -- Observações:
 -- - Este script não ajusta saldos/extratos; apenas insere palpites e cobranças pendentes.
 -- - Ajuste @grupo_id se quiser aplicar em outro grupo ou remover para geral.
+
+-- ⚠️ IMPORTANTE: Execute COM COMMIT para que as mudanças sejam salvas no banco!
+COMMIT;
