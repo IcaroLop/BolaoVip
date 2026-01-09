@@ -103,7 +103,7 @@ async function obterRankingRodadaAggregado({ grupoId, campeonatoId = null, rodad
   const rodadaNum = Number(rodada);
   const grupoFiltro = grupoId ? Number(grupoId) : null;
 
-  const where = ['r.rodada = ?'];
+  const where = ['rd.numero = ?'];
   const params = [rodadaNum];
 
   if (campeonatoId) {
@@ -130,6 +130,7 @@ async function obterRankingRodadaAggregado({ grupoId, campeonatoId = null, rodad
            r.posicao
     FROM ranking_rodada r
     JOIN usuarios u ON u.id = r.id_usuario
+    JOIN rodadas rd ON r.rodada = rd.id
     WHERE ${where.join(' AND ')}
     ORDER BY r.posicao ASC
     LIMIT ? OFFSET ?
