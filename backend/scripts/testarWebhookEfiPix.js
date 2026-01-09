@@ -26,52 +26,73 @@ async function testarWebhookEfiPix() {
 
     const rodadaAlvo = process.env.TEST_RODADA || '6';
 
-    // 1) Buscar cobrança pendente (prioriza Maria Souza). Se não houver rodada no payload, faz fallback para qualquer pendente.
-    console.log(`1️⃣  Buscando cobrança pendente (rodada alvo: ${rodadaAlvo}, origem='premios')...`);
+    // 1) Buscar cobrança pendente. Estratégia em camadas:
+    //   a) origem='premios' com rodada alvo
+    //   b) origem='premios' sem rodada
+    //   c) origem='palpites' com rodada alvo (pendente de pagamento de palpite)
+    //   d) qualquer pendente (último recurso)
+    console.log(`1️⃣  Buscando cobrança pendente (rodada alvo: ${rodadaAlvo})...`);
 
-    let cobrancas;
-    // Tenta filtrar pela rodada quando existir no payload
-    [cobrancas] = await pool.query(`
-      SELECT 
-        id, 
-        id_usuario, 
-        txid, 
-        valor_original, 
-        status_pagamento,
-        payload_raw
-      FROM pix_cobrancas
-      WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'premios'
-        AND status_pagamento = 'PENDENTE'
-        AND (
-          JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = ?
-          OR JSON_EXTRACT(payload_raw,'$.rodada') IS NULL
-          OR JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = ''
-        )
-      ORDER BY (id_usuario = 4) DESC, id DESC
-      LIMIT 1
-    `, [rodadaAlvo]);
+    const consultas = [
+      {
+        descricao: "premios c/rodada",
+        sql: `SELECT id,id_usuario,txid,valor_original,status_pagamento,payload_raw
+              FROM pix_cobrancas
+              WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'premios'
+                AND status_pagamento = 'PENDENTE'
+                AND JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = ?
+              ORDER BY (id_usuario = 4) DESC, id DESC
+              LIMIT 1`,
+        params: [rodadaAlvo]
+      },
+      {
+        descricao: "premios sem rodada",
+        sql: `SELECT id,id_usuario,txid,valor_original,status_pagamento,payload_raw
+              FROM pix_cobrancas
+              WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'premios'
+                AND status_pagamento = 'PENDENTE'
+                AND (JSON_EXTRACT(payload_raw,'$.rodada') IS NULL OR JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = '' OR JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = '-')
+              ORDER BY (id_usuario = 4) DESC, id DESC
+              LIMIT 1`,
+        params: []
+      },
+      {
+        descricao: "palpites c/rodada",
+        sql: `SELECT id,id_usuario,txid,valor_original,status_pagamento,payload_raw
+              FROM pix_cobrancas
+              WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'palpites'
+                AND status_pagamento = 'PENDENTE'
+                AND JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = ?
+              ORDER BY (id_usuario = 4) DESC, id DESC
+              LIMIT 1`,
+        params: [rodadaAlvo]
+      },
+      {
+        descricao: "qualquer pendente",
+        sql: `SELECT id,id_usuario,txid,valor_original,status_pagamento,payload_raw
+              FROM pix_cobrancas
+              WHERE status_pagamento = 'PENDENTE'
+              ORDER BY (id_usuario = 4) DESC, id DESC
+              LIMIT 1`,
+        params: []
+      }
+    ];
 
-    // Se não achou nada, pega qualquer pendente de origem premios
-    if (!cobrancas || cobrancas.length === 0) {
-      console.log('   Nenhuma cobrança com rodada informada. Fazendo fallback para qualquer pendente de origem="premios"...');
-      [cobrancas] = await pool.query(`
-        SELECT 
-          id, 
-          id_usuario, 
-          txid, 
-          valor_original, 
-          status_pagamento,
-          payload_raw
-        FROM pix_cobrancas
-        WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'premios'
-          AND status_pagamento = 'PENDENTE'
-        ORDER BY (id_usuario = 4) DESC, id DESC
-        LIMIT 1
-      `);
+    let cobrancas = [];
+    for (const c of consultas) {
+      const [res] = await pool.query(c.sql, c.params);
+      if (res && res.length > 0) {
+        console.log(`   ➜ Encontrado via filtro: ${c.descricao}`);
+        cobrancas = res;
+        break;
+      } else {
+        console.log(`   (nenhum resultado em ${c.descricao})`);
+      }
     }
 
     if (!cobrancas || cobrancas.length === 0) {
       console.error(`❌ Nenhuma cobrança pendente encontrada (rodada alvo: ${rodadaAlvo}).`);
+      console.error('   Verifique se há status_pagamento="PENDENTE" em pix_cobrancas (origem premios/palpites).');
       process.exit(1);
     }
 
