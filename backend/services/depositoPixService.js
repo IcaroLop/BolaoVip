@@ -29,7 +29,7 @@ async function criarDepositoPix(usuarioId, valor) {
     console.log(`[depositoPixService] txid gerado: ${txid}`);
 
     // 3. Buscar nome do usuário
-    const [usuarioRows] = await db.query('SELECT nome FROM usuario WHERE id = ?', [usuarioId]);
+    const [usuarioRows] = await db.query('SELECT nome FROM usuarios WHERE id = ?', [usuarioId]);
     if (!usuarioRows || usuarioRows.length === 0) {
       throw new Error(`Usuário ${usuarioId} não encontrado`);
     }
