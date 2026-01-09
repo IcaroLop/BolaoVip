@@ -47,15 +47,16 @@ WHERE p.rodada = @rodada
   AND p.campeonato_id = @campeonato_id
   AND (p.grupo_id IS NULL OR p.grupo_id = @grupo_id);
 
--- 2) Inserir novos palpites (gols 0x0 determinístico)
+-- 2) Inserir novos palpites (placares ALEATÓRIOS para gerar rankings diferenciados)
+-- Usa CONV(HEX(MD5(...)), 16, 10) para gerar pseudo-aleatoriedade reproducível por usuario+jogo
 INSERT INTO palpites (id_usuario, rodada, campeonato_id, grupo_id, id_jogo, gols_casa, gols_fora, codigo_envio, data_envio, status_pagamento)
 SELECT u.usuario_id,
        @rodada,
        @campeonato_id,
        @grupo_id,
        j.id,
-       0 AS gols_casa,
-       0 AS gols_fora,
+       (CONV(HEX(MD5(CONCAT(u.usuario_id, '_casa_', j.id))), 16, 10) % 6) AS gols_casa,
+       (CONV(HEX(MD5(CONCAT(u.usuario_id, '_fora_', j.id))), 16, 10) % 6) AS gols_fora,
        SUBSTRING(REPLACE(UUID(),'-',''),1,26) AS codigo_envio,
        NOW() as data_envio,
        'pendente' as status_pagamento
