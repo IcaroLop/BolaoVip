@@ -217,6 +217,13 @@ const CobrancasPendentesPage = () => {
         <div className="premiacoes-grid">
           {premiacoes.map((item) => {
             const valorTotal = Number(item.valor_total || 0);
+            const tipoOperacao = item.tipo_operacao || 'Premiação';
+            
+            // Filtrar apenas premiações (ignorar cobranças)
+            if (tipoOperacao === 'Cobrança') {
+              return null;
+            }
+            
             return (
               <div key={item.id} className="premiacao-card">
                 <div className="premiacao-meta">

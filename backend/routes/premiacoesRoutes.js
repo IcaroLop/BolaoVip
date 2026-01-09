@@ -180,7 +180,8 @@ router.get('/premiacoes/pendentes-confirmacao', autenticar, async (req, res) => 
 		const [premios] = await pool.query(
 		      `SELECT p.id, p.rodada, p.tipo_premio, ABS(p.valor) AS valor_total, p.saldo_parcial, 
 			      (ABS(p.valor) - IFNULL(p.saldo_parcial, 0)) AS valor_restante,
-			      p.usuario_id, u.nome AS nome_usuario
+			      p.usuario_id, u.nome AS nome_usuario,
+			      CASE WHEN p.valor > 0 THEN 'Premiação' ELSE 'Cobrança' END AS tipo_operacao
 		       FROM premios p
 		       JOIN usuarios u ON u.id = p.usuario_id
 		       WHERE ${filtros.join(' AND ')}
