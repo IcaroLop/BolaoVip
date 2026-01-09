@@ -102,14 +102,15 @@ async function criarDepositoPix(usuarioId, valor) {
     const tituloNotificacao = '💰 Depósito PIX Gerado';
     const mensagemNotificacao = `Depósito de R$ ${valorOriginal.toFixed(2)} preparado. Escanneie o QRCode ou copie o código PIX. Válido por ${calendarioExpiracao} segundos.`;
 
+    // Tentar criar notificação com tipo curto
     await criarNotificacao(
       usuarioId,
-      'deposito',
+      'pix',  // Tipo muito curto para evitar truncamento
       tituloNotificacao,
       mensagemNotificacao,
       dadosNotificacao
     ).catch(err => {
-      console.error('[depositoPixService] Erro ao criar notificação de depósito pendente:', err);
+      console.warn('[depositoPixService] ⚠️ Notificação não criada (não crítico):', err.message);
     });
 
     // 8. Buscar o registro inserido

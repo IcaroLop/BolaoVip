@@ -71,15 +71,15 @@ exports.criarDeposito = async (req, res) => {
     const resultado = await criarDepositoPix(usuarioId, valor);
     
     console.log(`[saldoController.criarDeposito] ✅ Depósito PIX criado com sucesso. deposito_id=${resultado.deposito_id}`);
-    console.log(`[saldoController.criarDeposito] Resposta para frontend:`, JSON.stringify({
+    console.log(`[saldoController.criarDeposito] Resposta para frontend (completa):`, {
       sucesso: resultado.sucesso,
       deposito_id: resultado.deposito_id,
       txid: resultado.txid,
       valor: resultado.valor,
-      pix_copiaecola: resultado.pix_copiaecola ? '✅ PRESENTE' : '❌ AUSENTE',
-      qrcode_url: resultado.qrcode_url ? '✅ PRESENTE' : '❌ AUSENTE',
+      pix_copiaecola_length: resultado.pix_copiaecola ? resultado.pix_copiaecola.length : 0,
+      qrcode_url_length: resultado.qrcode_url ? resultado.qrcode_url.length : 0,
       calendario_expiracao: resultado.calendario_expiracao
-    }));
+    });
     res.json(resultado);
   } catch (err) {
     console.error('[saldoController.criarDeposito] ❌ Erro ao criar depósito:', err);
