@@ -40,7 +40,9 @@ async function criarDepositoPix(usuarioId, valor) {
     console.log(`[depositoPixService] Chamando pixService.criarCobranca para gerar QRCode...`);
 
     const cobranca = await pixService.criarCobranca(txid, valor, chavePix, descricao, nomeUsuario);
-    console.log(`[depositoPixService] ✅ QRCode gerado com sucesso via EFI`);
+    console.log(`[depositoPixService] ✅ Resposta EFI recebida`);
+    console.log(`[depositoPixService] Estrutura da resposta EFI:`, Object.keys(cobranca));
+    console.log(`[depositoPixService] Conteúdo completo da resposta EFI (primeiros 500 chars):`, JSON.stringify(cobranca).substring(0, 500));
 
     // 5. Extrair dados principais
     const calendarioCriacao = new Date(cobranca.calendario.criacao);
@@ -50,6 +52,20 @@ async function criarDepositoPix(usuarioId, valor) {
     const locLocation = cobranca.loc?.location || null;
     const locTipo = cobranca.loc?.tipoCob || null;
     const pixCopiaECola = cobranca.pixCopiaECola;
+
+    // Log de debug
+    console.log(`[depositoPixService] Dados extraídos:`);
+    console.log(`  - calendarioCriacao: ${calendarioCriacao}`);
+    console.log(`  - calendarioExpiracao: ${calendarioExpiracao}`);
+    console.log(`  - valorOriginal: ${valorOriginal}`);
+    console.log(`  - locId: ${locId}`);
+    console.log(`  - locLocation: ${locLocation}`);
+    console.log(`  - locTipo: ${locTipo}`);
+    console.log(`  - pixCopiaECola: ${pixCopiaECola ? '✅ PRESENTE' : '❌ AUSENTE'}`);
+    if (!pixCopiaECola) {
+      console.log(`[depositoPixService] ⚠️ AVISO: pixCopiaECola não encontrado na resposta EFI!`);
+      console.log(`[depositoPixService] Chaves disponíveis na resposta:`, Object.keys(cobranca).join(', '));
+    }
 
     // 6. Armazenar no banco de dados
     const insertData = {
