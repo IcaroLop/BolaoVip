@@ -104,7 +104,17 @@ async function testarWebhookEfiPix() {
     console.log(`   TXID: ${cobranca.txid}`);
     console.log(`   Valor: R$ ${valorOriginal.toFixed(2)}`);
     console.log(`   Status Atual: ${cobranca.status_pagamento}`);
-    const payloadInfo = JSON.parse(cobranca.payload_raw || '{}');
+    // payload_raw pode ser string JSON ou já objeto; normaliza para objeto seguro
+    let payloadInfo = {};
+    try {
+      if (typeof cobranca.payload_raw === 'string') {
+        payloadInfo = JSON.parse(cobranca.payload_raw || '{}');
+      } else if (cobranca.payload_raw && typeof cobranca.payload_raw === 'object') {
+        payloadInfo = cobranca.payload_raw;
+      }
+    } catch (e) {
+      console.warn('⚠️  Não foi possível parsear payload_raw; seguindo vazio.');
+    }
     console.log(`   Origem: ${payloadInfo.origem || 'N/A'} | Tipo: ${payloadInfo.tipo_premio || 'N/A'} | RodadaPayload: ${payloadInfo.rodada || 'N/A'}\n`);
 
     // 2) Preparar payload do webhook (simulando resposta da EFI)
@@ -185,7 +195,16 @@ async function testarWebhookEfiPix() {
     console.log(`   Payload Webhook: ${cobrancaApos.webhook_payload ? 'Salvo' : 'Não salvo'}\n`);
 
     // 5) Verificar se prêmio foi atualizado (se for palpite)
-    const payloadObj = JSON.parse(cobranca.payload_raw || '{}');
+    let payloadObj = {};
+    try {
+      if (typeof cobranca.payload_raw === 'string') {
+        payloadObj = JSON.parse(cobranca.payload_raw || '{}');
+      } else if (cobranca.payload_raw && typeof cobranca.payload_raw === 'object') {
+        payloadObj = cobranca.payload_raw;
+      }
+    } catch (e) {
+      console.warn('⚠️  Não foi possível parsear payload_raw para verificação de palpite.');
+    }
     if (payloadObj.origem === 'palpites') {
       console.log('5️⃣  Verificando palpite relacionado...');
       const [palpites] = await pool.query(`
