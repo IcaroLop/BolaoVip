@@ -447,6 +447,22 @@ form {
   border-radius: 4px;
 }
 
+.qrcode-display img.qrcode-image {
+  max-width: 220px;
+  max-height: 220px;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.qrcode-display p {
+  color: #666;
+  text-align: center;
+  font-size: 0.9em;
+  margin: 0;
+  padding: 20px;
+}
+
 /* CopiaECola Section */
 .copiaecola-section {
   margin: 20px 0;

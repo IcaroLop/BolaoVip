@@ -245,23 +245,46 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
             {/* QRCode (usa qrcode.react se disponível; senão, imagem do loc_location) */}
             <div className="qrcode-section">
               <h3>📷 Escaneie o QRCode:</h3>
-              {QRCode && depositoData.pix_copiaecola ? (
-                <div className="qrcode-display">
-                  <QRCode value={depositoData.pix_copiaecola} size={220} includeMargin={true} />
-                </div>
-              ) : depositoData.qrcode_url ? (
-                <div className="qrcode-display">
-                  <img
-                    src={`https://${depositoData.qrcode_url}`}
-                    alt="QRCode PIX"
-                    className="qrcode-image"
-                  />
-                </div>
-              ) : (
-                <div className="qrcode-display">
-                  <p>⚠️ Não foi possível gerar o QRCode. Use o código Copia-e-Cola abaixo.</p>
-                </div>
-              )}
+              {(() => {
+                console.log('[DepositoModal QRCode] Renderizando QRCode...');
+                console.log('[DepositoModal QRCode] QRCode lib disponível?', !!QRCode);
+                console.log('[DepositoModal QRCode] pix_copiaecola presente?', !!depositoData.pix_copiaecola);
+                console.log('[DepositoModal QRCode] qrcode_url:', depositoData.qrcode_url);
+                
+                if (QRCode && depositoData.pix_copiaecola) {
+                  console.log('[DepositoModal QRCode] ✅ Renderizando via qrcode.react');
+                  return (
+                    <div className="qrcode-display">
+                      <QRCode value={depositoData.pix_copiaecola} size={220} includeMargin={true} />
+                    </div>
+                  );
+                } else if (depositoData.qrcode_url) {
+                  const imgUrl = `https://${depositoData.qrcode_url}`;
+                  console.log('[DepositoModal QRCode] ✅ Renderizando via <img>. URL:', imgUrl);
+                  return (
+                    <div className="qrcode-display">
+                      <img
+                        src={imgUrl}
+                        alt="QRCode PIX"
+                        className="qrcode-image"
+                        onError={(e) => {
+                          console.error('[DepositoModal QRCode] ❌ Erro ao carregar imagem:', imgUrl);
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'block';
+                        }}
+                      />
+                      <p style={{display: 'none'}}>⚠️ Erro ao carregar QRCode. Use o código Copia-e-Cola abaixo.</p>
+                    </div>
+                  );
+                } else {
+                  console.warn('[DepositoModal QRCode] ⚠️ Nenhum método de exibição disponível');
+                  return (
+                    <div className="qrcode-display">
+                      <p>⚠️ Não foi possível gerar o QRCode. Use o código Copia-e-Cola abaixo.</p>
+                    </div>
+                  );
+                }
+              })()}
             </div>
 
             {/* CopiaECola */}
