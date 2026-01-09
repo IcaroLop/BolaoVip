@@ -22,6 +22,7 @@ async function isAdminOuFinanceiro(usuarioId) {
 
 router.get('/premiacoes/rodada/:rodada', premiacoesController.getPremiacoesRodada);
 router.get('/premiacoes/rodada/:rodada/detalhes', premiacoesController.getPremiacoesComDetalhesRodada);
+router.get('/premiacoes/rodada/:rodada/preview', premiacoesController.getPremiacoesPreviaRodada);
 
 /**
  * POST /premiacoes/:premioId/confirmar-pagamento

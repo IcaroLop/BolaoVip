@@ -254,12 +254,12 @@ const RankingPage = () => {
       if (grupoSelecionado) params.append('grupoId', grupoSelecionado);
       if (campeonatoId) params.append('campeonatoId', campeonatoId);
 
-      // Usar novo endpoint com detalhes (RECEBE/PAGA)
-      const res = await axios.get(`${API}/premiacoes/rodada/${rodada}/detalhes?${params.toString()}`, authHeader);
+      // Usar endpoint /preview para mostrar prévia dos prêmios ANTES de gerar
+      const res = await axios.get(`${API}/premiacoes/rodada/${rodada}/preview?${params.toString()}`, authHeader);
       setPremiacoesRodada(res.data);
     } catch (err) {
       if (err.response && err.response.status === 404) {
-        // Premiações ainda não cadastradas - comportamento esperado
+        // Nenhum ranking para essa rodada - comportamento esperado
         setPremiacoesRodada([]);
       } else {
         console.error(err);

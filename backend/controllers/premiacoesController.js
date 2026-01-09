@@ -138,6 +138,107 @@ async function getPremiacoesRodada(req, res) {
   }
 }
 
+async function getPremiacoesPreviaRodada(req, res) {
+  try {
+    const { rodada } = req.params;
+    const campeonatoId = req.query.campeonatoId || req.query.campeonato_id;
+    const grupoId = req.query.grupoId || req.query.grupo_id;
+    const rodadaNum = Number(rodada);
+    
+    // Buscar ranking da rodada
+    const filtrosRanking = ['rd.numero = ?'];
+    const paramsRanking = [rodadaNum];
+    
+    if (campeonatoId) {
+      filtrosRanking.push('r.campeonato_id = ?');
+      paramsRanking.push(Number(campeonatoId));
+    }
+    
+    if (grupoId) {
+      filtrosRanking.push('(r.grupo_id = ? OR r.grupo_id IS NULL)');
+      paramsRanking.push(Number(grupoId));
+    }
+
+    const [ranking] = await pool.query(`
+      SELECT r.id_usuario, r.posicao, u.nome
+      FROM ranking_rodada r
+      JOIN usuarios u ON r.id_usuario = u.id
+      JOIN rodadas rd ON r.rodada = rd.id
+      WHERE ${filtrosRanking.join(' AND ')}
+      ORDER BY r.posicao ASC
+    `, paramsRanking);
+
+    if (ranking.length === 0) {
+      return res.status(404).json({ error: 'Nenhum ranking encontrado para esta rodada.' });
+    }
+
+    const totalParticipantes = ranking.length;
+    const campeaoUser = ranking[0];
+    const viceUser = ranking[1] || null;
+    const lanternaUser = ranking[totalParticipantes - 1];
+    
+    // Valores fixos de premiação (refletir do rankingController.gerarPremiacoesRodada)
+    const valorCampeao = 120.00;
+    const valorVice = 10.00;
+    const valorLanterna = -20.00;
+    const valorDemais = -10.00;
+    
+    const preview = [
+      {
+        posicao: 1,
+        usuario_id: campeaoUser.id_usuario,
+        nome_usuario: campeaoUser.nome,
+        tipo_premio: 'Campeão',
+        valor_premio: valorCampeao,
+        acao: 'RECEBE',
+        status_pagamento: 'PENDENTE'
+      }
+    ];
+    
+    if (viceUser) {
+      preview.push({
+        posicao: 2,
+        usuario_id: viceUser.id_usuario,
+        nome_usuario: viceUser.nome,
+        tipo_premio: 'Vice',
+        valor_premio: valorVice,
+        acao: 'RECEBE',
+        status_pagamento: 'PENDENTE'
+      });
+    }
+    
+    preview.push({
+      posicao: totalParticipantes,
+      usuario_id: lanternaUser.id_usuario,
+      nome_usuario: lanternaUser.nome,
+      tipo_premio: 'Lanterna',
+      valor_premio: Math.abs(valorLanterna),
+      acao: 'PAGA',
+      status_pagamento: 'PENDENTE'
+    });
+    
+    // Adicionar demais participantes
+    for (let i = 1; i < ranking.length - 1; i++) {
+      if (i !== 1) { // Skip vice (posição 2)
+        preview.push({
+          posicao: i + 1,
+          usuario_id: ranking[i].id_usuario,
+          nome_usuario: ranking[i].nome,
+          tipo_premio: 'Demais participantes',
+          valor_premio: Math.abs(valorDemais),
+          acao: 'PAGA',
+          status_pagamento: 'PENDENTE'
+        });
+      }
+    }
+
+    res.json(preview);
+  } catch (error) {
+    console.error('❌ Erro ao gerar prévia de premiações:', error.message);
+    res.status(500).json({ error: 'Erro ao gerar prévia de premiações' });
+  }
+}
+
 function formatarTipoPremio(tipo) {
   if (tipo === 'campeao') return 'Campeão';
   if (tipo === 'vice') return 'Vice';
@@ -147,5 +248,6 @@ function formatarTipoPremio(tipo) {
 
 module.exports = {
   getPremiacoesRodada,
-  getPremiacoesComDetalhesRodada
+  getPremiacoesComDetalhesRodada,
+  getPremiacoesPreviaRodada
 };
