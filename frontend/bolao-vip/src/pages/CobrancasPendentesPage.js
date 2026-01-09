@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../config';
 import './CobrancasPendentesPage.css';
@@ -16,6 +16,12 @@ const CobrancasPendentesPage = () => {
   const authHeader = useMemo(() => (token ? { headers: { Authorization: `Bearer ${token}` } } : {}), [token]);
   const nomesPerfis = (perfisUsuario || []).map((p) => (p.nome || '').toLowerCase());
   const isAdminFinance = nomesPerfis.includes('administrador') || nomesPerfis.includes('financeiro');
+  
+  // Polling automático
+  const intervalRef = useRef(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState(new Date());
+  const [statusPolling, setStatusPolling] = useState('ativo');
 
   const buscarCobrancasPendentes = useCallback(async () => {
     try {
@@ -94,7 +100,27 @@ const CobrancasPendentesPage = () => {
       ]);
     };
     init();
-  }, [buscarCobrancasPendentes, buscarHistoricoCobrancas, buscarPremiacoesPendentes, carregarUsuario]);
+    
+    // Setup polling automático
+    if (autoRefresh) {
+      intervalRef.current = setInterval(async () => {
+        setStatusPolling('atualizando');
+        await Promise.all([
+          buscarCobrancasPendentes(),
+          buscarHistoricoCobrancas(),
+          buscarPremiacoesPendentes()
+        ]);
+        setUltimaAtualizacao(new Date());
+        setStatusPolling('ativo');
+      }, 5000); // Atualiza a cada 5 segundos
+    }
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [buscarCobrancasPendentes, buscarHistoricoCobrancas, buscarPremiacoesPendentes, carregarUsuario, autoRefresh]);
 
   useEffect(() => {
     setPaginaAtual(1); // Reset página quando histórico muda
@@ -207,6 +233,54 @@ const CobrancasPendentesPage = () => {
 
   return (
     <div className="cobrancas-container">
+      {/* Indicador de Auto-Refresh */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '16px',
+        padding: '8px 12px',
+        backgroundColor: '#f0f0f0',
+        borderRadius: '4px',
+        fontSize: '12px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{
+            display: 'inline-block',
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: autoRefresh ? (statusPolling === 'atualizando' ? '#FFA500' : '#00AA00') : '#CCCCCC',
+            animation: statusPolling === 'atualizando' ? 'pulse 1s infinite' : 'none'
+          }}></span>
+          <span>{autoRefresh ? '🔄 Auto-refresh ativo' : '⏸️ Auto-refresh parado'}</span>
+          <span style={{ color: '#666', marginLeft: '8px' }}>
+            Última atualização: {ultimaAtualizacao.toLocaleTimeString('pt-BR')}
+          </span>
+        </div>
+        <button
+          onClick={() => setAutoRefresh(!autoRefresh)}
+          style={{
+            padding: '4px 12px',
+            backgroundColor: autoRefresh ? '#ff6b6b' : '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+        >
+          {autoRefresh ? '⏸️ Pausar' : '▶️ Retomar'}
+        </button>
+      </div>
+      
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
+
       <h2 className="title">🧾 Premiações Pendentes</h2>
 
       {premiacoes.length === 0 ? (
