@@ -23,7 +23,8 @@ async function main() {
 
     // 1) Pagamentos gerados para a rodada
     const [premios] = await pool.query(
-      `SELECT p.id, p.usuario_id, u.nome, p.tipo_premio, p.valor, p.status_pagamento, p.data_pagamento
+      `SELECT p.id, p.usuario_id, u.nome, p.tipo_premio, p.valor, p.status_pagamento, p.data_pagamento,
+              p.campeonato_id, p.grupo_id
        FROM premios p
        JOIN usuarios u ON u.id = p.usuario_id
        WHERE p.rodada = ?
@@ -44,7 +45,7 @@ async function main() {
 
     // 3) Ranking top 10
     const [ranking] = await pool.query(
-      `SELECT rr.id_usuario, u.nome, rr.pontos_totais, rr.posicao
+      `SELECT rr.id_usuario, u.nome, rr.pontos_totais, rr.posicao, rr.campeonato_id, rr.grupo_id
        FROM ranking_rodada rr
        JOIN usuarios u ON u.id = rr.id_usuario
        WHERE rr.rodada = ?
@@ -65,17 +66,21 @@ async function main() {
       console.log(`\nSaldo do usuário ${usuarioId}:`);
       console.table(saldo);
 
-      // 5) Movimentações recentes do usuário
-      const [movs] = await pool.query(
-        `SELECT id, tipo_movimento, valor, descricao, saldo_anterior, saldo_posterior, data_movimento
-         FROM saldo_movimentacoes
-         WHERE usuario_id = ?
-         ORDER BY data_movimento DESC
-         LIMIT 10`,
-        [usuarioId]
-      );
-      console.log(`\nÚltimas movimentações do usuário ${usuarioId}:`);
-      console.table(movs);
+      // 5) Movimentações recentes do usuário (extrato_movimentacao)
+      try {
+        const [movs] = await pool.query(
+          `SELECT id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status, data_criacao
+           FROM extrato_movimentacao
+           WHERE usuario_id = ?
+           ORDER BY data_criacao DESC
+           LIMIT 10`,
+          [usuarioId]
+        );
+        console.log(`\nÚltimas movimentações do usuário ${usuarioId}:`);
+        console.table(movs);
+      } catch (errMov) {
+        console.warn('⚠️ Não foi possível ler extrato_movimentacao:', errMov.message);
+      }
     } else {
       console.log('\nDica: passe o usuarioId como segundo argumento para ver saldo e movimentações.');
     }
