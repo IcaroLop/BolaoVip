@@ -55,17 +55,18 @@ const db = require('../database/conexao');
       });
     }
 
-    // 3. Verificar qual é a condição esperada
     console.log('\n🔍 Condição para Gerar Pagamentos:');
-    console.log('  - Status DEVE ser "encerrada" ou "finalizada"?');
-    console.log('  - OU todos os jogos DEVEM ter placar?');
+    console.log('  - Status DEVE ser "encerrada"');
+    console.log('  - E todos os jogos DEVEM ter placar');
     
     console.log(`\n  ✓ Todos os jogos têm placar? ${semPlacar === 0 ? 'SIM ✅' : 'NÃO ❌'}`);
-    console.log(`  ✓ Status da rodada é "finalizada"? ${rodada[0]?.status === 'finalizada' ? 'SIM ✅' : 'NÃO ❌ (é: ' + rodada[0]?.status + ')'}`);
-
-    // 4. Ver qual é a lógica do controller
-    console.log('\n📝 Verificar o código do rankingController.gerarPremiacoesRodada()');
-    console.log('   Para entender exatamente qual condição está falhando.');
+    console.log(`  ✓ Status da rodada é "encerrada"? ${rodada[0]?.status === 'encerrada' ? 'SIM ✅' : 'NÃO ❌ (é: ' + rodada[0]?.status + ')'}`);
+    
+    if (semPlacar === 0 && rodada[0]?.status === 'encerrada') {
+      console.log('\n  ✅ TUDO OK! Pode gerar pagamentos!');
+    } else {
+      console.log('\n  ❌ Ainda há problemas a resolver');
+    }
 
     process.exit(0);
   } catch (err) {
