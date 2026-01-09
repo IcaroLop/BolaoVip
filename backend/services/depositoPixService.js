@@ -102,16 +102,17 @@ async function criarDepositoPix(usuarioId, valor) {
     const tituloNotificacao = '💰 Depósito PIX Gerado';
     const mensagemNotificacao = `Depósito de R$ ${valorOriginal.toFixed(2)} preparado. Escanneie o QRCode ou copie o código PIX. Válido por ${calendarioExpiracao} segundos.`;
 
-    // Tentar criar notificação com tipo curto
-    await criarNotificacao(
-      usuarioId,
-      'pix',  // Tipo muito curto para evitar truncamento
-      tituloNotificacao,
-      mensagemNotificacao,
-      dadosNotificacao
-    ).catch(err => {
-      console.warn('[depositoPixService] ⚠️ Notificação não criada (não crítico):', err.message);
-    });
+    // Desabilitar notificação temporariamente (coluna 'tipo' muito pequena)
+    // await criarNotificacao(
+    //   usuarioId,
+    //   'pix',
+    //   tituloNotificacao,
+    //   mensagemNotificacao,
+    //   dadosNotificacao
+    // ).catch(err => {
+    //   console.warn('[depositoPixService] ⚠️ Notificação não criada (não crítico):', err.message);
+    // });
+    console.log('[depositoPixService] ℹ️ Notificação de depósito desabilitada (issue com coluna tipo)');
 
     // 8. Buscar o registro inserido
     const [rows] = await db.query('SELECT * FROM pix_depositos WHERE id = ?', [insertResult.insertId]);
