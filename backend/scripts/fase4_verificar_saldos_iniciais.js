@@ -14,17 +14,18 @@ const pool = require('../database/conexao');
     console.log('FASE 4: VERIFICAR SALDOS INICIAIS');
     console.log('========================================\n');
 
-    // 1. Verificar saldos atuais de todos os usuários
+    // 1. Verificar saldos atuais de todos os usuários (AMBAS as tabelas)
     const [usuarios] = await pool.query(
-      'SELECT id, nome, saldo FROM usuarios WHERE id IN (1,2,3,4,5,6,7,8,9) ORDER BY id'
+      'SELECT u.id, u.nome, u.saldo as saldo_usuarios, su.saldo as saldo_usuario_tabela FROM usuarios u LEFT JOIN saldo_usuario su ON u.id = su.usuario_id WHERE u.id IN (1,2,3,4,5,6,7,8,9) ORDER BY u.id'
     );
 
     console.log('=== SALDOS ATUAIS DOS USUÁRIOS ===\n');
     let totalSaldos = 0;
     usuarios.forEach(u => {
-      const status = u.saldo === 300 ? '✅' : '⚠️';
-      console.log(`${status} User ${u.id}: ${u.nome.padEnd(20)} - R$ ${u.saldo.toFixed(2)}`);
-      totalSaldos += u.saldo;
+      const saldoCorreto = (u.saldo_usuarios === 300 && u.saldo_usuario_tabela === 300);
+      const status = saldoCorreto ? '✅' : '⚠️';
+      console.log(`${status} User ${u.id}: ${u.nome.padEnd(20)} - usuarios: R$ ${u.saldo_usuarios.toFixed(2)}, saldo_usuario: R$ ${(u.saldo_usuario_tabela || 0).toFixed(2)}`);
+      totalSaldos += u.saldo_usuarios;
     });
 
     console.log(`\nSaldo Total: R$ ${totalSaldos.toFixed(2)}`);

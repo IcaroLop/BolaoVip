@@ -19,16 +19,16 @@ const rankingController = require('../controllers/rankingController');
     const grupoId = 2;
     const rodadas = Array.from({ length: 21 }, (_, i) => i + 1);
 
-    // Salvar saldos iniciais
+    // Salvar saldos iniciais (AMBAS as tabelas)
     const [saldosIniciais] = await pool.query(
-      'SELECT id, saldo FROM usuarios WHERE id IN (1,2,3,4,5,6,7,8,9) ORDER BY id'
+      'SELECT u.id, u.saldo as saldo_usuarios, su.saldo as saldo_usuario_tabela FROM usuarios u LEFT JOIN saldo_usuario su ON u.id = su.usuario_id WHERE u.id IN (1,2,3,4,5,6,7,8,9) ORDER BY u.id'
     );
     
     console.log('=== SALDOS INICIAIS ===\n');
     const saldosAntes = {};
     saldosIniciais.forEach(u => {
-      saldosAntes[u.id] = u.saldo;
-      console.log(`User ${u.id}: R$ ${u.saldo.toFixed(2)}`);
+      saldosAntes[u.id] = u.saldo_usuarios;
+      console.log(`User ${u.id}: usuarios=R$ ${u.saldo_usuarios.toFixed(2)}, saldo_usuario=R$ ${(u.saldo_usuario_tabela || 0).toFixed(2)}`);
     });
 
     // Processar cada rodada
@@ -68,9 +68,9 @@ const rankingController = require('../controllers/rankingController');
           console.log(`   - User ${p.usuario_id}: ${p.tipo_premio} R$ ${p.valor.toFixed(2)}`);
         });
 
-        // 4. Obter saldos atuais
+        // 4. Obter saldos atuais (AMBAS as tabelas)
         const [saldosDepois] = await pool.query(
-          'SELECT id, saldo FROM usuarios WHERE id IN (1,2,3,4,5,6,7,8,9) ORDER BY id'
+          'SELECT u.id, u.saldo as saldo_usuarios, su.saldo as saldo_usuario_tabela FROM usuarios u LEFT JOIN saldo_usuario su ON u.id = su.usuario_id WHERE u.id IN (1,2,3,4,5,6,7,8,9) ORDER BY u.id'
         );
 
         // 5. Verificar movimentações
@@ -93,7 +93,8 @@ const rankingController = require('../controllers/rankingController');
         // 6. Validar saldos
         let todosCorretos = true;
         movimentacoes.forEach(m => {
-          const saldoAtual = saldosDepois.find(s => s.id === m.usuario_id)?.saldo;
+          const usuarioRow = saldosDepois.find(s => s.id === m.usuario_id);
+          const saldoAtual = usuarioRow?.saldo_usuarios;
           const saldoEsperado = m.saldo_novo;
           
           if (saldoAtual !== saldoEsperado) {
@@ -135,18 +136,18 @@ const rankingController = require('../controllers/rankingController');
       console.log(`${icon} Rodada ${String(r.rodada).padStart(2, ' ')}: ${r.premios} prêmios, ${r.movimentacoes} movs - ${r.status}`);
     });
 
-    // Saldos finais
+    // Saldos finais (AMBAS as tabelas)
     const [saldosFinais] = await pool.query(
-      'SELECT id, saldo FROM usuarios WHERE id IN (1,2,3,4,5,6,7,8,9) ORDER BY id'
+      'SELECT u.id, u.saldo as saldo_usuarios, su.saldo as saldo_usuario_tabela FROM usuarios u LEFT JOIN saldo_usuario su ON u.id = su.usuario_id WHERE u.id IN (1,2,3,4,5,6,7,8,9) ORDER BY u.id'
     );
 
     console.log('\n=== SALDOS FINAIS ===\n');
     let totalSaldoFinal = 0;
     saldosFinais.forEach(u => {
-      const diferenca = u.saldo - saldosAntes[u.id];
+      const diferenca = u.saldo_usuarios - saldosAntes[u.id];
       const icon = diferenca !== 0 ? '✅' : '⏸️';
-      console.log(`${icon} User ${u.id}: R$ ${u.saldo.toFixed(2)} (${diferenca >= 0 ? '+' : ''}${diferenca.toFixed(2)})`);
-      totalSaldoFinal += u.saldo;
+      console.log(`${icon} User ${u.id}: usuarios=R$ ${u.saldo_usuarios.toFixed(2)} (${diferenca >= 0 ? '+' : ''}${diferenca.toFixed(2)}), saldo_usuario=R$ ${(u.saldo_usuario_tabela || 0).toFixed(2)}`);
+      totalSaldoFinal += u.saldo_usuarios;
     });
 
     console.log(`\nTotal Inicial: R$ ${Object.values(saldosAntes).reduce((a, b) => a + b, 0).toFixed(2)}`);
