@@ -7,7 +7,7 @@
  * Uso: node backend/scripts/testarWebhookEfiPix.js
  * 
  * Este script irá:
- * 1. Buscar a cobrança pendente de Maria Souza (rodada 3)
+ * 1. Buscar a cobrança pendente de Maria Souza (rodada 6)
  * 2. Simular um webhook da EFI com status='CONCLUIDA'
  * 3. Enviar para o endpoint POST /pix/webhook
  * 4. Verificar se o status foi atualizado para 'PAGO'
@@ -24,8 +24,8 @@ async function testarWebhookEfiPix() {
     console.log('\n🧪 TESTE DE WEBHOOK EFI PIX');
     console.log('=====================================\n');
 
-    // 1) Buscar cobrança pendente de Maria Souza (rodada 3)
-    console.log('1️⃣  Buscando cobrança de Maria Souza (rodada 3)...');
+    // 1) Buscar cobrança pendente de Maria Souza (rodada 6)
+    console.log('1️⃣  Buscando cobrança de Maria Souza (rodada 6)...');
     const [cobrancas] = await pool.query(`
       SELECT 
         id, 
@@ -36,13 +36,13 @@ async function testarWebhookEfiPix() {
         payload_raw
       FROM pix_cobrancas
       WHERE JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.origem')) = 'premios'
-        AND JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = '3'
+        AND JSON_UNQUOTE(JSON_EXTRACT(payload_raw,'$.rodada')) = '6'
         AND status_pagamento = 'PENDENTE'
       LIMIT 1
     `);
 
     if (!cobrancas || cobrancas.length === 0) {
-      console.error('❌ Nenhuma cobrança pendente encontrada para rodada 3!');
+      console.error('❌ Nenhuma cobrança pendente encontrada para rodada 6!');
       process.exit(1);
     }
 
