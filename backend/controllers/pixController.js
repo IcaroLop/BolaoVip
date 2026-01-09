@@ -143,17 +143,18 @@ async function webhookCobranca (req, res) {
           const [cobrancaRows] = await db.query('SELECT id_usuario, codigo_envio, valor_original FROM pix_cobrancas WHERE txid = ?', [txid]);
           if (cobrancaRows && cobrancaRows.length > 0) {
             const { id_usuario, codigo_envio, valor_original } = cobrancaRows[0];
+            const valorNum = Number(valor_original || 0);
             
             const dadosNotificacao = {
               txid,
               codigo_envio,
-              valor: valor_original,
+              valor: valorNum,
               data_pagamento: new Date(),
               status: 'CONFIRMADO'
             };
 
             const tituloNotificacao = '✅ Pagamento Confirmado';
-            const mensagemNotificacao = `Seu pagamento de R$ ${valor_original.toFixed(2)} foi confirmado! Referência: ${codigo_envio}`;
+            const mensagemNotificacao = `Seu pagamento de R$ ${valorNum.toFixed(2)} foi confirmado! Referência: ${codigo_envio}`;
 
             await criarNotificacao(
               id_usuario,
