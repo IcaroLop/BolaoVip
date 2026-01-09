@@ -1,6 +1,7 @@
 const pool = require('../database/conexao');
 const { calcularPontuacao } = require('../services/pontuacaoService');
 const saldoService = require('../services/saldoService');
+const pixService = require('../services/pixService');
 
 async function calcularRankingRodada(rodada, campeonatoId = null, grupoId = null) {
   try {
@@ -377,6 +378,8 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
 
         // Gerar PIX para o valor calculado
         const codigo_envio = uuidv4().replace(/-/g, '').substring(0, 26);
+        
+        // Dados iniciais para pix_cobrancas (antes de enviar para EFI)
         const insertData = {
           id_usuario: d.usuario_id,
           codigo_envio,
@@ -397,14 +400,45 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
           webhook_payload: null
         };
 
+        try {
+          // Tentar enviar para EFI para gerar cobrança
+          console.log(`🌐 Enviando cobrança para EFI: txid=${codigo_envio}, valor=R$ ${valorPix.toFixed(2)}`);
+          const cobrancaEfi = await pixService.criarCobranca(
+            codigo_envio,
+            valorPix,
+            process.env.EFI_PIX_KEY || '',
+            `Cobrança rodada ${rodadaNum}`,
+            `Usuario ${d.usuario_id}`
+          );
+
+          // ✅ EFI retornou com sucesso - atualizar dados com resposta da EFI
+          console.log(`✅ Cobrança criada na EFI: txid=${cobrancaEfi.txid}, status=${cobrancaEfi.status}`);
+          
+          insertData.txid = cobrancaEfi.txid || codigo_envio;
+          insertData.status = cobrancaEfi.status || 'ATIVA';
+          insertData.chave_pix = cobrancaEfi.chave || process.env.EFI_PIX_KEY;
+          insertData.pix_copiaecola = cobrancaEfi.pixCopiaECola || null;
+          insertData.loc_id = cobrancaEfi.loc?.id || null;
+          insertData.loc_location = cobrancaEfi.loc?.location || null;
+          insertData.loc_tipo = cobrancaEfi.loc?.tipoCob || null;
+          insertData.calendario_expiracao = cobrancaEfi.calendario?.expiracao || 259200;
+          insertData.payload_raw = JSON.stringify(cobrancaEfi); // Guardar resposta completa da EFI
+
+        } catch (errEfi) {
+          // ❌ Erro ao enviar para EFI - criar cobrança apenas no banco (modo fallback)
+          console.warn(`⚠️ Erro ao criar cobrança na EFI: ${errEfi.message}. Criando apenas no banco local.`);
+          console.warn(`   Usuario: ${d.usuario_id}, Valor: R$ ${valorPix.toFixed(2)}, Rodada: ${rodadaNum}`);
+        }
+
+        // Inserir cobrança no banco (com ou sem dados da EFI)
         await pool.query('INSERT INTO pix_cobrancas SET ?', [insertData]);
-        console.log(`🔔 Cobrança PIX criada: R$ ${valorPix.toFixed(2)} para usuário ${d.usuario_id}`);
+        console.log(`🔔 Cobrança PIX criada: R$ ${valorPix.toFixed(2)} para usuário ${d.usuario_id}${insertData.pix_copiaecola ? ' (QR Code gerado)' : ' (sem QR Code - modo fallback)'}`);
 
       } catch (err) {
         console.error(`❌ Erro ao processar débito para usuário ${d.usuario_id}:`, err.message);
         const codigo_envio = uuidv4().replace(/-/g, '').substring(0, 26);
         const valorDebito = Number(d.valor_cobranca);
-        await pool.query('INSERT INTO pix_cobrancas SET ?', [{
+        const errorData = {
           id_usuario: d.usuario_id,
           codigo_envio,
           txid: codigo_envio,
@@ -416,7 +450,31 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
           calendario_criacao: new Date(),
           calendario_expiracao: 259200,
           payload_raw: JSON.stringify({ origem: 'premios', rodada: rodadaNum, erro_saldo: true })
-        }]);
+        };
+
+        try {
+          // Tentar enviar para EFI mesmo em caso de erro de saldo
+          console.log(`🌐 Tentando enviar cobrança de erro para EFI: valor=R$ ${valorDebito.toFixed(2)}`);
+          const cobrancaEfi = await pixService.criarCobranca(
+            codigo_envio,
+            valorDebito,
+            process.env.EFI_PIX_KEY || '',
+            `Cobrança rodada ${rodadaNum} (erro)`,
+            `Usuario ${d.usuario_id}`
+          );
+          
+          errorData.txid = cobrancaEfi.txid || codigo_envio;
+          errorData.status = cobrancaEfi.status || 'ATIVA';
+          errorData.pix_copiaecola = cobrancaEfi.pixCopiaECola || null;
+          errorData.loc_id = cobrancaEfi.loc?.id || null;
+          errorData.loc_location = cobrancaEfi.loc?.location || null;
+          errorData.payload_raw = JSON.stringify(cobrancaEfi);
+        } catch (errEfi) {
+          console.warn(`⚠️ Também falhou ao enviar para EFI: ${errEfi.message}. Criando cobrança apenas no banco.`);
+        }
+
+        await pool.query('INSERT INTO pix_cobrancas SET ?', [errorData]);
+        console.log(`🔔 Cobrança PIX de erro criada: R$ ${valorDebito.toFixed(2)} para usuário ${d.usuario_id}`);
       }
     }
 
