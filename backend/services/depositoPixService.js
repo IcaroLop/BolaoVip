@@ -202,22 +202,23 @@ async function verificarEAtualizarDeposito(deposito) {
 
         await conexao.commit();
 
-        // 4. Enviar notificação ao usuário
-        await criarNotificacao(
-          id_usuario,
-          'deposito_confirmado',
-          '✅ Depósito Confirmado',
-          `Seu depósito de R$ ${valorPago.toFixed(2)} foi confirmado e creditado em sua conta!`,
-          {
-            txid,
-            valor: valorPago,
-            saldo_novo: saldoNovo,
-            data_confirmacao: new Date(),
-            origem: 'fallback_deposito'
-          }
-        ).catch(err => {
-          console.error('[depositoPixService] Erro ao criar notificação de depósito confirmado:', err);
-        });
+        // 4. Enviar notificação ao usuário (desabilitada devido a truncação na coluna 'tipo')
+        // await criarNotificacao(
+        //   id_usuario,
+        //   'deposito_confirmado',
+        //   '✅ Depósito Confirmado',
+        //   `Seu depósito de R$ ${valorPago.toFixed(2)} foi confirmado e creditado em sua conta!`,
+        //   {
+        //     txid,
+        //     valor: valorPago,
+        //     saldo_novo: saldoNovo,
+        //     data_confirmacao: new Date(),
+        //     origem: 'fallback_deposito'
+        //   }
+        // ).catch(err => {
+        //   console.error('[depositoPixService] Erro ao criar notificação de depósito confirmado:', err);
+        // });
+        console.log('[depositoPixService] ℹ️ Notificação de confirmação desabilitada (issue com coluna tipo)');
 
         console.log(`[depositoPixService] ✅ Depósito ${id} confirmado e saldo creditado (via fallback). Novo saldo: R$ ${saldoNovo.toFixed(2)}`);
         return true;

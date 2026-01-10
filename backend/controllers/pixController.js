@@ -1,6 +1,7 @@
 const pixService = require('../services/pixService');
 const db = require('../database/conexao'); // mysql2/promise pool
 const { criarNotificacao } = require('../services/notificacoesService');
+const { verificarTodosPendentes } = require('../services/pixConsultaService');
 require('dotenv').config();
 
 const chavePix = process.env.EFI_PIX_KEY;
@@ -195,5 +196,13 @@ async function webhookCobranca (req, res) {
 
 module.exports = {
   gerarCobranca,
-  webhookCobranca
+  webhookCobranca,
+  async verificarPendentes(req, res) {
+    try {
+      const resultado = await verificarTodosPendentes();
+      res.json({ sucesso: true, resultado });
+    } catch (err) {
+      res.status(500).json({ sucesso: false, erro: err.message });
+    }
+  }
 };

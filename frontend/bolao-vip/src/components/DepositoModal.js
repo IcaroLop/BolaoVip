@@ -3,15 +3,7 @@ import ReactDOM from 'react-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config';
 import './DepositoModal.css';
-
-// Importar QRCode - se disponível
-let QRCode;
-try {
-  QRCode = require('qrcode.react').default;
-} catch (e) {
-  console.warn('[DepositoModal] qrcode.react não encontrado, usando fallback');
-  QRCode = null;
-}
+import * as QRCodeLib from 'qrcode';
 
 function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   const [etapa, setEtapa] = useState('valor'); // 'valor', 'qrcode', 'aguardando'
@@ -24,6 +16,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   const [depositoData, setDepositoData] = useState(null);
   const [statusPolling, setStatusPolling] = useState('ativo');
   const [mensagemPolling, setMensagemPolling] = useState('Aguardando pagamento...');
+  const [qrDataUrl, setQrDataUrl] = useState('');
   
   // Polling interval
   const [intervalId, setIntervalId] = useState(null);
@@ -153,6 +146,25 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
     };
   }, [intervalId]);
 
+  // Gerar QRCode client-side a partir do Copia-e-Cola
+  useEffect(() => {
+    async function gerarQr() {
+      try {
+        if (depositoData?.pix_copiaecola) {
+          const url = await QRCodeLib.toDataURL(depositoData.pix_copiaecola, { width: 220, margin: 2 });
+          setQrDataUrl(url);
+          console.log('[DepositoModal] ✅ QRCode gerado client-side');
+        } else {
+          setQrDataUrl('');
+        }
+      } catch (e) {
+        console.warn('[DepositoModal] ❌ Falha ao gerar QRCode client-side:', e?.message || e);
+        setQrDataUrl('');
+      }
+    }
+    gerarQr();
+  }, [depositoData?.pix_copiaecola]);
+
   const handleFecharModal = () => {
     if (intervalId) {
       clearInterval(intervalId);
@@ -242,49 +254,37 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               <p><strong>Válido por:</strong> {depositoData.calendario_expiracao} segundos</p>
             </div>
 
-            {/* QRCode (usa qrcode.react se disponível; senão, imagem do loc_location) */}
+            {/* QRCode - renderiza localmente a partir do Copia-e-Cola */}
             <div className="qrcode-section">
               <h3>📷 Escaneie o QRCode:</h3>
-              {(() => {
-                console.log('[DepositoModal QRCode] Renderizando QRCode...');
-                console.log('[DepositoModal QRCode] QRCode lib disponível?', !!QRCode);
-                console.log('[DepositoModal QRCode] pix_copiaecola presente?', !!depositoData.pix_copiaecola);
-                console.log('[DepositoModal QRCode] qrcode_url:', depositoData.qrcode_url);
-                
-                if (QRCode && depositoData.pix_copiaecola) {
-                  console.log('[DepositoModal QRCode] ✅ Renderizando via qrcode.react');
-                  return (
-                    <div className="qrcode-display">
-                      <QRCode value={depositoData.pix_copiaecola} size={220} includeMargin={true} />
-                    </div>
-                  );
-                } else if (depositoData.qrcode_url) {
-                  const imgUrl = `https://${depositoData.qrcode_url}`;
-                  console.log('[DepositoModal QRCode] ✅ Renderizando via <img>. URL:', imgUrl);
-                  return (
-                    <div className="qrcode-display">
-                      <img
-                        src={imgUrl}
-                        alt="QRCode PIX"
-                        className="qrcode-image"
-                        onError={(e) => {
-                          console.error('[DepositoModal QRCode] ❌ Erro ao carregar imagem:', imgUrl);
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'block';
-                        }}
-                      />
-                      <p style={{display: 'none'}}>⚠️ Erro ao carregar QRCode. Use o código Copia-e-Cola abaixo.</p>
-                    </div>
-                  );
-                } else {
-                  console.warn('[DepositoModal QRCode] ⚠️ Nenhum método de exibição disponível');
-                  return (
-                    <div className="qrcode-display">
-                      <p>⚠️ Não foi possível gerar o QRCode. Use o código Copia-e-Cola abaixo.</p>
-                    </div>
-                  );
-                }
-              })()}
+              <div className="qrcode-display">
+                {qrDataUrl ? (
+                  <img src={qrDataUrl} alt="QRCode PIX" className="qrcode-image" />
+                ) : (
+                  <p>⚠️ Não foi possível gerar o QRCode. Use o código Copia-e-Cola abaixo.</p>
+                )}
+              </div>
+              {/* Fallback: botão para abrir no navegador a URL da EFI */}
+              {depositoData.qrcode_url && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+                  <a
+                    href={`https://${depositoData.qrcode_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{
+                      padding: '10px 16px',
+                      backgroundColor: '#3DF29D',
+                      color: '#0A1628',
+                      textDecoration: 'none',
+                      borderRadius: '8px',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    🌐 Abrir QRCode no navegador
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* CopiaECola */}
@@ -312,13 +312,9 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               <button 
                 type="button" 
                 className="btn btn-secondary" 
-                onClick={() => {
-                  if (intervalId) clearInterval(intervalId);
-                  setEtapa('valor');
-                  setDepositoData(null);
-                }}
+                onClick={handleFecharModal}
               >
-                ← Voltar
+                ← Fechar
               </button>
               <button 
                 type="button" 
@@ -362,6 +358,26 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                 onClick={handleFecharModal}
               >
                 Fechar
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    setStatusPolling('atualizando');
+                    setMensagemPolling('Verificando pendências agora...');
+                    await axios.post(`${API_BASE_URL}/pix/verificar-pendentes`);
+                    await axios.get(`${API_BASE_URL}/saldo/usuario`, { headers: { Authorization: `Bearer ${token}` } });
+                    setStatusPolling('ativo');
+                    setMensagemPolling('Aguardando confirmação do pagamento...');
+                  } catch (e) {
+                    console.error('[DepositoModal] Erro ao verificar pendentes manualmente:', e?.message || e);
+                    setStatusPolling('ativo');
+                  }
+                }}
+              >
+                🔄 Verificar agora
               </button>
             </div>
 
