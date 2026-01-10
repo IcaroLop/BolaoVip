@@ -32,7 +32,7 @@ async function executarVerificacao() {
 
 /**
  * Inicia o job de verificação de cobranças pendentes
- * Executa a cada 5 minutos (cron: a cada 5 minutos)
+ * Executa a cada 2 minutos (cron: a cada 2 minutos)
  */
 function iniciarJob() {
   if (cronTask) {
@@ -40,12 +40,12 @@ function iniciarJob() {
     return;
   }
 
-  // A cada 5 minutos
-  cronTask = cron.schedule('*/5 * * * *', executarVerificacao, {
+  // A cada 2 minutos
+  cronTask = cron.schedule('*/2 * * * *', executarVerificacao, {
     timezone: 'America/Manaus'
   });
 
-  console.log('[Cron PIX Fallback] ✅ Job iniciado - verificação a cada 5 minutos');
+  console.log('[Cron PIX Fallback] ✅ Job iniciado - verificação a cada 2 minutos');
 
   // Executar uma verificação inicial após 30 segundos (startup)
   setTimeout(() => {

@@ -247,7 +247,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                 2. Clique em "Gerar PIX"<br />
                 3. Escanneie o QRCode com seu banco<br />
                 4. Confirme o pagamento<br />
-                5. Seu saldo será creditado automaticamente (em até 5 minutos)
+                5. Seu saldo será creditado automaticamente (em até 2 minutos)
               </p>
             </div>
           </form>
@@ -343,7 +343,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               <p>
                 <strong>💡 Dica:</strong><br />
                 Cole o código PIX no seu aplicativo bancário e confirme o pagamento.
-                O sistema verificará a cada 5 minutos automaticamente.
+                O sistema verificará a cada 2 minutos automaticamente.
               </p>
             </div>
           </div>
@@ -365,7 +365,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               </p>
               <ul style={{ fontSize: '0.85em', color: '#555', textAlign: 'left', marginTop: '5px' }}>
                 <li>Após pagar o PIX, o sistema detecta automaticamente</li>
-                <li>Verificação a cada <strong>5 minutos</strong> via fallback</li>
+                <li>Verificação a cada <strong>2 minutos</strong> via fallback</li>
                 <li>Saldo creditado automaticamente quando confirmado</li>
                 <li>Você pode clicar em "Verificar agora" para consulta imediata</li>
               </ul>
@@ -405,7 +405,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
             <div className="info-box info-warning">
               <p>
                 <strong>⏳ Importante:</strong><br />
-                • Pode levar até 5 minutos para confirmar<br />
+                • Pode levar até 2 minutos para confirmar<br />
                 • Você pode fechar este modal<br />
                 • Receberá uma notificação quando confirmado<br />
                 • Seu saldo será creditado automaticamente
