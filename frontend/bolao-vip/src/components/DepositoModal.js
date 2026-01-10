@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config';
@@ -19,7 +19,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   
   // Polling interval
-  const [intervalId, setIntervalId] = useState(null);
+  const pollingIntervalRef = useRef(null);
   const [isSandbox, setIsSandbox] = useState(false);
   const [pollAttempts, setPollAttempts] = useState(0);
   const [pixExpirado, setPixExpirado] = useState(false);
@@ -128,9 +128,9 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         setMensagemPolling('⚠️ PIX expirado! Gere um novo para continuar.');
         
         // Parar polling
-        if (intervalId) {
-          clearInterval(intervalId);
-          setIntervalId(null);
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
         }
         
         // Notificar backend sobre expiração
@@ -243,7 +243,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
       verificarStatusDeposito(depositoId, token);
     }, 30000); // 30 segundos
 
-    setIntervalId(id);
+    pollingIntervalRef.current = id;
   };
 
   // Monitorar mudanças de etapa
@@ -255,11 +255,12 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   // Parar polling quando modal fecha
   useEffect(() => {
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
     };
-  }, [intervalId]);
+  }, []);
 
   // Gerar QRCode client-side a partir do Copia-e-Cola
   useEffect(() => {
@@ -288,9 +289,9 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   }, [depositoData?.pix_copiaecola]);
 
   const handleFecharModal = () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-      setIntervalId(null);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
     setPollAttempts(0);
     setTempoDecorrido(0);
@@ -531,9 +532,9 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                     className="btn btn-primary"
                     onClick={() => {
                       // Resetar estados e voltar para gerar novo PIX
-                      if (intervalId) {
-                        clearInterval(intervalId);
-                        setIntervalId(null);
+                      if (pollingIntervalRef.current) {
+                        clearInterval(pollingIntervalRef.current);
+                        pollingIntervalRef.current = null;
                       }
                       setEtapa('valor');
                       setValor('');
