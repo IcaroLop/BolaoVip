@@ -254,13 +254,12 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
 
   // Parar polling quando modal fecha
   useEffect(() => {
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    };
-  }, []);
+    if (!isOpen && pollingIntervalRef.current) {
+      console.log('[DepositoModal] Modal fechado - limpando polling');
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, [isOpen]);
 
   // Gerar QRCode client-side a partir do Copia-e-Cola
   useEffect(() => {
