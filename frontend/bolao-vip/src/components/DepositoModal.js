@@ -569,6 +569,15 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                   <p><strong>Valor do Depósito:</strong> R$ {depositoData?.valor.toFixed(2)}</p>
                   <p><strong>Status:</strong> Aguardando Confirmação...</p>
                   <p><strong>Tempo decorrido:</strong> {Math.floor(tempoDecorrido / 60)}min {tempoDecorrido % 60}s / {Math.floor((depositoData?.calendario_expiracao || 3600) / 60)}min</p>
+                  
+                  {/* DEBUG INFO - Remover após teste */}
+                  <div style={{ background: '#f0f0f0', padding: '10px', margin: '10px 0', borderRadius: '5px', fontSize: '0.8em' }}>
+                    <p><strong>🔍 DEBUG:</strong></p>
+                    <p>Ambiente: {isSandbox ? '🟡 SANDBOX' : '🟢 PRODUÇÃO'}</p>
+                    <p>Tentativas: {pollAttempts}/2</p>
+                    <p>Auto-confirm: {isSandbox && pollAttempts >= 2 ? '✅ SERÁ ACIONADO' : '⏸️ Não acionado'}</p>
+                  </div>
+                  
                   <p style={{ fontSize: '0.9em', color: '#666', marginTop: '10px' }}>
                     ℹ️ <strong>Como funciona:</strong>
                   </p>
