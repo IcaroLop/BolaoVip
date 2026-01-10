@@ -22,6 +22,8 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   const [intervalId, setIntervalId] = useState(null);
   const [isSandbox, setIsSandbox] = useState(false);
   const [pollAttempts, setPollAttempts] = useState(0);
+  const [pixExpirado, setPixExpirado] = useState(false);
+  const [tempoDecorrido, setTempoDecorrido] = useState(0);
 
   useEffect(() => {
     async function carregarAmbiente() {
@@ -118,6 +120,34 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   // Função para verificar status do depósito (polling)
   const verificarStatusDeposito = async (depositoId, token) => {
     try {
+      // Verificar se PIX expirou (3600 segundos = 1 hora)
+      if (depositoData && tempoDecorrido >= depositoData.calendario_expiracao) {
+        console.log('[DepositoModal] ⏰ PIX EXPIRADO após', tempoDecorrido, 'segundos');
+        setPixExpirado(true);
+        setStatusPolling('ativo');
+        setMensagemPolling('⚠️ PIX expirado! Gere um novo para continuar.');
+        
+        // Parar polling
+        if (intervalId) {
+          clearInterval(intervalId);
+          setIntervalId(null);
+        }
+        
+        // Notificar backend sobre expiração
+        try {
+          await axios.post(
+            `${API_BASE_URL}/saldo/notificar-pix-expirado/${depositoId}`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          console.log('[DepositoModal] ✅ Backend notificado sobre PIX expirado');
+        } catch (notifError) {
+          console.error('[DepositoModal] Erro ao notificar expiração:', notifError);
+        }
+        
+        return;
+      }
+      
       setStatusPolling('atualizando');
       setMensagemPolling('Verificando pagamento...');
 
@@ -190,10 +220,12 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
     }
   };
 
-  // Iniciar polling a cada 10 segundos
+  // Iniciar polling a cada 30 segundos
   const iniciarPolling = (depositoId, token) => {
-    console.log('[DepositoModal] Iniciando polling para verificar confirmação...');
+    console.log('[DepositoModal] Iniciando polling a cada 30s até expiração do PIX...');
     setPollAttempts(0);
+    setTempoDecorrido(0);
+    setPixExpirado(false);
 
     // Mantém etapa 'qrcode' para exibir QR e CopiaECola; mudança para 'aguardando'
     // só ocorre quando o usuário clicar em "Já Pagou - Aguardar"
@@ -201,10 +233,15 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
     // Primeiro polling imediato
     verificarStatusDeposito(depositoId, token);
 
-    // Polling a cada 10 segundos
+    // Polling a cada 30 segundos com incremento de tempo
     const id = setInterval(() => {
+      setTempoDecorrido(prev => {
+        const novoTempo = prev + 30;
+        console.log(`[DepositoModal] ⏱️ Tempo decorrido: ${novoTempo}s / ${depositoData?.calendario_expiracao || 3600}s`);
+        return novoTempo;
+      });
       verificarStatusDeposito(depositoId, token);
-    }, 10000);
+    }, 30000); // 30 segundos
 
     setIntervalId(id);
   };
@@ -256,6 +293,8 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
       setIntervalId(null);
     }
     setPollAttempts(0);
+    setTempoDecorrido(0);
+    setPixExpirado(false);
     
     // Resetar estados
     setEtapa('valor');
@@ -454,7 +493,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               <p>
                 <strong>💡 Dica:</strong><br />
                 Cole o código PIX no seu aplicativo bancário e confirme o pagamento.
-                O sistema verificará a cada 2 minutos automaticamente.
+                O sistema verificará automaticamente a cada 30 segundos.
               </p>
             </div>
           </div>
@@ -463,59 +502,119 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         {/* ETAPA 3: Aguardando Confirmação */}
         {etapa === 'aguardando' && (
           <div className="deposito-aguardando-container">
-            <div className="polling-indicator">
-              <div className={`spinner ${statusPolling === 'atualizando' ? 'atualizando' : ''}`}></div>
-              <p>{mensagemPolling}</p>
-            </div>
+            {/* Indicador de PIX Expirado */}
+            {pixExpirado ? (
+              <>
+                <div className="polling-indicator">
+                  <div className="spinner" style={{ borderTopColor: '#FFC107' }}></div>
+                  <p style={{ color: '#FFC107' }}>⚠️ PIX Expirado!</p>
+                </div>
 
-            <div className="deposito-info">
-              <p><strong>Valor do Depósito:</strong> R$ {depositoData?.valor.toFixed(2)}</p>
-              <p><strong>Status:</strong> Aguardando Confirmação...</p>
-              <p style={{ fontSize: '0.9em', color: '#666', marginTop: '10px' }}>
-                ℹ️ <strong>Como funciona:</strong>
-              </p>
-              <ul style={{ fontSize: '0.85em', color: '#555', textAlign: 'left', marginTop: '5px' }}>
-                <li>Após pagar o PIX, o sistema detecta automaticamente</li>
-                <li>Verificação a cada <strong>2 minutos</strong> via fallback</li>
-                <li>Saldo creditado automaticamente quando confirmado</li>
-                <li>Você pode clicar em "Verificar agora" para consulta imediata</li>
-              </ul>
-            </div>
+                <div className="deposito-info" style={{ borderLeftColor: '#FFC107', background: 'rgba(255, 193, 7, 0.1)' }}>
+                  <p><strong>Valor do Depósito:</strong> R$ {depositoData?.valor.toFixed(2)}</p>
+                  <p><strong>Status:</strong> <span style={{ color: '#FFC107' }}>Expirado</span></p>
+                  <p style={{ fontSize: '0.9em', color: '#FFC107', marginTop: '10px' }}>
+                    ⚠️ O QRCode PIX expirou após 1 hora sem pagamento.
+                  </p>
+                </div>
 
-            <div className="modal-actions">
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                onClick={handleFecharModal}
-              >
-                Fechar
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={async () => {
-                  try {
-                    const token = localStorage.getItem('token');
-                    await verificarStatusDeposito(depositoData.deposito_id, token);
-                  } catch (e) {
-                    console.error('[DepositoModal] Erro ao verificar:', e?.message || e);
-                  }
-                }}
-              >
-                🔄 Verificar agora
-              </button>
-              {/* Botão REMOVIDO: Confirmar SANDBOX - Desnecessário em produção com fallback automático */}
-            </div>
+                <div className="modal-actions">
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={handleFecharModal}
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      // Resetar estados e voltar para gerar novo PIX
+                      if (intervalId) {
+                        clearInterval(intervalId);
+                        setIntervalId(null);
+                      }
+                      setEtapa('valor');
+                      setValor('');
+                      setDepositoData(null);
+                      setPixExpirado(false);
+                      setTempoDecorrido(0);
+                      setPollAttempts(0);
+                    }}
+                  >
+                    🔄 Gerar Novo PIX
+                  </button>
+                </div>
 
-            <div className="info-box info-warning">
-              <p>
-                <strong>⏳ Importante:</strong><br />
-                • Pode levar até 2 minutos para confirmar<br />
-                • Você pode fechar este modal<br />
-                • Receberá uma notificação quando confirmado<br />
-                • Seu saldo será creditado automaticamente
-              </p>
-            </div>
+                <div className="info-box info-warning">
+                  <p>
+                    <strong>💡 Importante:</strong><br />
+                    • Você recebeu uma notificação sobre a expiração<br />
+                    • Clique em "Gerar Novo PIX" para criar uma nova cobrança<br />
+                    • O novo PIX terá validade de 1 hora
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* UI Normal de Aguardando */}
+                <div className="polling-indicator">
+                  <div className={`spinner ${statusPolling === 'atualizando' ? 'atualizando' : ''}`}></div>
+                  <p>{mensagemPolling}</p>
+                </div>
+
+                <div className="deposito-info">
+                  <p><strong>Valor do Depósito:</strong> R$ {depositoData?.valor.toFixed(2)}</p>
+                  <p><strong>Status:</strong> Aguardando Confirmação...</p>
+                  <p><strong>Tempo decorrido:</strong> {Math.floor(tempoDecorrido / 60)}min {tempoDecorrido % 60}s / {Math.floor((depositoData?.calendario_expiracao || 3600) / 60)}min</p>
+                  <p style={{ fontSize: '0.9em', color: '#666', marginTop: '10px' }}>
+                    ℹ️ <strong>Como funciona:</strong>
+                  </p>
+                  <ul style={{ fontSize: '0.85em', color: '#555', textAlign: 'left', marginTop: '5px' }}>
+                    <li>Após pagar o PIX, o sistema detecta automaticamente</li>
+                    <li>Verificação a cada <strong>30 segundos</strong> até expirar</li>
+                    <li>Saldo creditado automaticamente quando confirmado</li>
+                    <li>Você pode clicar em "Verificar agora" para consulta imediata</li>
+                  </ul>
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={handleFecharModal}
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem('token');
+                        await verificarStatusDeposito(depositoData.deposito_id, token);
+                      } catch (e) {
+                        console.error('[DepositoModal] Erro ao verificar:', e?.message || e);
+                      }
+                    }}
+                  >
+                    🔄 Verificar agora
+                  </button>
+                  {/* Botão REMOVIDO: Confirmar SANDBOX - Desnecessário em produção com fallback automático */}
+                </div>
+
+                <div className="info-box info-warning">
+                  <p>
+                    <strong>⏳ Importante:</strong><br />
+                    • Verificação automática a cada 30 segundos<br />
+                    • Você pode fechar este modal<br />
+                    • Receberá uma notificação quando confirmado<br />
+                    • Se o PIX expirar, você será notificado
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

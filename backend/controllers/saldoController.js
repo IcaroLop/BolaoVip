@@ -421,6 +421,80 @@ exports.expirarDepositosAntigos = async (req, res) => {
 };
 
 /**
+ * POST /saldo/notificar-pix-expirado/:depositoId - Notifica usuário sobre PIX expirado
+ */
+exports.notificarPixExpirado = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const { depositoId } = req.params;
+    const db = require('../database/conexao');
+    const { criarNotificacao } = require('../services/notificacoesService');
+
+    console.log(`[saldoController.notificarPixExpirado] Notificando expiração. usuario=${usuarioId}, deposito_id=${depositoId}`);
+
+    // Buscar depósito
+    const [depositos] = await db.query(
+      'SELECT * FROM pix_depositos WHERE id = ? AND id_usuario = ?',
+      [depositoId, usuarioId]
+    );
+
+    if (!depositos || depositos.length === 0) {
+      return res.status(404).json({ erro: 'Depósito não encontrado' });
+    }
+
+    const deposito = depositos[0];
+
+    // Marcar como EXPIRADO se ainda estiver PENDENTE
+    if (deposito.status_pagamento === 'PENDENTE') {
+      await db.query(
+        `UPDATE pix_depositos 
+         SET status_pagamento = 'EXPIRADO', updated_at = NOW()
+         WHERE id = ?`,
+        [depositoId]
+      );
+      console.log(`[saldoController.notificarPixExpirado] ✅ Depósito ${depositoId} marcado como EXPIRADO`);
+    }
+
+    // Criar notificação no sistema
+    try {
+      await criarNotificacao(
+        usuarioId,
+        'pix_expirado',
+        '⚠️ PIX Expirado',
+        `Seu depósito de R$ ${deposito.valor_original.toFixed(2)} expirou após 1 hora sem pagamento. Gere um novo PIX para continuar.`,
+        {
+          deposito_id: depositoId,
+          txid: deposito.txid,
+          valor: deposito.valor_original,
+          acao: 'gerar_novo_pix'
+        }
+      );
+      console.log(`[saldoController.notificarPixExpirado] ✅ Notificação criada com sucesso`);
+    } catch (notifError) {
+      console.error('[saldoController.notificarPixExpirado] Erro ao criar notificação:', notifError.message);
+    }
+
+    // TODO: Enviar Push Notification (se implementado)
+    // await enviarPushNotification(usuarioId, {
+    //   title: '⚠️ PIX Expirado',
+    //   body: `Seu depósito de R$ ${deposito.valor_original.toFixed(2)} expirou. Gere um novo PIX.`,
+    //   data: { tipo: 'pix_expirado', deposito_id: depositoId }
+    // });
+
+    res.json({
+      sucesso: true,
+      mensagem: 'Notificação de expiração enviada',
+      deposito_id: depositoId,
+      status: 'EXPIRADO'
+    });
+
+  } catch (err) {
+    console.error('[saldoController.notificarPixExpirado] Erro:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao notificar expiração' });
+  }
+};
+
+/**
  * POST /saldo/verificar-deposito-pix/:depositoId - Verifica um depósito PIX específico (consulta EFI imediatamente)
  * Usado pelo frontend durante polling para confirmar pagamento em tempo real
  */

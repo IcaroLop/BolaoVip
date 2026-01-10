@@ -24,6 +24,9 @@ router.post('/deposito-pix-confirmar/:depositoId', saldoController.confirmarDepo
 // POST - Verificar depósito PIX específico (consulta EFI imediatamente)
 router.post('/verificar-deposito-pix/:depositoId', saldoController.verificarDepositoPix);
 
+// POST - Notificar usuário sobre PIX expirado
+router.post('/notificar-pix-expirado/:depositoId', saldoController.notificarPixExpirado);
+
 // GET - Listar todos os depósitos pendentes (admin/debug)
 router.get('/depositos-pendentes', saldoController.listarDepositosPendentes);
 
