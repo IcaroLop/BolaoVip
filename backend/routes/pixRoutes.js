@@ -11,4 +11,7 @@ router.post('/webhook', pixController.webhookCobranca);
 // Verificação manual (fallback) de pendências de PIX (cobranças + depósitos)
 router.post('/verificar-pendentes', autenticar, pixController.verificarPendentes);
 
+// Informações do ambiente PIX (sandbox/prod)
+router.get('/ambiente', autenticar, pixController.ambiente);
+
 module.exports = router;

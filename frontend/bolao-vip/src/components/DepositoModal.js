@@ -20,6 +20,23 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   
   // Polling interval
   const [intervalId, setIntervalId] = useState(null);
+  const [isSandbox, setIsSandbox] = useState(false);
+
+  useEffect(() => {
+    async function carregarAmbiente() {
+      try {
+        const token = localStorage.getItem('token');
+        const resp = await axios.get(`${API_BASE_URL}/pix/ambiente`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setIsSandbox(Boolean(resp.data?.sandbox));
+        console.log('[DepositoModal] Ambiente PIX:', resp.data);
+      } catch (e) {
+        console.warn('[DepositoModal] Não foi possível obter ambiente PIX:', e?.message);
+      }
+    }
+    if (isOpen) carregarAmbiente();
+  }, [isOpen]);
 
   // Copiar para clipboard
   const copiarParaClipboard = (texto) => {
@@ -261,20 +278,47 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                 <strong>ℹ️ Como funciona:</strong><br />
                 1. Digite o valor desejado<br />
                 2. Clique em "Gerar PIX"<br />
-                3. Escanneie o QRCode com seu banco<br />
-                4. Confirme o pagamento<br />
-                5. Seu saldo será creditado automaticamente (em até 2 minutos)
-              </p>
-            </div>
-          </form>
+                    await verificarStatusDeposito(depositoData.deposito_id, token);
         )}
-
-        {/* ETAPA 2: QRCode e CopiaECola */}
+                    console.error('[DepositoModal] Erro ao verificar:', e?.message || e);
         {etapa === 'qrcode' && depositoData && (
           <div className="deposito-qrcode-container">
             <div className="deposito-info">
               <p><strong>Valor:</strong> R$ {depositoData.valor.toFixed(2)}</p>
               <p><strong>Válido por:</strong> {depositoData.calendario_expiracao} segundos</p>
+              {isSandbox && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      setStatusPolling('atualizando');
+                      setMensagemPolling('Confirmando depósito manualmente (SANDBOX)...');
+                      const response = await axios.post(
+                        `${API_BASE_URL}/saldo/deposito-pix-confirmar/${depositoData.deposito_id}`,
+                        {},
+                        { headers: { Authorization: `Bearer ${token}` } }
+                      );
+                      if (response.data.sucesso) {
+                        setStatusPolling('ativo');
+                        setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
+                        setTimeout(() => handleFecharModal(), 2000);
+                      } else {
+                        setStatusPolling('ativo');
+                        setMensagemPolling('⚠️ Depósito ainda pendente na EFI');
+                      }
+                    } catch (e) {
+                      console.error('[DepositoModal] Erro ao confirmar manualmente:', e?.message || e);
+                      setStatusPolling('ativo');
+                      setMensagemPolling('❌ Erro ao confirmar');
+                    }
+                  }}
+                  style={{ backgroundColor: '#FF9800' }}
+                >
+                  ✅ Confirmar (SANDBOX)
+                </button>
+              )}
             </div>
 
             {/* QRCode - renderiza localmente a partir do Copia-e-Cola */}

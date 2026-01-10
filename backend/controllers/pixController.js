@@ -197,6 +197,16 @@ async function webhookCobranca (req, res) {
 module.exports = {
   gerarCobranca,
   webhookCobranca,
+  // Retorna informações do ambiente PIX (sandbox vs produção)
+  async ambiente(req, res) {
+    try {
+      const isSandbox = String(process.env.EFI_PIX_SANDBOX).toLowerCase() === 'true';
+      const baseUrl = isSandbox ? 'https://pix-h.api.efipay.com.br' : 'https://pix.api.efipay.com.br';
+      res.json({ sandbox: isSandbox, baseUrl });
+    } catch (err) {
+      res.status(500).json({ erro: err.message || 'Erro ao obter ambiente PIX' });
+    }
+  },
   async verificarPendentes(req, res) {
     try {
       const resultado = await verificarTodosPendentes();
