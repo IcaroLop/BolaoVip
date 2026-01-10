@@ -184,8 +184,8 @@ async function verificarEAtualizarDeposito(deposito) {
           [id_usuario]
         );
 
-        const saldoAnt = saldoAnterior[0][0]?.saldo_atual || 0;
-        const saldoNovo = saldoAnt + valorPago;
+        const saldoAnt = parseFloat(saldoAnterior[0][0]?.saldo_atual || 0);
+        const saldoNovo = saldoAnt + parseFloat(valorPago);
 
         await conexao.query(
           'UPDATE saldo_usuario SET saldo_atual = saldo_atual + ? WHERE usuario_id = ?',
