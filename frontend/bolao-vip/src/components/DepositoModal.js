@@ -278,9 +278,12 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                 <strong>ℹ️ Como funciona:</strong><br />
                 1. Digite o valor desejado<br />
                 2. Clique em "Gerar PIX"<br />
-                    await verificarStatusDeposito(depositoData.deposito_id, token);
-        )}
-                    console.error('[DepositoModal] Erro ao verificar:', e?.message || e);
+                3. Escanneie o QRCode com seu banco<br />
+                4. Confirme o pagamento<br />
+                5. Seu saldo será creditado automaticamente (em até 2 minutos)
+              </p>
+            </div>
+
         {etapa === 'qrcode' && depositoData && (
           <div className="deposito-qrcode-container">
             <div className="deposito-info">
