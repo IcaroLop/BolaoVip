@@ -30,10 +30,17 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         const resp = await axios.get(`${API_BASE_URL}/pix/ambiente`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setIsSandbox(Boolean(resp.data?.sandbox));
-        console.log('[DepositoModal] Ambiente PIX:', resp.data);
+        const ambienteSandbox = Boolean(resp.data?.sandbox);
+        setIsSandbox(ambienteSandbox);
+        console.log('[DepositoModal] 🌍 Ambiente PIX carregado:', {
+          sandbox: ambienteSandbox,
+          baseUrl: resp.data?.baseUrl,
+          raw: resp.data
+        });
       } catch (e) {
-        console.warn('[DepositoModal] Não foi possível obter ambiente PIX:', e?.message);
+        console.warn('[DepositoModal] ⚠️ Não foi possível obter ambiente PIX:', e?.message);
+        console.warn('[DepositoModal] 📍 Assumindo ambiente PRODUCAO por padrão');
+        setIsSandbox(false);
       }
     }
     if (isOpen) carregarAmbiente();
@@ -141,10 +148,14 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         setMensagemPolling('⏳ Aguardando confirmação do pagamento...');
 
         // Incrementar tentativas de polling
-        setPollAttempts(prev => prev + 1);
+        const novasTentativas = pollAttempts + 1;
+        setPollAttempts(novasTentativas);
+        
+        console.log(`[DepositoModal] 🔍 DEBUG Auto-Confirm: isSandbox=${isSandbox}, pollAttempts=${pollAttempts}, novasTentativas=${novasTentativas}, depositoId=${depositoId}`);
 
         // Em SANDBOX, após 2 tentativas ainda pendente → auto-confirmar
-        if (isSandbox && pollAttempts + 1 >= 2) {
+        if (isSandbox && novasTentativas >= 2) {
+          console.log('[DepositoModal] 🤖 ACIONANDO AUTO-CONFIRM (SANDBOX) - 2 tentativas atingidas');
           try {
             setStatusPolling('atualizando');
             setMensagemPolling('Confirmando depósito automaticamente (SANDBOX)...');
@@ -153,6 +164,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               {},
               { headers: { Authorization: `Bearer ${token}` } }
             );
+            console.log('[DepositoModal] ✅ Resposta do auto-confirm:', resp.data);
             if (resp.data?.sucesso) {
               setStatusPolling('ativo');
               setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
@@ -163,9 +175,11 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               setMensagemPolling('⚠️ Aguardando confirmação do PIX...');
             }
           } catch (e) {
-            console.error('[DepositoModal] Erro ao auto-confirmar (SANDBOX):', e?.message || e);
+            console.error('[DepositoModal] ❌ Erro ao auto-confirmar (SANDBOX):', e?.message || e);
             setStatusPolling('ativo');
           }
+        } else {
+          console.log(`[DepositoModal] ⏸️ Auto-confirm não acionado: isSandbox=${isSandbox}, tentativas=${novasTentativas}/2`);
         }
       }
       
