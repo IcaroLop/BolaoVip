@@ -235,16 +235,17 @@ exports.confirmarSaque = async (req, res) => {
 
 /**
  * POST /saldo/deposito-pix-confirmar/:depositoId - Confirma um depósito PIX manualmente (SANDBOX/DEV)
- * Simula recebimento do PIX e credita o saldo
+ * Simula recebimento do PIX e credita o saldo SEM consultar EFI (força confirmação)
  */
 exports.confirmarDepositoPix = async (req, res) => {
+  let conexao;
   try {
     const usuarioId = req.usuario.id;
     const { depositoId } = req.params;
     const db = require('../database/conexao');
-    const { verificarEAtualizarDeposito } = require('../services/depositoPixService');
+    const saldoService = require('../services/saldoService');
 
-    console.log(`[saldoController.confirmarDepositoPix] Confirmando depósito PIX manualmente. usuario=${usuarioId}, deposito_id=${depositoId}`);
+    console.log(`[saldoController.confirmarDepositoPix] Confirmando depósito PIX manualmente (SANDBOX). usuario=${usuarioId}, deposito_id=${depositoId}`);
 
     // Buscar depósito
     const [depositos] = await db.query(
@@ -258,29 +259,87 @@ exports.confirmarDepositoPix = async (req, res) => {
 
     const deposito = depositos[0];
 
-    // Verificar e atualizar (vai creditar saldo se status mudar)
-    const resultado = await verificarEAtualizarDeposito(deposito);
+    // Verificar se já foi pago
+    if (deposito.status_pagamento === 'PAGO') {
+      console.log(`[saldoController.confirmarDepositoPix] Depósito já foi confirmado anteriormente`);
+      const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
+      return res.json({
+        sucesso: true,
+        mensagem: 'Depósito já havia sido confirmado anteriormente',
+        deposito_id: depositoId,
+        saldo: saldoAtualizado
+      });
+    }
 
-    if (resultado) {
-      console.log(`[saldoController.confirmarDepositoPix] ✅ Depósito confirmado e saldo creditado`);
+    const valorPago = Number(deposito.valor_original);
+    const { id, txid, id_usuario } = deposito;
+
+    console.log(`[saldoController.confirmarDepositoPix] Forçando confirmação de R$ ${valorPago} (SANDBOX - sem consultar EFI)`);
+
+    // Iniciar transação
+    conexao = await db.getConnection();
+    await conexao.beginTransaction();
+
+    try {
+      // 1. Atualizar pix_depositos
+      await conexao.query(
+        `UPDATE pix_depositos 
+         SET status = 'CONCLUIDA', 
+             status_pagamento = 'PAGO', 
+             webhook_recebido = false, 
+             webhook_payload = '{"simulado":true,"origem":"sandbox_manual"}', 
+             data_pagamento = NOW(),
+             updated_at = NOW()
+         WHERE id = ?`,
+        [id]
+      );
+
+      // 2. Obter saldo anterior
+      const [saldoAnterior] = await conexao.query(
+        'SELECT saldo_atual FROM saldo_usuario WHERE usuario_id = ?',
+        [id_usuario]
+      );
+
+      const saldoAnt = saldoAnterior[0]?.saldo_atual || 0;
+      const saldoNovo = saldoAnt + valorPago;
+
+      // 3. Creditar saldo do usuário
+      await conexao.query(
+        'UPDATE saldo_usuario SET saldo_atual = saldo_atual + ? WHERE usuario_id = ?',
+        [valorPago, id_usuario]
+      );
+
+      // 4. Registrar movimentação no extrato
+      await conexao.query(
+        `INSERT INTO extrato_movimentacao 
+         (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id_usuario, 'deposito', valorPago, saldoAnt, saldoNovo, `Depósito PIX confirmado (SANDBOX) - txid: ${txid}`, id, 'deposito_pix', 'confirmado']
+      );
+
+      await conexao.commit();
+
+      console.log(`[saldoController.confirmarDepositoPix] ✅ Depósito confirmado e saldo creditado. Novo saldo: R$ ${saldoNovo.toFixed(2)}`);
       
       // Obter saldo atualizado
       const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
       
       res.json({
         sucesso: true,
-        mensagem: 'Depósito confirmado e creditado',
+        mensagem: `Depósito de R$ ${valorPago.toFixed(2)} confirmado (SANDBOX)`,
         deposito_id: depositoId,
+        saldo_anterior: saldoAnt,
+        saldo_novo: saldoNovo,
         saldo: saldoAtualizado
       });
-    } else {
-      console.log(`[saldoController.confirmarDepositoPix] ⚠️ Depósito ainda pendente na EFI`);
-      res.status(400).json({
-        erro: 'Depósito ainda não foi confirmado pela EFI. Tente novamente em alguns momentos.'
-      });
+    } catch (transactionError) {
+      await conexao.rollback();
+      throw transactionError;
     }
   } catch (err) {
     console.error('[saldoController.confirmarDepositoPix] Erro ao confirmar depósito:', err);
     res.status(500).json({ erro: err.message || 'Erro ao confirmar depósito' });
+  } finally {
+    if (conexao) conexao.release();
   }
 };
