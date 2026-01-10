@@ -360,9 +360,15 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
             <div className="deposito-info">
               <p><strong>Valor do Depósito:</strong> R$ {depositoData?.valor.toFixed(2)}</p>
               <p><strong>Status:</strong> Aguardando Confirmação...</p>
-              <p style={{ fontSize: '0.9em', color: '#666' }}>
-                O sistema verificará a cada 5 minutos. Você receberá uma notificação quando o PIX for confirmado.
+              <p style={{ fontSize: '0.9em', color: '#666', marginTop: '10px' }}>
+                ℹ️ <strong>Como funciona:</strong>
               </p>
+              <ul style={{ fontSize: '0.85em', color: '#555', textAlign: 'left', marginTop: '5px' }}>
+                <li>Após pagar o PIX, o sistema detecta automaticamente</li>
+                <li>Verificação a cada <strong>5 minutos</strong> via fallback</li>
+                <li>Saldo creditado automaticamente quando confirmado</li>
+                <li>Você pode clicar em "Verificar agora" para consulta imediata</li>
+              </ul>
             </div>
 
             <div className="modal-actions">
@@ -393,40 +399,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               >
                 🔄 Verificar agora
               </button>
-              {/* Botão de teste para sandbox: confirma manualmente o depósito */}
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={async () => {
-                  try {
-                    const token = localStorage.getItem('token');
-                    setStatusPolling('atualizando');
-                    setMensagemPolling('Confirmando depósito manualmente (SANDBOX)...');
-                    
-                    const response = await axios.post(
-                      `${API_BASE_URL}/saldo/deposito-pix-confirmar/${depositoData.deposito_id}`,
-                      {},
-                      { headers: { Authorization: `Bearer ${token}` } }
-                    );
-                    
-                    if (response.data.sucesso) {
-                      setStatusPolling('ativo');
-                      setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
-                      setTimeout(() => handleFecharModal(), 2000);
-                    } else {
-                      setStatusPolling('ativo');
-                      setMensagemPolling('⚠️ Depósito ainda pendente na EFI');
-                    }
-                  } catch (e) {
-                    console.error('[DepositoModal] Erro ao confirmar manualmente:', e?.message || e);
-                    setStatusPolling('ativo');
-                    setMensagemPolling('❌ Erro ao confirmar');
-                  }
-                }}
-                style={{ backgroundColor: '#FF9800' }}
-              >
-                ✅ Confirmar (SANDBOX)
-              </button>
+              {/* Botão REMOVIDO: Confirmar SANDBOX - Desnecessário em produção com fallback automático */}
             </div>
 
             <div className="info-box info-warning">
