@@ -571,11 +571,19 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                   <p><strong>Tempo decorrido:</strong> {Math.floor(tempoDecorrido / 60)}min {tempoDecorrido % 60}s / {Math.floor((depositoData?.calendario_expiracao || 3600) / 60)}min</p>
                   
                   {/* DEBUG INFO - Remover após teste */}
-                  <div style={{ background: '#f0f0f0', padding: '10px', margin: '10px 0', borderRadius: '5px', fontSize: '0.8em' }}>
-                    <p><strong>🔍 DEBUG:</strong></p>
-                    <p>Ambiente: {isSandbox ? '🟡 SANDBOX' : '🟢 PRODUÇÃO'}</p>
-                    <p>Tentativas: {pollAttempts}/2</p>
-                    <p>Auto-confirm: {isSandbox && pollAttempts >= 2 ? '✅ SERÁ ACIONADO' : '⏸️ Não acionado'}</p>
+                  <div style={{ 
+                    background: 'rgba(255, 193, 7, 0.15)', 
+                    border: '1px solid rgba(255, 193, 7, 0.3)',
+                    padding: '10px', 
+                    margin: '10px 0', 
+                    borderRadius: '5px', 
+                    fontSize: '0.8em',
+                    color: '#FFC107'
+                  }}>
+                    <p style={{ margin: '5px 0' }}><strong>🔍 DEBUG:</strong></p>
+                    <p style={{ margin: '3px 0' }}>Ambiente: {isSandbox ? '🟡 SANDBOX' : '🟢 PRODUÇÃO'}</p>
+                    <p style={{ margin: '3px 0' }}>Tentativas: {pollAttempts}/2</p>
+                    <p style={{ margin: '3px 0' }}>Auto-confirm: {isSandbox && pollAttempts >= 2 ? '✅ SERÁ ACIONADO' : '⏸️ Não acionado'}</p>
                   </div>
                   
                   <p style={{ fontSize: '0.9em', color: '#666', marginTop: '10px' }}>
