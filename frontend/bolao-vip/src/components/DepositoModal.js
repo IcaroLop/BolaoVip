@@ -283,6 +283,8 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                 5. Seu saldo será creditado automaticamente (em até 2 minutos)
               </p>
             </div>
+          </form>
+        )}
 
         {etapa === 'qrcode' && depositoData && (
           <div className="deposito-qrcode-container">
