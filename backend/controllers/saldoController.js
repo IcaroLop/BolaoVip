@@ -345,6 +345,82 @@ exports.confirmarDepositoPix = async (req, res) => {
 };
 
 /**
+ * GET /saldo/depositos-pendentes - Lista todos os depósitos pendentes do sistema (admin/debug)
+ */
+exports.listarDepositosPendentes = async (req, res) => {
+  try {
+    const db = require('../database/conexao');
+    
+    const [depositos] = await db.query(
+      `SELECT 
+        id, txid, id_usuario, valor_original, status_pagamento,
+        created_at, updated_at, calendario_expiracao,
+        TIMESTAMPDIFF(MINUTE, created_at, NOW()) as minutos_desde_criacao,
+        DATE_ADD(created_at, INTERVAL calendario_expiracao SECOND) as data_expiracao
+      FROM pix_depositos
+      WHERE status_pagamento = 'PENDENTE'
+      ORDER BY created_at DESC
+      LIMIT 50`
+    );
+
+    console.log(`[saldoController.listarDepositosPendentes] Encontrados ${depositos.length} depósitos pendentes`);
+
+    res.json({
+      sucesso: true,
+      total: depositos.length,
+      depositos: depositos.map(d => ({
+        id: d.id,
+        txid: d.txid,
+        usuario_id: d.id_usuario,
+        valor: d.valor_original,
+        status: d.status_pagamento,
+        criado_em: d.created_at,
+        atualizado_em: d.updated_at,
+        minutos_desde_criacao: d.minutos_desde_criacao,
+        expira_em: d.data_expiracao,
+        expirado: d.data_expiracao < new Date()
+      }))
+    });
+  } catch (err) {
+    console.error('[saldoController.listarDepositosPendentes] Erro:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao listar depósitos pendentes' });
+  }
+};
+
+/**
+ * POST /saldo/expirar-depositos-antigos - Marca depósitos pendentes antigos como EXPIRADO
+ */
+exports.expirarDepositosAntigos = async (req, res) => {
+  try {
+    const db = require('../database/conexao');
+    const { idadeMinutos = 60 } = req.body; // Padrão: 1 hora
+
+    console.log(`[saldoController.expirarDepositosAntigos] Expirando depósitos pendentes há mais de ${idadeMinutos} minutos...`);
+
+    const [result] = await db.query(
+      `UPDATE pix_depositos
+       SET status_pagamento = 'EXPIRADO',
+           updated_at = NOW()
+       WHERE status_pagamento = 'PENDENTE'
+         AND created_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)`,
+      [idadeMinutos]
+    );
+
+    console.log(`[saldoController.expirarDepositosAntigos] ✅ ${result.affectedRows} depósitos expirados`);
+
+    res.json({
+      sucesso: true,
+      mensagem: `${result.affectedRows} depósitos marcados como EXPIRADO`,
+      depositos_expirados: result.affectedRows,
+      idade_minutos: idadeMinutos
+    });
+  } catch (err) {
+    console.error('[saldoController.expirarDepositosAntigos] Erro:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao expirar depósitos antigos' });
+  }
+};
+
+/**
  * POST /saldo/verificar-deposito-pix/:depositoId - Verifica um depósito PIX específico (consulta EFI imediatamente)
  * Usado pelo frontend durante polling para confirmar pagamento em tempo real
  */

@@ -248,13 +248,14 @@ async function verificarDepositosPendentes() {
   try {
     console.log('[depositoPixService] 🔍 Iniciando verificação de depósitos pendentes...');
 
-    // Buscar depósitos pendentes criados há mais de 2 minutos E não expirados
+    // Buscar depósitos pendentes criados há mais de 2 minutos E não expirados (max 6 horas)
     const [depositos] = await db.query(
       `SELECT id, txid, id_usuario, valor_original, created_at, calendario_expiracao
        FROM pix_depositos
        WHERE status_pagamento = 'PENDENTE'
          AND webhook_recebido = false
          AND created_at < DATE_SUB(NOW(), INTERVAL 2 MINUTE)
+         AND created_at > DATE_SUB(NOW(), INTERVAL 6 HOUR)
          AND (
            calendario_expiracao IS NULL 
            OR DATE_ADD(created_at, INTERVAL calendario_expiracao SECOND) > NOW()
