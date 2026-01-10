@@ -300,8 +300,8 @@ exports.confirmarDepositoPix = async (req, res) => {
         [id_usuario]
       );
 
-      const saldoAnt = saldoAnterior[0]?.saldo_atual || 0;
-      const saldoNovo = saldoAnt + valorPago;
+      const saldoAnt = parseFloat(saldoAnterior[0]?.saldo_atual || 0);
+      const saldoNovo = saldoAnt + parseFloat(valorPago);
 
       // 3. Creditar saldo do usuário
       await conexao.query(
