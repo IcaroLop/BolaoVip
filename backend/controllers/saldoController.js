@@ -353,7 +353,7 @@ exports.verificarDepositoPix = async (req, res) => {
     const usuarioId = req.usuario.id;
     const { depositoId } = req.params;
     const db = require('../database/conexao');
-    const { depositoPixService } = require('../services/depositoPixService');
+    const depositoPixService = require('../services/depositoPixService');
 
     console.log(`[saldoController.verificarDepositoPix] Verificando depósito PIX. usuario=${usuarioId}, deposito_id=${depositoId}`);
 
