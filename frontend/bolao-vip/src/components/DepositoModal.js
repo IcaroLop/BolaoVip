@@ -21,6 +21,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   // Polling interval
   const [intervalId, setIntervalId] = useState(null);
   const [isSandbox, setIsSandbox] = useState(false);
+  const [pollAttempts, setPollAttempts] = useState(0);
 
   useEffect(() => {
     async function carregarAmbiente() {
@@ -130,6 +131,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         // Depósito confirmado! Parar polling e mostrar mensagem de sucesso
         setStatusPolling('ativo');
         setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
+        setPollAttempts(0);
         
         // Aguardar 2 segundos e fechar modal
         setTimeout(() => handleFecharModal(), 2000);
@@ -137,6 +139,34 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         // Ainda pendente
         setStatusPolling('ativo');
         setMensagemPolling('⏳ Aguardando confirmação do pagamento...');
+
+        // Incrementar tentativas de polling
+        setPollAttempts(prev => prev + 1);
+
+        // Em SANDBOX, após 2 tentativas ainda pendente → auto-confirmar
+        if (isSandbox && pollAttempts + 1 >= 2) {
+          try {
+            setStatusPolling('atualizando');
+            setMensagemPolling('Confirmando depósito automaticamente (SANDBOX)...');
+            const resp = await axios.post(
+              `${API_BASE_URL}/saldo/deposito-pix-confirmar/${depositoId}`,
+              {},
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (resp.data?.sucesso) {
+              setStatusPolling('ativo');
+              setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
+              setPollAttempts(0);
+              setTimeout(() => handleFecharModal(), 2000);
+            } else {
+              setStatusPolling('ativo');
+              setMensagemPolling('⚠️ Aguardando confirmação do PIX...');
+            }
+          } catch (e) {
+            console.error('[DepositoModal] Erro ao auto-confirmar (SANDBOX):', e?.message || e);
+            setStatusPolling('ativo');
+          }
+        }
       }
       
     } catch (error) {
@@ -149,6 +179,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   // Iniciar polling a cada 10 segundos
   const iniciarPolling = (depositoId, token) => {
     console.log('[DepositoModal] Iniciando polling para verificar confirmação...');
+    setPollAttempts(0);
 
     // Mantém etapa 'qrcode' para exibir QR e CopiaECola; mudança para 'aguardando'
     // só ocorre quando o usuário clicar em "Já Pagou - Aguardar"
@@ -210,6 +241,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
       clearInterval(intervalId);
       setIntervalId(null);
     }
+    setPollAttempts(0);
     
     // Resetar estados
     setEtapa('valor');
