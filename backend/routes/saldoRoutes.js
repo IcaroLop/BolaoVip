@@ -18,6 +18,9 @@ router.post('/deposito', saldoController.criarDeposito);
 // POST - Criar e confirmar depósito instantaneamente (modo desenvolvimento)
 router.post('/deposito-dev', saldoController.criarDepositoDev);
 
+// POST - Confirmar depósito manualmente (SANDBOX/DEV - simula recebimento PIX)
+router.post('/deposito-pix-confirmar/:depositoId', saldoController.confirmarDepositoPix);
+
 // POST - Confirmar depósito
 router.post('/confirmar-deposito/:movimentacaoId', saldoController.confirmarDeposito);
 
@@ -27,6 +30,7 @@ router.post('/saque', saldoController.criarSaque);
 // POST - Confirmar saque
 router.post('/confirmar-saque/:movimentacaoId', saldoController.confirmarSaque);
 
-module.exports = router;
 // POST - Criar e confirmar saque instantaneamente (modo desenvolvimento)
 router.post('/saque-dev', saldoController.criarSaqueDev);
+
+module.exports = router;

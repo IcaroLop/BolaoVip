@@ -232,3 +232,55 @@ exports.confirmarSaque = async (req, res) => {
     res.status(500).json({ erro: err.message || 'Erro ao confirmar saque' });
   }
 };
+
+/**
+ * POST /saldo/deposito-pix-confirmar/:depositoId - Confirma um depósito PIX manualmente (SANDBOX/DEV)
+ * Simula recebimento do PIX e credita o saldo
+ */
+exports.confirmarDepositoPix = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const { depositoId } = req.params;
+    const db = require('../database/conexao');
+    const { verificarEAtualizarDeposito } = require('../services/depositoPixService');
+
+    console.log(`[saldoController.confirmarDepositoPix] Confirmando depósito PIX manualmente. usuario=${usuarioId}, deposito_id=${depositoId}`);
+
+    // Buscar depósito
+    const [depositos] = await db.query(
+      'SELECT * FROM pix_depositos WHERE id = ? AND id_usuario = ?',
+      [depositoId, usuarioId]
+    );
+
+    if (!depositos || depositos.length === 0) {
+      return res.status(404).json({ erro: 'Depósito não encontrado' });
+    }
+
+    const deposito = depositos[0];
+
+    // Verificar e atualizar (vai creditar saldo se status mudar)
+    const resultado = await verificarEAtualizarDeposito(deposito);
+
+    if (resultado) {
+      console.log(`[saldoController.confirmarDepositoPix] ✅ Depósito confirmado e saldo creditado`);
+      
+      // Obter saldo atualizado
+      const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
+      
+      res.json({
+        sucesso: true,
+        mensagem: 'Depósito confirmado e creditado',
+        deposito_id: depositoId,
+        saldo: saldoAtualizado
+      });
+    } else {
+      console.log(`[saldoController.confirmarDepositoPix] ⚠️ Depósito ainda pendente na EFI`);
+      res.status(400).json({
+        erro: 'Depósito ainda não foi confirmado pela EFI. Tente novamente em alguns momentos.'
+      });
+    }
+  } catch (err) {
+    console.error('[saldoController.confirmarDepositoPix] Erro ao confirmar depósito:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao confirmar depósito' });
+  }
+};

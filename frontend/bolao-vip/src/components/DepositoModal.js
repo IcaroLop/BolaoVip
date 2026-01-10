@@ -149,16 +149,23 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
   // Gerar QRCode client-side a partir do Copia-e-Cola
   useEffect(() => {
     async function gerarQr() {
+      console.log('[DepositoModal] Iniciando geração de QRCode...');
+      console.log('[DepositoModal] depositoData:', depositoData);
+      console.log('[DepositoModal] pix_copiaecola disponível?', !!depositoData?.pix_copiaecola);
+      
       try {
         if (depositoData?.pix_copiaecola) {
+          console.log('[DepositoModal] Tentando gerar data URL com qrcode.toDataURL()...');
           const url = await QRCodeLib.toDataURL(depositoData.pix_copiaecola, { width: 220, margin: 2 });
+          console.log('[DepositoModal] ✅ QRCode data URL gerado com sucesso. Comprimento:', url.length);
           setQrDataUrl(url);
-          console.log('[DepositoModal] ✅ QRCode gerado client-side');
         } else {
+          console.warn('[DepositoModal] ⚠️ pix_copiaecola não disponível');
           setQrDataUrl('');
         }
       } catch (e) {
-        console.warn('[DepositoModal] ❌ Falha ao gerar QRCode client-side:', e?.message || e);
+        console.error('[DepositoModal] ❌ Erro ao gerar QRCode:', e?.message || e);
+        console.error('[DepositoModal] Stack:', e?.stack);
         setQrDataUrl('');
       }
     }
@@ -259,9 +266,15 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               <h3>📷 Escaneie o QRCode:</h3>
               <div className="qrcode-display">
                 {qrDataUrl ? (
-                  <img src={qrDataUrl} alt="QRCode PIX" className="qrcode-image" />
+                  <>
+                    <img src={qrDataUrl} alt="QRCode PIX" className="qrcode-image" />
+                    <p style={{ marginTop: '10px', color: '#3DF29D', fontSize: '0.9em' }}>✅ QRCode carregado</p>
+                  </>
                 ) : (
-                  <p>⚠️ Não foi possível gerar o QRCode. Use o código Copia-e-Cola abaixo.</p>
+                  <>
+                    <p style={{ color: '#FFB84D', marginBottom: '10px' }}>⚠️ Não foi possível gerar o QRCode.</p>
+                    <p style={{ color: '#888', fontSize: '0.85em' }}>Use o código Copia-e-Cola abaixo ou o botão para abrir no navegador.</p>
+                  </>
                 )}
               </div>
               {/* Fallback: botão para abrir no navegador a URL da EFI */}
@@ -278,7 +291,8 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                       color: '#0A1628',
                       textDecoration: 'none',
                       borderRadius: '8px',
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      fontSize: '0.9em'
                     }}
                   >
                     🌐 Abrir QRCode no navegador
@@ -378,6 +392,40 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                 }}
               >
                 🔄 Verificar agora
+              </button>
+              {/* Botão de teste para sandbox: confirma manualmente o depósito */}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    setStatusPolling('atualizando');
+                    setMensagemPolling('Confirmando depósito manualmente (SANDBOX)...');
+                    
+                    const response = await axios.post(
+                      `${API_BASE_URL}/saldo/deposito-pix-confirmar/${depositoData.deposito_id}`,
+                      {},
+                      { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    
+                    if (response.data.sucesso) {
+                      setStatusPolling('ativo');
+                      setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
+                      setTimeout(() => handleFecharModal(), 2000);
+                    } else {
+                      setStatusPolling('ativo');
+                      setMensagemPolling('⚠️ Depósito ainda pendente na EFI');
+                    }
+                  } catch (e) {
+                    console.error('[DepositoModal] Erro ao confirmar manualmente:', e?.message || e);
+                    setStatusPolling('ativo');
+                    setMensagemPolling('❌ Erro ao confirmar');
+                  }
+                }}
+                style={{ backgroundColor: '#FF9800' }}
+              >
+                ✅ Confirmar (SANDBOX)
               </button>
             </div>
 
