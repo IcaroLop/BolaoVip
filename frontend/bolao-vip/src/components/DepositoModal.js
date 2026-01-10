@@ -167,11 +167,23 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
       if (response.data.confirmado) {
         // Depósito confirmado! Parar polling e mostrar mensagem de sucesso
         setStatusPolling('ativo');
-        setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
+        
+        // Verificar se foi auto-confirmado no SANDBOX
+        if (response.data.autoConfirmSandbox) {
+          setMensagemPolling('✅ Depósito auto-confirmado! (SANDBOX) Saldo creditado.');
+        } else {
+          setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
+        }
+        
         setPollAttempts(0);
         
-        // Aguardar 2 segundos e fechar modal
-        setTimeout(() => handleFecharModal(), 2000);
+        // Chamar callback para atualizar saldo do pai
+        if (onDepositoSucesso) {
+          onDepositoSucesso();
+        }
+        
+        // Aguardar 3 segundos e fechar modal (tempo para o usuário ver a mensagem)
+        setTimeout(() => handleFecharModal(), 3000);
       } else {
         // Ainda pendente
         setStatusPolling('ativo');

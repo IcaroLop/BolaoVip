@@ -567,7 +567,22 @@ exports.verificarDepositoPix = async (req, res) => {
             conexao = await db.getConnection();
             await conexao.beginTransaction();
             
-            // 1. Atualizar pix_depositos
+            const valorPago = parseFloat(deposito.valor_original);
+            
+            // 1. Criar registro em movimentacoes
+            const [movimentacaoResult] = await conexao.query(
+              `INSERT INTO movimentacoes 
+               (id_usuario, tipo_movimentacao, descricao, valor, saldo_anterior, saldo_posterior, data_movimentacao, status)
+               SELECT ?, 'deposito', ?, ?, saldo_atual, saldo_atual + ?, NOW(), 'confirmado'
+               FROM saldo_usuario
+               WHERE usuario_id = ?`,
+              [usuarioId, `Depósito PIX (txid: ${deposito.txid}) - Auto-confirmado SANDBOX`, valorPago, valorPago, usuarioId]
+            );
+            
+            const movimentacaoId = movimentacaoResult?.insertId;
+            console.log(`[saldoController.verificarDepositoPix] 📝 Movimentação criada: ${movimentacaoId}`);
+            
+            // 2. Atualizar pix_depositos
             await conexao.query(
               `UPDATE pix_depositos 
                SET status = 'CONCLUIDA', 
@@ -580,8 +595,7 @@ exports.verificarDepositoPix = async (req, res) => {
               [depositoId]
             );
             
-            // 2. Creditar saldo
-            const valorPago = parseFloat(deposito.valor_original);
+            // 3. Creditar saldo
             await conexao.query(
               'UPDATE saldo_usuario SET saldo_atual = saldo_atual + ? WHERE usuario_id = ?',
               [valorPago, usuarioId]
@@ -598,6 +612,7 @@ exports.verificarDepositoPix = async (req, res) => {
               confirmado: true,
               mensagem: 'Depósito auto-confirmado (SANDBOX)',
               deposito_id: depositoId,
+              movimentacao_id: movimentacaoId,
               status: 'PAGO',
               saldo: saldoAtualizado,
               autoConfirmSandbox: true
