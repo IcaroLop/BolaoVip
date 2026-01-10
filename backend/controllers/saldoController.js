@@ -343,3 +343,88 @@ exports.confirmarDepositoPix = async (req, res) => {
     if (conexao) conexao.release();
   }
 };
+
+/**
+ * POST /saldo/verificar-deposito-pix/:depositoId - Verifica um depósito PIX específico (consulta EFI imediatamente)
+ * Usado pelo frontend durante polling para confirmar pagamento em tempo real
+ */
+exports.verificarDepositoPix = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const { depositoId } = req.params;
+    const db = require('../database/conexao');
+    const { depositoPixService } = require('../services/depositoPixService');
+
+    console.log(`[saldoController.verificarDepositoPix] Verificando depósito PIX. usuario=${usuarioId}, deposito_id=${depositoId}`);
+
+    // Buscar depósito
+    const [depositos] = await db.query(
+      'SELECT * FROM pix_depositos WHERE id = ? AND id_usuario = ?',
+      [depositoId, usuarioId]
+    );
+
+    if (!depositos || depositos.length === 0) {
+      return res.status(404).json({ erro: 'Depósito não encontrado' });
+    }
+
+    const deposito = depositos[0];
+
+    // Se já foi pago, retornar sucesso
+    if (deposito.status_pagamento === 'PAGO') {
+      console.log(`[saldoController.verificarDepositoPix] ✅ Depósito já estava confirmado`);
+      const saldoService = require('../services/saldoService');
+      const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
+      return res.json({
+        sucesso: true,
+        confirmado: true,
+        mensagem: 'Depósito já foi confirmado',
+        deposito_id: depositoId,
+        status: deposito.status_pagamento,
+        saldo: saldoAtualizado
+      });
+    }
+
+    // Se ainda está pendente, consultar EFI para verificar
+    if (deposito.status_pagamento === 'PENDENTE') {
+      console.log(`[saldoController.verificarDepositoPix] 🔄 Consultando status na EFI...`);
+      
+      // Tentar atualizar via fallback service
+      const foiAtualizado = await depositoPixService.verificarEAtualizarDeposito(deposito);
+      
+      if (foiAtualizado) {
+        console.log(`[saldoController.verificarDepositoPix] ✅ Depósito confirmado e saldo creditado`);
+        const saldoService = require('../services/saldoService');
+        const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
+        return res.json({
+          sucesso: true,
+          confirmado: true,
+          mensagem: 'Depósito confirmado com sucesso',
+          deposito_id: depositoId,
+          status: 'PAGO',
+          saldo: saldoAtualizado
+        });
+      } else {
+        console.log(`[saldoController.verificarDepositoPix] ⏳ Depósito ainda não foi confirmado na EFI`);
+        return res.json({
+          sucesso: true,
+          confirmado: false,
+          mensagem: 'Depósito ainda não foi confirmado. Aguarde mais alguns momentos.',
+          deposito_id: depositoId,
+          status: 'PENDENTE',
+          dica: 'O sistema verifica automaticamente a cada 2 minutos. Você pode clicar em "Verificar agora" para consultar novamente.'
+        });
+      }
+    }
+
+    res.json({
+      sucesso: true,
+      confirmado: false,
+      status: deposito.status_pagamento,
+      deposito_id: depositoId
+    });
+
+  } catch (err) {
+    console.error('[saldoController.verificarDepositoPix] Erro ao verificar depósito:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao verificar depósito' });
+  }
+};

@@ -21,6 +21,9 @@ router.post('/deposito-dev', saldoController.criarDepositoDev);
 // POST - Confirmar depósito manualmente (SANDBOX/DEV - simula recebimento PIX)
 router.post('/deposito-pix-confirmar/:depositoId', saldoController.confirmarDepositoPix);
 
+// POST - Verificar depósito PIX específico (consulta EFI imediatamente)
+router.post('/verificar-deposito-pix/:depositoId', saldoController.verificarDepositoPix);
+
 // POST - Confirmar depósito
 router.post('/confirmar-deposito/:movimentacaoId', saldoController.confirmarDeposito);
 

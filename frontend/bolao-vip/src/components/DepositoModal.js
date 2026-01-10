@@ -96,20 +96,36 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
       setStatusPolling('atualizando');
       setMensagemPolling('Verificando pagamento...');
 
-      // Buscar dados atualizados do saldo
-      await axios.get(`${API_BASE_URL}/saldo/usuario`, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      // Consultar o endpoint específico para verificar o depósito
+      const response = await axios.post(
+        `${API_BASE_URL}/saldo/verificar-deposito-pix/${depositoId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      });
+      );
 
-      console.log('[DepositoModal] Polling: Ainda aguardando confirmação...');
-      setStatusPolling('ativo');
-      setMensagemPolling('Aguardando confirmação do pagamento...');
+      console.log('[DepositoModal] Polling response:', response.data);
+
+      if (response.data.confirmado) {
+        // Depósito confirmado! Parar polling e mostrar mensagem de sucesso
+        setStatusPolling('ativo');
+        setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
+        
+        // Aguardar 2 segundos e fechar modal
+        setTimeout(() => handleFecharModal(), 2000);
+      } else {
+        // Ainda pendente
+        setStatusPolling('ativo');
+        setMensagemPolling('⏳ Aguardando confirmação do pagamento...');
+      }
       
     } catch (error) {
       console.error('[DepositoModal] Erro no polling:', error.message);
       setStatusPolling('ativo');
+      setMensagemPolling('Aguardando confirmação...');
     }
   };
 
@@ -385,15 +401,9 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                 onClick={async () => {
                   try {
                     const token = localStorage.getItem('token');
-                    setStatusPolling('atualizando');
-                    setMensagemPolling('Verificando pendências agora...');
-                    await axios.post(`${API_BASE_URL}/pix/verificar-pendentes`);
-                    await axios.get(`${API_BASE_URL}/saldo/usuario`, { headers: { Authorization: `Bearer ${token}` } });
-                    setStatusPolling('ativo');
-                    setMensagemPolling('Aguardando confirmação do pagamento...');
+                    await verificarStatusDeposito(depositoData.deposito_id, token);
                   } catch (e) {
-                    console.error('[DepositoModal] Erro ao verificar pendentes manualmente:', e?.message || e);
-                    setStatusPolling('ativo');
+                    console.error('[DepositoModal] Erro ao verificar:', e?.message || e);
                   }
                 }}
               >
