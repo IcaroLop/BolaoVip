@@ -554,7 +554,64 @@ exports.verificarDepositoPix = async (req, res) => {
           saldo: saldoAtualizado
         });
       } else {
-        console.log(`[saldoController.verificarDepositoPix] ⏳ Depósito ainda não foi confirmado na EFI`);
+        // Em SANDBOX, após 2 minutos de pendência (~4 verificações), auto-confirmar
+        const esSandbox = process.env.EFI_PIX_SANDBOX === 'true';
+        const tempoDecorrido = Math.floor((Date.now() - new Date(deposito.created_at).getTime()) / 1000);
+        const deveAutoConfirmar = esSandbox && tempoDecorrido >= 120; // 2 minutos
+        
+        if (deveAutoConfirmar) {
+          console.log(`[saldoController.verificarDepositoPix] 🤖 AUTO-CONFIRMAR SANDBOX: ${tempoDecorrido}s decorridos >= 120s`);
+          
+          let conexao;
+          try {
+            conexao = await db.getConnection();
+            await conexao.beginTransaction();
+            
+            // 1. Atualizar pix_depositos
+            await conexao.query(
+              `UPDATE pix_depositos 
+               SET status = 'CONCLUIDA', 
+                   status_pagamento = 'PAGO', 
+                   webhook_recebido = false, 
+                   webhook_payload = '{"simulado":true,"origem":"auto_confirm_sandbox"}', 
+                   data_pagamento = NOW(),
+                   updated_at = NOW()
+               WHERE id = ?`,
+              [depositoId]
+            );
+            
+            // 2. Creditar saldo
+            const valorPago = parseFloat(deposito.valor_original);
+            await conexao.query(
+              'UPDATE saldo_usuario SET saldo_atual = saldo_atual + ? WHERE usuario_id = ?',
+              [valorPago, usuarioId]
+            );
+            
+            await conexao.commit();
+            console.log(`[saldoController.verificarDepositoPix] ✅ Auto-confirm SANDBOX concluído. Creditado R$ ${valorPago}`);
+            
+            const saldoService = require('../services/saldoService');
+            const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
+            
+            return res.json({
+              sucesso: true,
+              confirmado: true,
+              mensagem: 'Depósito auto-confirmado (SANDBOX)',
+              deposito_id: depositoId,
+              status: 'PAGO',
+              saldo: saldoAtualizado,
+              autoConfirmSandbox: true
+            });
+          } catch (err) {
+            if (conexao) await conexao.rollback();
+            console.error('[saldoController.verificarDepositoPix] Erro no auto-confirm:', err);
+            throw err;
+          } finally {
+            if (conexao) conexao.release();
+          }
+        }
+        
+        console.log(`[saldoController.verificarDepositoPix] ⏳ Depósito ainda não foi confirmado na EFI (${tempoDecorrido}s, SANDBOX=${esSandbox})`);
         return res.json({
           sucesso: true,
           confirmado: false,
