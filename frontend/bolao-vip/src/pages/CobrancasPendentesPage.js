@@ -96,15 +96,18 @@ const CobrancasPendentesPage = () => {
   }, [authHeader, token]);
 
   const buscarSaques = useCallback(async () => {
-    if (!token || !canVerSaques) return;
+    if (!token) return;
     try {
       const res = await axios.get(`${API_BASE_URL}/admin/saques/solicitacoes`, authHeader);
       setSaques(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Erro ao buscar solicitações de saque:', err);
-      setMensagemSaques('Erro ao carregar solicitações de saque.');
+      // Não mostrar erro se acesso negado (usuário sem permissão)
+      if (err.response?.status !== 403) {
+        setMensagemSaques('Erro ao carregar solicitações de saque.');
+      }
     }
-  }, [authHeader, token, canVerSaques]);
+  }, [authHeader, token]);
 
   useEffect(() => {
     const init = async () => {
@@ -143,6 +146,13 @@ const CobrancasPendentesPage = () => {
   useEffect(() => {
     setPaginaAtual(1); // Reset página quando histórico muda
   }, [historico]);
+
+  // Chamar buscarSaques quando perfisUsuario mudar (após carregarUsuario)
+  useEffect(() => {
+    if (perfisUsuario.length > 0 && canVerSaques) {
+      buscarSaques();
+    }
+  }, [perfisUsuario, canVerSaques, buscarSaques]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const copiarCodigoPix = (codigo) => {
     // Tenta usar navigator.clipboard (Chrome, Edge moderno, Firefox)
