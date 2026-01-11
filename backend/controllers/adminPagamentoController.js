@@ -29,7 +29,7 @@ async function isDesenvolvedor(usuarioId) {
 
 async function getUserGroupId(usuarioId) {
   const [rows] = await db.query(
-    'SELECT grupo_id FROM usuarios WHERE id = ?',
+    'SELECT grupo_id FROM grupo_membros WHERE usuario_id = ? AND status = "ativo" LIMIT 1',
     [usuarioId]
   );
   return rows && rows.length > 0 ? rows[0].grupo_id : null;
@@ -40,7 +40,7 @@ function buildGroupFilterClause(isDev, actingGroupId, tableAlias = 'u') {
   const params = [];
 
   if (!isDev && actingGroupId) {
-    filtros.push(`${tableAlias}.grupo_id = ?`);
+    filtros.push(`gm.grupo_id = ?`);
     params.push(actingGroupId);
   }
 
@@ -94,7 +94,7 @@ router.get('/pagamentos/cobrancas/pendentes', async (req, res) => {
       // Admin/Financeiro: apenas do mesmo grupo
       const grupoId = await getUserGroupId(usuarioId);
       if (grupoId) {
-        filtros.push('u.grupo_id = ?');
+        filtros.push('gm.grupo_id = ?');
         params.push(grupoId);
       }
     }
@@ -112,6 +112,7 @@ router.get('/pagamentos/cobrancas/pendentes', async (req, res) => {
               c.txid
          FROM pix_cobrancas c
          JOIN usuarios u ON c.id_usuario = u.id
+         LEFT JOIN grupo_membros gm ON gm.usuario_id = u.id AND gm.status = 'ativo'
         WHERE ${filtros.join(' AND ')}
         ORDER BY c.calendario_criacao DESC`,
       params
@@ -477,7 +478,7 @@ router.get('/saques/solicitacoes', async (req, res) => {
       `SELECT em.id,
               em.usuario_id,
               u.nome AS nome_usuario,
-              u.grupo_id,
+              gm.grupo_id,
               em.valor,
               em.status,
               em.descricao,
@@ -486,6 +487,7 @@ router.get('/saques/solicitacoes', async (req, res) => {
               em.saldo_novo
          FROM extrato_movimentacao em
          JOIN usuarios u ON u.id = em.usuario_id
+         LEFT JOIN grupo_membros gm ON gm.usuario_id = u.id AND gm.status = 'ativo'
         WHERE ${whereClauses.join(' AND ')}
         ORDER BY em.criado_em DESC`,
       params
@@ -516,9 +518,10 @@ router.post('/saques/:id/cancelar', async (req, res) => {
     await conexao.beginTransaction();
 
     const [rows] = await conexao.query(
-      `SELECT em.id, em.usuario_id, u.grupo_id, em.valor, em.status
+      `SELECT em.id, em.usuario_id, gm.grupo_id, em.valor, em.status
          FROM extrato_movimentacao em
          JOIN usuarios u ON u.id = em.usuario_id
+         LEFT JOIN grupo_membros gm ON gm.usuario_id = u.id AND gm.status = 'ativo'
         WHERE em.id = ? AND em.tipo = 'saque' AND em.status = 'pendente'`,
       [id]
     );
@@ -563,9 +566,10 @@ router.post('/saques/:id/liberar', async (req, res) => {
 
     // Buscar solicitante e validar grupo/status
     const [rows] = await db.query(
-      `SELECT em.id, em.usuario_id, u.grupo_id
+      `SELECT em.id, em.usuario_id, gm.grupo_id
          FROM extrato_movimentacao em
          JOIN usuarios u ON u.id = em.usuario_id
+         LEFT JOIN grupo_membros gm ON gm.usuario_id = u.id AND gm.status = 'ativo'
         WHERE em.id = ? AND em.tipo = 'saque' AND em.status = 'pendente'`,
       [id]
     );

@@ -213,18 +213,27 @@ exports.criarSaque = async (req, res) => {
 
     // Notificar financeiro/administrador do mesmo grupo
     try {
-      const [grupoRows] = await db.query('SELECT grupo_id FROM usuarios WHERE id = ?', [usuarioId]);
-      const grupoId = grupoRows && grupoRows[0] ? grupoRows[0].grupo_id : null;
-
-      if (grupoId) {
+      // Obter grupos do usuário solicitante via grupo_membros
+      const [grupoRows] = await db.query(
+        'SELECT grupo_id FROM grupo_membros WHERE usuario_id = ? AND status = "ativo"',
+        [usuarioId]
+      );
+      
+      if (grupoRows && grupoRows.length > 0) {
+        const gruposIds = grupoRows.map(g => g.grupo_id);
+        
+        // Buscar usuários com perfil Financeiro ou Administrador nos mesmos grupos
         const [destinatarios] = await db.query(
           `SELECT DISTINCT u.id AS usuario_id
              FROM usuarios u
              JOIN usuario_perfis up ON up.usuario_id = u.id
              JOIN perfis p ON p.id = up.perfil_id
-            WHERE u.grupo_id = ?
-              AND LOWER(p.nome) IN ('financeiro', 'administrador')`,
-          [grupoId]
+             JOIN grupo_membros gm ON gm.usuario_id = u.id
+            WHERE gm.grupo_id IN (${gruposIds.map(() => '?').join(',')})
+              AND gm.status = 'ativo'
+              AND LOWER(p.nome) IN ('financeiro', 'administrador')
+              AND u.id != ?`,
+          [...gruposIds, usuarioId]
         );
 
         await Promise.all(
