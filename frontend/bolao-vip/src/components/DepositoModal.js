@@ -166,7 +166,7 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
 
       if (response.data.confirmado) {
         // Depósito confirmado! Parar polling e mostrar mensagem de sucesso
-        setStatusPolling('ativo');
+        setStatusPolling('confirmado');
         
         // Verificar se foi auto-confirmado no SANDBOX
         if (response.data.autoConfirmSandbox) {
@@ -177,13 +177,18 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
         
         setPollAttempts(0);
         
+        // Parar polling quando confirmado
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        
         // Chamar callback para atualizar saldo do pai
         if (onDepositoSucesso) {
           onDepositoSucesso();
         }
         
-        // Aguardar 3 segundos e fechar modal (tempo para o usuário ver a mensagem)
-        setTimeout(() => handleFecharModal(), 3000);
+        // REMOVER FECHAMENTO AUTOMÁTICO - usuário fecha manualmente
       } else {
         // Ainda pendente
         setStatusPolling('ativo');
@@ -385,9 +390,19 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
 
         {etapa === 'qrcode' && depositoData && (
           <div className="deposito-qrcode-container">
+            {/* Status do Pagamento */}
+            <div className="polling-indicator" style={{ marginBottom: '15px' }}>
+              <div className={`spinner ${statusPolling === 'atualizando' ? 'atualizando' : ''} ${statusPolling === 'confirmado' ? 'confirmado' : ''}`}></div>
+              <p style={{ color: statusPolling === 'confirmado' ? '#3DF29D' : '#FFB84D' }}>{mensagemPolling}</p>
+            </div>
+            
             <div className="deposito-info">
               <p><strong>Valor:</strong> R$ {depositoData.valor.toFixed(2)}</p>
               <p><strong>Válido por:</strong> {depositoData.calendario_expiracao} segundos</p>
+              <p><strong>Status:</strong> <span style={{ color: statusPolling === 'confirmado' ? '#3DF29D' : '#FFB84D' }}>
+                {pixExpirado ? '⚠️ Expirado' : (statusPolling === 'confirmado' ? '✅ Confirmado' : '⏳ Aguardando Pagamento')}
+              </span></p>
+              <p><strong>Tempo decorrido:</strong> {Math.floor(tempoDecorrido / 60)}min {tempoDecorrido % 60}s</p>
               {isSandbox && (
                 <button
                   type="button"
@@ -403,9 +418,15 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
                         { headers: { Authorization: `Bearer ${token}` } }
                       );
                       if (response.data.sucesso) {
-                        setStatusPolling('ativo');
+                        setStatusPolling('confirmado');
                         setMensagemPolling('✅ Depósito confirmado! Saldo creditado.');
-                        setTimeout(() => handleFecharModal(), 2000);
+                        if (pollingIntervalRef.current) {
+                          clearInterval(pollingIntervalRef.current);
+                          pollingIntervalRef.current = null;
+                        }
+                        if (onDepositoSucesso) {
+                          onDepositoSucesso();
+                        }
                       } else {
                         setStatusPolling('ativo');
                         setMensagemPolling('⚠️ Depósito ainda pendente na EFI');
@@ -492,20 +513,31 @@ function DepositoModal({ isOpen, onClose, onDepositoSucesso }) {
               >
                 ← Fechar
               </button>
-              <button 
-                type="button" 
-                className="btn btn-primary" 
-                onClick={() => setEtapa('aguardando')}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    await verificarStatusDeposito(depositoData.deposito_id, token);
+                  } catch (e) {
+                    console.error('[DepositoModal] Erro ao verificar:', e?.message || e);
+                  }
+                }}
+                disabled={statusPolling === 'confirmado'}
               >
-                ✅ Já Pagou - Aguardar
+                🔄 Verificar Agora
               </button>
             </div>
 
             <div className="info-box">
               <p>
-                <strong>💡 Dica:</strong><br />
-                Cole o código PIX no seu aplicativo bancário e confirme o pagamento.
-                O sistema verificará automaticamente a cada 30 segundos.
+                <strong>💡 Como funciona:</strong><br />
+                • Escaneie o QRCode ou copie o código PIX<br />
+                • Confirme o pagamento no seu banco<br />
+                • O sistema verifica automaticamente a cada 30 segundos<br />
+                • Você pode fechar este modal e o sistema continua verificando<br />
+                {isSandbox && '• Em SANDBOX, o depósito é confirmado automaticamente após 2 minutos'}
               </p>
             </div>
           </div>
