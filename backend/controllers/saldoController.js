@@ -312,8 +312,8 @@ exports.confirmarDepositoPix = async (req, res) => {
       // 4. Registrar movimentação no extrato
       await conexao.query(
         `INSERT INTO extrato_movimentacao 
-         (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status, data_movimentacao)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [id_usuario, 'deposito', valorPago, saldoAnt, saldoNovo, `Depósito PIX confirmado (SANDBOX) - txid: ${txid}`, id, 'deposito_pix', 'confirmado']
       );
 
@@ -569,14 +569,21 @@ exports.verificarDepositoPix = async (req, res) => {
             
             const valorPago = parseFloat(deposito.valor_original);
             
-            // 1. Criar registro em movimentacoes
+            // 1. Obter saldo anterior
+            const [saldoAnterior] = await conexao.query(
+              'SELECT saldo_atual FROM saldo_usuario WHERE usuario_id = ?',
+              [usuarioId]
+            );
+            
+            const saldoAnt = parseFloat(saldoAnterior[0]?.saldo_atual || 0);
+            const saldoNovo = saldoAnt + valorPago;
+            
+            // 2. Criar registro em extrato_movimentacao
             const [movimentacaoResult] = await conexao.query(
-              `INSERT INTO movimentacoes 
-               (id_usuario, tipo_movimentacao, descricao, valor, saldo_anterior, saldo_posterior, data_movimentacao, status)
-               SELECT ?, 'deposito', ?, ?, saldo_atual, saldo_atual + ?, NOW(), 'confirmado'
-               FROM saldo_usuario
-               WHERE usuario_id = ?`,
-              [usuarioId, `Depósito PIX (txid: ${deposito.txid}) - Auto-confirmado SANDBOX`, valorPago, valorPago, usuarioId]
+              `INSERT INTO extrato_movimentacao 
+               (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status, data_movimentacao)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+              [usuarioId, 'deposito', valorPago, saldoAnt, saldoNovo, `Depósito PIX (txid: ${deposito.txid}) - Auto-confirmado SANDBOX`, deposito.id, 'deposito_pix', 'confirmado']
             );
             
             const movimentacaoId = movimentacaoResult?.insertId;
@@ -602,7 +609,7 @@ exports.verificarDepositoPix = async (req, res) => {
             );
             
             await conexao.commit();
-            console.log(`[saldoController.verificarDepositoPix] ✅ Auto-confirm SANDBOX concluído. Creditado R$ ${valorPago}`);
+            console.log(`[saldoController.verificarDepositoPix] ✅ Auto-confirm SANDBOX concluído. Creditado R$ ${valorPago} | Movimentação ${movimentacaoResult.insertId}`);
             
             const saldoService = require('../services/saldoService');
             const saldoAtualizado = await saldoService.obterSaldoUsuario(usuarioId);
