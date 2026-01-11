@@ -312,8 +312,8 @@ exports.confirmarDepositoPix = async (req, res) => {
       // 4. Registrar movimentação no extrato
       await conexao.query(
         `INSERT INTO extrato_movimentacao 
-         (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status, data_movimentacao)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+         (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [id_usuario, 'deposito', valorPago, saldoAnt, saldoNovo, `Depósito PIX confirmado (SANDBOX) - txid: ${txid}`, id, 'deposito_pix', 'confirmado']
       );
 
@@ -581,8 +581,8 @@ exports.verificarDepositoPix = async (req, res) => {
             // 2. Criar registro em extrato_movimentacao
             const [movimentacaoResult] = await conexao.query(
               `INSERT INTO extrato_movimentacao 
-               (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status, data_movimentacao)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+               (usuario_id, tipo, valor, saldo_anterior, saldo_novo, descricao, referencia_id, referencia_tipo, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [usuarioId, 'deposito', valorPago, saldoAnt, saldoNovo, `Depósito PIX (txid: ${deposito.txid}) - Auto-confirmado SANDBOX`, deposito.id, 'deposito_pix', 'confirmado']
             );
             
