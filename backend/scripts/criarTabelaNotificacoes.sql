@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS notificacoes_usuarios (
   id INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT NOT NULL,
-  tipo ENUM('palpite_enviado', 'pagamento_confirmado', 'inicio_rodada', 'resultado_publicado', 'premio_recebido', 'sistema', 'saque_solicitado', 'pix_expirado') NOT NULL DEFAULT 'sistema',
+  tipo ENUM('palpite_enviado', 'pagamento_pendente', 'pagamento_confirmado', 'inicio_rodada', 'resultado_publicado', 'premio_recebido', 'sistema', 'saque_solicitado', 'pix_expirado') NOT NULL DEFAULT 'sistema',
   titulo VARCHAR(255) NOT NULL,
   mensagem TEXT NOT NULL,
   dados_json JSON NULL COMMENT 'Dados adicionais em formato JSON (PIX, valores, etc)',
