@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/conexao');
 const autenticar = require('../middleware/authMiddleware');
+const saldoService = require('../services/saldoService');
 
 router.use(autenticar);
 
@@ -32,6 +33,18 @@ async function getUserGroupId(usuarioId) {
     [usuarioId]
   );
   return rows && rows.length > 0 ? rows[0].grupo_id : null;
+}
+
+function buildGroupFilterClause(isDev, actingGroupId, tableAlias = 'u') {
+  const filtros = [];
+  const params = [];
+
+  if (!isDev && actingGroupId) {
+    filtros.push(`${tableAlias}.grupo_id = ?`);
+    params.push(actingGroupId);
+  }
+
+  return { filtros, params };
 }
 
 // GET cobranças pendentes (campo status)
@@ -438,6 +451,140 @@ router.post('/pagamentos/cobrancas/:codigo_envio/gerar-pix', async (req, res) =>
   } catch (error) {
     console.error('Erro ao gerar PIX:', error);
     res.status(500).json({ erro: 'Erro ao gerar PIX para a cobrança.' });
+  }
+});
+
+// =============================
+// Solicitações de Saque (Financeiro/Admin/Dev)
+// =============================
+
+// Listar solicitações de saque (pendentes/confirmadas/canceladas) visíveis para finance/admin do mesmo grupo ou dev
+router.get('/saques/solicitacoes', async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const isPrivilegiado = await isAdminOuFinanceiro(usuarioId);
+    const isDev = await isDesenvolvedor(usuarioId);
+
+    if (!isPrivilegiado && !isDev) {
+      return res.status(403).json({ erro: 'Acesso restrito a Financeiro/Administrador ou Desenvolvedor.' });
+    }
+
+    const grupoId = await getUserGroupId(usuarioId);
+    const { filtros, params } = buildGroupFilterClause(isDev, grupoId, 'u');
+    const whereClauses = ["em.tipo = 'saque'", "em.status IN ('pendente','confirmado','cancelado')", ...filtros];
+
+    const [rows] = await db.query(
+      `SELECT em.id,
+              em.usuario_id,
+              u.nome AS nome_usuario,
+              u.grupo_id,
+              em.valor,
+              em.status,
+              em.descricao,
+              em.criado_em,
+              em.saldo_anterior,
+              em.saldo_novo
+         FROM extrato_movimentacao em
+         JOIN usuarios u ON u.id = em.usuario_id
+        WHERE ${whereClauses.join(' AND ')}
+        ORDER BY em.criado_em DESC`,
+      params
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error('[adminPagamentoController] Erro ao listar solicitações de saque:', err);
+    res.status(500).json({ erro: 'Erro ao listar solicitações de saque' });
+  }
+});
+
+// Cancelar solicitação de saque
+router.post('/saques/:id/cancelar', async (req, res) => {
+  let conexao;
+  try {
+    const usuarioId = req.usuario.id;
+    const { id } = req.params;
+    const isPrivilegiado = await isAdminOuFinanceiro(usuarioId);
+    const isDev = await isDesenvolvedor(usuarioId);
+
+    if (!isPrivilegiado && !isDev) {
+      return res.status(403).json({ erro: 'Acesso restrito a Financeiro/Administrador ou Desenvolvedor.' });
+    }
+
+    const grupoId = await getUserGroupId(usuarioId);
+    conexao = await db.getConnection();
+    await conexao.beginTransaction();
+
+    const [rows] = await conexao.query(
+      `SELECT em.id, em.usuario_id, u.grupo_id, em.valor, em.status
+         FROM extrato_movimentacao em
+         JOIN usuarios u ON u.id = em.usuario_id
+        WHERE em.id = ? AND em.tipo = 'saque' AND em.status = 'pendente'`,
+      [id]
+    );
+
+    if (!rows || rows.length === 0) {
+      await conexao.rollback();
+      return res.status(404).json({ erro: 'Solicitação de saque não encontrada ou já processada.' });
+    }
+
+    const registro = rows[0];
+    if (!isDev && grupoId && registro.grupo_id !== grupoId) {
+      await conexao.rollback();
+      return res.status(403).json({ erro: 'Saque pertence a outro grupo.' });
+    }
+
+    await conexao.query('UPDATE extrato_movimentacao SET status = "cancelado" WHERE id = ?', [id]);
+
+    await conexao.commit();
+    res.json({ sucesso: true, mensagem: 'Solicitação de saque cancelada', saque_id: id });
+  } catch (err) {
+    if (conexao) await conexao.rollback();
+    console.error('[adminPagamentoController] Erro ao cancelar saque:', err);
+    res.status(500).json({ erro: 'Erro ao cancelar saque' });
+  } finally {
+    if (conexao) conexao.release();
+  }
+});
+
+// Liberar (confirmar) saque: debita saldo do solicitante
+router.post('/saques/:id/liberar', async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+    const { id } = req.params;
+    const isPrivilegiado = await isAdminOuFinanceiro(usuarioId);
+    const isDev = await isDesenvolvedor(usuarioId);
+
+    if (!isPrivilegiado && !isDev) {
+      return res.status(403).json({ erro: 'Acesso restrito a Financeiro/Administrador ou Desenvolvedor.' });
+    }
+
+    const grupoId = await getUserGroupId(usuarioId);
+
+    // Buscar solicitante e validar grupo/status
+    const [rows] = await db.query(
+      `SELECT em.id, em.usuario_id, u.grupo_id
+         FROM extrato_movimentacao em
+         JOIN usuarios u ON u.id = em.usuario_id
+        WHERE em.id = ? AND em.tipo = 'saque' AND em.status = 'pendente'`,
+      [id]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ erro: 'Solicitação de saque não encontrada ou já processada.' });
+    }
+
+    const registro = rows[0];
+    if (!isDev && grupoId && registro.grupo_id !== grupoId) {
+      return res.status(403).json({ erro: 'Saque pertence a outro grupo.' });
+    }
+
+    // Debitar saldo e marcar movimentação como confirmada
+    const resultado = await saldoService.confirmarSaque(registro.usuario_id, parseInt(id));
+    res.json({ sucesso: true, mensagem: 'Saque liberado e debitado do saldo.', saque_id: id, saldo_novo: resultado.saldoNovo });
+  } catch (err) {
+    console.error('[adminPagamentoController] Erro ao liberar saque:', err);
+    res.status(500).json({ erro: err.message || 'Erro ao liberar saque' });
   }
 });
 

@@ -1,4 +1,6 @@
 const saldoService = require('../services/saldoService');
+const { criarNotificacao } = require('../services/notificacoesService');
+const db = require('../database/conexao');
 
 /**
  * GET /saldo/usuario - Obtém saldo do usuário autenticado
@@ -208,6 +210,38 @@ exports.criarSaque = async (req, res) => {
     }
 
     const resultado = await saldoService.criarSaque(usuarioId, valor, 'Saque solicitado');
+
+    // Notificar financeiro/administrador do mesmo grupo
+    try {
+      const [grupoRows] = await db.query('SELECT grupo_id FROM usuarios WHERE id = ?', [usuarioId]);
+      const grupoId = grupoRows && grupoRows[0] ? grupoRows[0].grupo_id : null;
+
+      if (grupoId) {
+        const [destinatarios] = await db.query(
+          `SELECT DISTINCT u.id AS usuario_id
+             FROM usuarios u
+             JOIN usuario_perfis up ON up.usuario_id = u.id
+             JOIN perfis p ON p.id = up.perfil_id
+            WHERE u.grupo_id = ?
+              AND LOWER(p.nome) IN ('financeiro', 'administrador')`,
+          [grupoId]
+        );
+
+        await Promise.all(
+          destinatarios.map((dest) =>
+            criarNotificacao(
+              dest.usuario_id,
+              'saque_solicitado',
+              '🔔 Nova solicitação de saque',
+              `Um saque foi solicitado pelo usuário #${usuarioId} no valor de R$ ${parseFloat(valor).toFixed(2)}.`,
+              { solicitante_id: usuarioId, valor: parseFloat(valor), movimentacao_id: resultado.movimentacao_id }
+            ).catch((e) => console.error('[criarSaque] Erro ao notificar dest:', e?.message))
+          )
+        );
+      }
+    } catch (notifErr) {
+      console.error('[criarSaque] Erro ao enviar notificações de saque:', notifErr?.message || notifErr);
+    }
     
     res.json(resultado);
   } catch (err) {

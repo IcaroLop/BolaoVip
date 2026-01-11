@@ -8,14 +8,18 @@ const CobrancasPendentesPage = () => {
   const [historico, setHistorico] = useState([]);
   const [mensagemPremiacoes, setMensagemPremiacoes] = useState('');
   const [mensagemCobrancas, setMensagemCobrancas] = useState('');
+  const [mensagemSaques, setMensagemSaques] = useState('');
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina] = useState(20);
   const [premiacoes, setPremiacoes] = useState([]);
+  const [saques, setSaques] = useState([]);
   const [perfisUsuario, setPerfisUsuario] = useState([]);
   const token = localStorage.getItem('token');
   const authHeader = useMemo(() => (token ? { headers: { Authorization: `Bearer ${token}` } } : {}), [token]);
   const nomesPerfis = (perfisUsuario || []).map((p) => (p.nome || '').toLowerCase());
   const isAdminFinance = nomesPerfis.includes('administrador') || nomesPerfis.includes('financeiro');
+  const isDev = nomesPerfis.includes('desenvolvedor');
+  const canVerSaques = isAdminFinance || isDev;
   const isApostador = !isAdminFinance && !nomesPerfis.includes('desenvolvedor');
   
   // Polling automático
@@ -91,13 +95,25 @@ const CobrancasPendentesPage = () => {
     }
   }, [authHeader, token]);
 
+  const buscarSaques = useCallback(async () => {
+    if (!token || !canVerSaques) return;
+    try {
+      const res = await axios.get(`${API_BASE_URL}/admin/saques/solicitacoes`, authHeader);
+      setSaques(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Erro ao buscar solicitações de saque:', err);
+      setMensagemSaques('Erro ao carregar solicitações de saque.');
+    }
+  }, [authHeader, token, canVerSaques]);
+
   useEffect(() => {
     const init = async () => {
       await carregarUsuario();
       await Promise.all([
         buscarCobrancasPendentes(),
         buscarHistoricoCobrancas(),
-        buscarPremiacoesPendentes()
+        buscarPremiacoesPendentes(),
+        buscarSaques()
       ]);
     };
     init();
@@ -109,7 +125,8 @@ const CobrancasPendentesPage = () => {
         await Promise.all([
           buscarCobrancasPendentes(),
           buscarHistoricoCobrancas(),
-          buscarPremiacoesPendentes()
+          buscarPremiacoesPendentes(),
+          buscarSaques()
         ]);
         setUltimaAtualizacao(new Date());
         setStatusPolling('ativo');
@@ -209,6 +226,30 @@ const CobrancasPendentesPage = () => {
     }
   };
 
+  const cancelarSaque = async (saqueId) => {
+    try {
+      setMensagemSaques('Cancelando saque...');
+      await axios.post(`${API_BASE_URL}/admin/saques/${saqueId}/cancelar`, {}, authHeader);
+      setMensagemSaques('Saque cancelado.');
+      await buscarSaques();
+    } catch (err) {
+      console.error('Erro ao cancelar saque:', err);
+      setMensagemSaques(err?.response?.data?.erro || 'Erro ao cancelar saque.');
+    }
+  };
+
+  const liberarSaque = async (saqueId) => {
+    try {
+      setMensagemSaques('Liberando saque (debitando saldo)...');
+      await axios.post(`${API_BASE_URL}/admin/saques/${saqueId}/liberar`, {}, authHeader);
+      setMensagemSaques('Saque liberado e debitado do saldo.');
+      await buscarSaques();
+    } catch (err) {
+      console.error('Erro ao liberar saque:', err);
+      setMensagemSaques(err?.response?.data?.erro || 'Erro ao liberar saque.');
+    }
+  };
+
   const resumo = () => {
     const total = cobrancas.reduce((sum, c) => sum + Number(c.valor), 0);
     const pendentes = cobrancas.filter(c => c.status_pagamento.toUpperCase() === 'PENDENTE').length;
@@ -260,6 +301,67 @@ const CobrancasPendentesPage = () => {
           {autoRefresh ? '⏸️ Pausar' : '▶️ Retomar'}
         </button>
       </div>
+
+      {/* Grid de Solicitações de Saque - visível apenas para Financeiro/Admin/Dev */}
+      {canVerSaques && (
+        <div className="card" style={{ marginTop: '16px' }}>
+          <h2 className="title">🏧 Solicitações de Saque</h2>
+          {mensagemSaques && <div className="alert alert-info">{mensagemSaques}</div>}
+
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Solicitante</th>
+                  <th>Data/Hora</th>
+                  <th>Valor</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {saques.length === 0 && (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '12px' }}>Nenhuma solicitação de saque.</td>
+                  </tr>
+                )}
+
+                {saques.map((s) => {
+                  const dataHora = s.criado_em ? new Date(s.criado_em).toLocaleString('pt-BR') : '-';
+                  const statusLabel = (s.status || '').toUpperCase();
+                  const pendente = statusLabel === 'PENDENTE';
+                  return (
+                    <tr key={s.id}>
+                      <td>{s.id}</td>
+                      <td>{s.nome_usuario || s.usuario_id}</td>
+                      <td>{dataHora}</td>
+                      <td>R$ {Number(s.valor || 0).toFixed(2)}</td>
+                      <td>{statusLabel}</td>
+                      <td style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => cancelarSaque(s.id)}
+                          disabled={!pendente}
+                        >
+                          ❌ Cancelar
+                        </button>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => liberarSaque(s.id)}
+                          disabled={!pendente}
+                        >
+                          ✅ Liberar (Debitar)
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       
       <style>{`
         @keyframes pulse {
