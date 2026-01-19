@@ -14,6 +14,7 @@ router.post('/agendamentos/rodada/:rodada/consultar', async (req, res) => {
   const rodada = parseInt(req.params.rodada, 10);
 
   try {
+    console.info(`[MANUAL][API-Futebol] Consulta específica da rodada ${rodada}; vai atualizar resultados e recalcular pontos/ranking.`);
     await consultarResultadosDaRodada(rodada);
     res.json({ mensagem: `Consulta de resultados da rodada ${rodada} realizada com sucesso.` });
   } catch (err) {

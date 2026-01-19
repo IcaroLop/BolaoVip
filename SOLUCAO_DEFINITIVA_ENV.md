@@ -64,7 +64,7 @@ cat .env | grep DB_USER
 cat .env | grep DB_PASSWORD  
 # Deve mostrar: DB_PASSWORD=fBVhh6w2KW
 
-cat .env | grep DB_HOST
+cp .env.production .env
 # Deve mostrar: DB_HOST=10.100.48.197
 ```
 
