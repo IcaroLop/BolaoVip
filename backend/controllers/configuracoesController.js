@@ -58,6 +58,20 @@ async function consultarRodadaApiFutebol(req, res) {
 
     await salvarRodadaEJogos({ dados, partidas, campeonatoId, rodada });
 
+    // Após salvar, calcular pontos e ranking automaticamente (consulta manual)
+    try {
+      const { processarRodadaJogoAJogo } = require('../services/rankingPontosService');
+      const { calcularRankingRodada } = require('./rankingController');
+      
+      console.log(`[MANUAL] Calculando pontos e ranking para rodada ${rodada}, campeonato ${campeonatoId}...`);
+      await processarRodadaJogoAJogo(rodada, campeonatoId, null);
+      await calcularRankingRodada(rodada, campeonatoId, null);
+      console.log(`[MANUAL] ✅ Pontos e ranking calculados com sucesso para rodada ${rodada}`);
+    } catch (errRanking) {
+      console.error(`[MANUAL] ⚠️ Erro ao calcular ranking da rodada ${rodada}:`, errRanking.message);
+      // Não bloqueia a resposta - ranking pode ser calculado depois
+    }
+
     res.json({ mensagem: 'Rodada importada com sucesso', rodada, campeonatoId, partidas: partidas.length });
   } catch (error) {
     console.error('Erro ao consultar API Futebol (rodada):', error?.response?.data || error.message);

@@ -21,6 +21,11 @@ function calcularPontuacao(palpite, resultado) {
   const rCasa = resultado.placar_mandante;
   const rFora = resultado.placar_visitante;
 
+  // Se o palpite for NULL (usuário não palpitou), retorna 0 pontos
+  if (pCasa === null || pCasa === undefined || pFora === null || pFora === undefined) {
+    return 0.0;
+  }
+
   const totalGols = rCasa + rFora;
   const isEmpateReal = rCasa === rFora;
   const isEmpatePalpite = pCasa === pFora;
