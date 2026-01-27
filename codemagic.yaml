@@ -5,7 +5,7 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       ios_signing:
-        distribution_type: app_store  # ou 'ad_hoc' para testes
+        distribution_type: ad_hoc
         bundle_identifier: br.com.bolaovip
       vars:
         XCODE_WORKSPACE: "frontend/bolao-vip/ios/App/App.xcworkspace"
@@ -47,7 +47,8 @@ workflows:
           cd frontend/bolao-vip
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --export-method ad-hoc
     
     artifacts:
       - build/ios/ipa/*.ipa
