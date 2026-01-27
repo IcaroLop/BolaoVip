@@ -213,7 +213,8 @@ const PalpitePage = () => {
   const enviarPalpitesQuadro = async (quadro, gerarPix = false) => {
     const jogosEditaveis = quadro.jogos.filter(j => {
       const status = (j.status || '').toLowerCase();
-      return status === 'agendado' || status === 'programado' || status === 'agendada' || status === 'pre-jogo';
+      // Aceita: NULL/vazio (pré-jogo padrão), agendado, programado, pre-jogo
+      return !status || status === 'agendado' || status === 'programado' || status === 'agendada' || status === 'pre-jogo';
     });
 
     if (jogosEditaveis.length === 0) {
