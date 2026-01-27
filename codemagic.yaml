@@ -1,0 +1,68 @@
+workflows:
+  ios-workflow:
+    name: iOS Build - Bolao VIP
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      ios_signing:
+        distribution_type: app_store  # ou 'ad_hoc' para testes
+        bundle_identifier: br.com.bolaovip
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 18
+      xcode: 15.0
+      cocoapods: default
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'master'
+          include: true
+      
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          cd frontend/bolao-vip
+          npm ci
+      
+      - name: Build React App
+        script: |
+          cd frontend/bolao-vip
+          npm run build
+      
+      - name: Sync Capacitor
+        script: |
+          cd frontend/bolao-vip
+          npx cap sync ios
+      
+      - name: Install CocoaPods dependencies
+        script: |
+          cd frontend/bolao-vip/ios/App
+          pod install
+      
+      - name: Build iOS App
+        script: |
+          cd frontend/bolao-vip
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    
+    publishing:
+      email:
+        recipients:
+          - icaro.sales.lopes.isl@gmail.com
+        notify:
+          success: true
+          failure: true
+      
+      # Descomente para publicar na App Store automaticamente:
+      # app_store_connect:
+      #   api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+      #   key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+      #   issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+      #   submit_to_testflight: true
