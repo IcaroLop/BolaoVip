@@ -8,6 +8,7 @@ workflows:
         distribution_type: ad_hoc
         bundle_identifier: br.com.bolaovip
       vars:
+        BUNDLE_ID: br.com.bolaovip
         XCODE_WORKSPACE: "frontend/bolao-vip/ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 18
@@ -35,6 +36,15 @@ workflows:
         script: |
           cd frontend/bolao-vip
           npx cap sync ios
+
+      - name: Configurar assinatura automática (Ad Hoc)
+        script: |
+          # Requer integração App Store Connect habilitada no Codemagic
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_ADHOC \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
       
       - name: Install CocoaPods dependencies
         script: |
