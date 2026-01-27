@@ -223,9 +223,9 @@ async function gerarPremiacoesRodada(rodada, campeonatoId = null, grupoId = null
 
     const rodadaId = rodadaRecord[0].id;
 
-    // Premiação fixa configurada: campeão 120, vice 10, lanterna -20, demais -10
+    // Premiação fixa configurada: campeão 120, vice 15, lanterna -20, demais -10
     const valorCampeao = 120.00;
-    const valorVice = 10.00;
+    const valorVice = 15.00;
     const valorLanterna = -20.00;
     const valorDemais = -10.00;
 
