@@ -49,7 +49,7 @@ class NotificacoesAgendadasService {
    */
   async agendarNotificacoesJogos() {
     try {
-      // Buscar TODOS os jogos futuros (agendados)
+      // Buscar TODOS os jogos futuros (agendados ou com status NULL)
       const [jogos] = await pool.query(
         `SELECT 
           j.id as jogo_id,
@@ -60,7 +60,7 @@ class NotificacoesAgendadasService {
           j.time_visitante,
           j.campeonato_id
          FROM jogos j
-         WHERE j.status = 'agendado'
+         WHERE (j.status = 'agendado' OR j.status IS NULL)
            AND j.data >= NOW()
          ORDER BY j.data ASC`
       );
