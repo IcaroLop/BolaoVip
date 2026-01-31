@@ -1,0 +1,14 @@
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (19, 2, 10, 3, 17.0, 1);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (22, 2, 10, 3, 15.5, 2);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (8, 2, 10, 3, 14.0, 3);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (24, 2, 10, 3, 14.0, 3);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (9, 2, 10, 3, 14.0, 3);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (13, 2, 10, 3, 12.5, 6);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (21, 2, 10, 3, 12.5, 6);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (23, 2, 10, 3, 11.5, 8);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (26, 2, 10, 3, 11.0, 9);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (17, 2, 10, 3, 10.0, 10);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (18, 2, 10, 3, 8.5, 11);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (7, 2, 10, 3, 7.5, 12);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (25, 2, 10, 3, 6.0, 13);
+INSERT INTO ranking_rodada (id_usuario, rodada, campeonato_id, grupo_id, pontos_totais, posicao) VALUES (20, 2, 10, 3, 6.0, 13);
