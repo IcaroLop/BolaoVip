@@ -412,10 +412,48 @@ async function obterEstatisticasRanking({ grupoId, campeonatoId = null, rodadaFi
   };
 }
 
+/**
+ * ✅ NOVO: Atualiza os grids de ranking para TODOS os grupos após processar resultados
+ * Chamado automaticamente quando uma rodada é processada
+ * @param {number} rodada - Número da rodada processada
+ */
+async function atualizarGridsTodosGrupos(rodada) {
+  try {
+    // Buscar todos os grupos que têm palpites nesta rodada
+    const [grupos] = await pool.query(`
+      SELECT DISTINCT grupo_id FROM palpites WHERE rodada = ? AND grupo_id IS NOT NULL
+    `, [rodada]);
+
+    if (grupos.length === 0) {
+      console.log(`📊 Nenhum grupo com palpites na rodada ${rodada}`);
+      return;
+    }
+
+    console.log(`📊 Atualizando grids para ${grupos.length} grupo(s) na rodada ${rodada}...`);
+
+    for (const { grupo_id } of grupos) {
+      try {
+        // Simplesmente chamar obterEstatisticasRanking
+        // Ele tira os dados diretamente da tabela ranking_pontos_partida
+        // que já foi atualizada por processarRodadaJogoAJogo
+        const stats = await obterEstatisticasRanking(grupo_id, 10, rodada);
+        console.log(`  ✅ Grupo ${grupo_id}: ${stats.placarExato.length} + ${stats.vitorias.length} + ${stats.gols.length} + ${stats.wo.length} + ${stats.zeros.length} grids atualizados`);
+      } catch (err) {
+        console.error(`  ❌ Erro ao atualizar grids do grupo ${grupo_id}:`, err.message);
+      }
+    }
+
+    console.log(`✅ Todos os grids atualizados para a rodada ${rodada}`);
+  } catch (err) {
+    console.error(`❌ Erro ao atualizar grids de todos os grupos:`, err.message);
+  }
+}
+
 module.exports = {
   processarRodadaJogoAJogo,
   obterRankingRodadaAggregado,
   obterRankingGeralAggregado,
   obterResumoPosicoes,
-  obterEstatisticasRanking
+  obterEstatisticasRanking,
+  atualizarGridsTodosGrupos
 };

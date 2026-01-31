@@ -88,8 +88,12 @@ async function consultarResultadosDaRodada(rodada) {
 
   // Persistir pontos jogo a jogo e atualizar ranking/premiações
   try {
-    const { processarRodadaJogoAJogo } = require('./rankingPontosService');
+    const { processarRodadaJogoAJogo, atualizarGridsTodosGrupos } = require('./rankingPontosService');
     await processarRodadaJogoAJogo(rodada);
+    
+    // ✅ NOVO: Atualizar grids de ranking para todos os grupos automaticamente
+    console.log(`🔄 Atualizando grids de ranking para todos os grupos da rodada ${rodada}...`);
+    await atualizarGridsTodosGrupos(rodada);
   } catch (e) {
     console.error(`❌ Erro ao processar pontos jogo a jogo da rodada ${rodada}:`, e.message);
   }
