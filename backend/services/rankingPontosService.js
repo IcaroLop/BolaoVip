@@ -267,9 +267,154 @@ async function obterRankingGeralAggregado({ grupoId, campeonatoId = null, rodada
   }));
 }
 
+/**
+ * Obtém estatísticas completas de ranking para os 5 grids:
+ * 1. Top 4 com mais acertos de placar exato (G4)
+ * 2. Top 4 com mais acertos de vitórias (G4)
+ * 3. Top 4 com mais acertos de gols (G4)
+ * 4. Top 4 com mais W.Os (Z4)
+ * 5. Top 4 com mais zeros por jogo (Z4)
+ */
+async function obterEstatisticasRanking({ grupoId, campeonatoId = null, rodadaFinal }) {
+  const grupoFiltro = Number(grupoId);
+  const rodadaMax = Number(rodadaFinal);
+  const campeonatoFiltro = campeonatoId ? Number(campeonatoId) : 10;
+
+  // ==================== 1. PLACAR EXATO ====================
+  const [placarExato] = await pool.query(`
+    SELECT 
+      u.id,
+      u.nome,
+      SUM(r.acerto_exato) AS acertos
+    FROM ranking_pontos_partida r
+    JOIN usuarios u ON u.id = r.usuario_id
+    WHERE r.grupo_id = ?
+      AND r.campeonato_id = ?
+      AND r.rodada BETWEEN 1 AND ?
+    GROUP BY u.id, u.nome
+    ORDER BY acertos DESC
+    LIMIT 4
+  `, [grupoFiltro, campeonatoFiltro, rodadaMax]);
+
+  // ==================== 2. VITÓRIAS ====================
+  const [vitorias] = await pool.query(`
+    SELECT 
+      u.id,
+      u.nome,
+      SUM(r.vencedor_correto) AS acertos
+    FROM ranking_pontos_partida r
+    JOIN usuarios u ON u.id = r.usuario_id
+    WHERE r.grupo_id = ?
+      AND r.campeonato_id = ?
+      AND r.rodada BETWEEN 1 AND ?
+    GROUP BY u.id, u.nome
+    ORDER BY acertos DESC
+    LIMIT 4
+  `, [grupoFiltro, campeonatoFiltro, rodadaMax]);
+
+  // ==================== 3. GOLS (CASA OU FORA) ====================
+  const [gols] = await pool.query(`
+    SELECT 
+      u.id,
+      u.nome,
+      SUM(CASE WHEN r.gols_casa_corretos = 1 OR r.gols_fora_corretos = 1 THEN 1 ELSE 0 END) AS acertos
+    FROM ranking_pontos_partida r
+    JOIN usuarios u ON u.id = r.usuario_id
+    WHERE r.grupo_id = ?
+      AND r.campeonato_id = ?
+      AND r.rodada BETWEEN 1 AND ?
+    GROUP BY u.id, u.nome
+    ORDER BY acertos DESC
+    LIMIT 4
+  `, [grupoFiltro, campeonatoFiltro, rodadaMax]);
+
+  // ==================== 4. W.O (WALK OVER) ====================
+  // Contar: (10 jogos × rodadas) - quantidade de palpites por usuário
+  const [jogosCount] = await pool.query(`
+    SELECT 
+      COUNT(DISTINCT rodada) AS total_rodadas
+    FROM jogos
+    WHERE campeonato_id = ?
+      AND rodada BETWEEN 1 AND ?
+    GROUP BY rodada
+  `, [campeonatoFiltro, rodadaMax]);
+
+  const totalRodadas = jogosCount.length > 0 ? Math.ceil(jogosCount.length) : 1;
+  
+  const [wo] = await pool.query(`
+    SELECT 
+      u.id,
+      u.nome,
+      (? * ?) - COALESCE(SUM(CASE WHEN p.id IS NOT NULL THEN 1 ELSE 0 END), 0) AS wos
+    FROM usuarios u
+    LEFT JOIN palpites p ON p.id_usuario = u.id
+      AND p.campeonato_id = ?
+      AND p.rodada BETWEEN 1 AND ?
+      AND p.grupo_id = ?
+    WHERE u.id IN (
+      SELECT DISTINCT id_usuario FROM palpites 
+      WHERE grupo_id = ? AND campeonato_id = ?
+    )
+    GROUP BY u.id, u.nome
+    HAVING wos > 0
+    ORDER BY wos DESC
+    LIMIT 4
+  `, [10, totalRodadas, campeonatoFiltro, rodadaMax, grupoFiltro, grupoFiltro, campeonatoFiltro]);
+
+  // ==================== 5. ZERO PONTOS ====================
+  const [zeros] = await pool.query(`
+    SELECT 
+      u.id,
+      u.nome,
+      SUM(CASE WHEN r.pontos = 0 THEN 1 ELSE 0 END) AS zeros
+    FROM ranking_pontos_partida r
+    JOIN usuarios u ON u.id = r.usuario_id
+    WHERE r.grupo_id = ?
+      AND r.campeonato_id = ?
+      AND r.rodada BETWEEN 1 AND ?
+    GROUP BY u.id, u.nome
+    ORDER BY zeros DESC
+    LIMIT 4
+  `, [grupoFiltro, campeonatoFiltro, rodadaMax]);
+
+  return {
+    placarExato: placarExato.map((row, idx) => ({
+      posicao: idx + 1,
+      id_usuario: row.id,
+      nome: row.nome,
+      acertos: Number(row.acertos || 0)
+    })),
+    vitorias: vitorias.map((row, idx) => ({
+      posicao: idx + 1,
+      id_usuario: row.id,
+      nome: row.nome,
+      acertos: Number(row.acertos || 0)
+    })),
+    gols: gols.map((row, idx) => ({
+      posicao: idx + 1,
+      id_usuario: row.id,
+      nome: row.nome,
+      acertos: Number(row.acertos || 0)
+    })),
+    wo: wo.map((row, idx) => ({
+      posicao: idx + 1,
+      id_usuario: row.id,
+      nome: row.nome,
+      acertos: Number(row.wos || 0)
+    })),
+    zeros: zeros.map((row, idx) => ({
+      posicao: idx + 1,
+      id_usuario: row.id,
+      nome: row.nome,
+      acertos: Number(row.zeros || 0)
+    }))
+  };
+}
+
 module.exports = {
   processarRodadaJogoAJogo,
   obterRankingRodadaAggregado,
   obterRankingGeralAggregado,
-  obterResumoPosicoes
+  obterResumoPosicoes,
+  obterEstatisticasRanking
 };

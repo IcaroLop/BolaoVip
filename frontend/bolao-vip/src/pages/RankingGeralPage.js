@@ -11,6 +11,13 @@ const RankingGeralPage = () => {
   const [carregando, setCarregando] = useState(false);
   const [campeoesResumo, setCampeoesResumo] = useState([]);
   const [lanternasResumo, setLanternasResumo] = useState([]);
+  const [estadisticas, setEstatisticas] = useState({
+    placarExato: [],
+    vitorias: [],
+    gols: [],
+    wo: [],
+    zeros: []
+  });
 
   const token = useMemo(() => storage.getItem('token') || localStorage.getItem('token'), []);
   const authHeader = useMemo(() => (token ? { headers: { Authorization: `Bearer ${token}` } } : {}), [token]);
@@ -55,13 +62,20 @@ const RankingGeralPage = () => {
         params.append('rodadaFinal', rodadaFinal);
         if (campeonatoId) params.append('campeonatoId', campeonatoId);
 
-        const res = await axios.get(`${API_BASE_URL}/ranking/geral?${params.toString()}`, authHeader);
-        setRanking(res.data);
+        // Buscar dados em paralelo
+        const [res, resumoRes, statsRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/ranking/geral?${params.toString()}`, authHeader),
+          axios.get(`${API_BASE_URL}/ranking/geral/resumo-posicoes?${params.toString()}`, authHeader),
+          axios.get(`${API_BASE_URL}/ranking/geral/estatisticas?${params.toString()}`, authHeader).catch(err => {
+            console.warn('[RankingGeral] Erro ao obter estatísticas:', err?.response?.data || err.message);
+            return { data: { placarExato: [], vitorias: [], gols: [], wo: [], zeros: [] } };
+          })
+        ]);
 
-        // Resumo campeão/vice/lanterna
-        const resumoRes = await axios.get(`${API_BASE_URL}/ranking/geral/resumo-posicoes?${params.toString()}`, authHeader);
+        setRanking(res.data);
         setCampeoesResumo(resumoRes.data?.campeoes || []);
         setLanternasResumo(resumoRes.data?.lanternas || []);
+        setEstatisticas(statsRes.data);
       } catch (err) {
         console.error('Erro ao buscar ranking geral:', err?.response?.data || err.message);
         setErro('Erro ao carregar ranking geral.');
@@ -155,9 +169,163 @@ const RankingGeralPage = () => {
           </tbody>
         </table>
       </div>
+
+      {/* =============== G4 GRIDS =============== */}
+      <div className="grids-container g4-section">
+        <h2>📊 G4 - Top 4 Acertadores</h2>
+
+        {/* GRID 1: Placar Exato */}
+        <div className="ranking-card grid-g4">
+          <h3>🎯 Placar Exato</h3>
+          <table className="ranking-tabela">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Nome</th>
+                <th>Acertos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {estadisticas.placarExato && estadisticas.placarExato.length > 0 ? (
+                estadisticas.placarExato.map((user) => (
+                  <tr key={user.id_usuario}>
+                    <td className="posicao-g4">{user.posicao}º</td>
+                    <td>{user.nome}</td>
+                    <td className="acertos-cell">{user.acertos}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="sem-dados">Sem dados disponíveis</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* GRID 2: Vitórias */}
+        <div className="ranking-card grid-g4">
+          <h3>⚽ Vitórias</h3>
+          <table className="ranking-tabela">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Nome</th>
+                <th>Acertos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {estadisticas.vitorias && estadisticas.vitorias.length > 0 ? (
+                estadisticas.vitorias.map((user) => (
+                  <tr key={user.id_usuario}>
+                    <td className="posicao-g4">{user.posicao}º</td>
+                    <td>{user.nome}</td>
+                    <td className="acertos-cell">{user.acertos}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="sem-dados">Sem dados disponíveis</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* GRID 3: Gols */}
+        <div className="ranking-card grid-g4">
+          <h3>⛳ Gols (Casa ou Fora)</h3>
+          <table className="ranking-tabela">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Nome</th>
+                <th>Acertos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {estadisticas.gols && estadisticas.gols.length > 0 ? (
+                estadisticas.gols.map((user) => (
+                  <tr key={user.id_usuario}>
+                    <td className="posicao-g4">{user.posicao}º</td>
+                    <td>{user.nome}</td>
+                    <td className="acertos-cell">{user.acertos}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="sem-dados">Sem dados disponíveis</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* =============== Z4 GRIDS =============== */}
+      <div className="grids-container z4-section">
+        <h2>📉 Z4 - Top 4 Com Mais Ocorrências</h2>
+
+        {/* GRID 4: W.O */}
+        <div className="ranking-card grid-z4">
+          <h3>🚫 Walk Over (W.O)</h3>
+          <table className="ranking-tabela">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Nome</th>
+                <th>W.Os</th>
+              </tr>
+            </thead>
+            <tbody>
+              {estadisticas.wo && estadisticas.wo.length > 0 ? (
+                estadisticas.wo.map((user) => (
+                  <tr key={user.id_usuario}>
+                    <td className="posicao-z4">{user.posicao}º</td>
+                    <td>{user.nome}</td>
+                    <td className="acertos-cell z4-value">{user.acertos}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="sem-dados">Sem dados disponíveis</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* GRID 5: Zero Pontos */}
+        <div className="ranking-card grid-z4">
+          <h3>💔 Zero Pontos por Jogo</h3>
+          <table className="ranking-tabela">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Nome</th>
+                <th>Zeros</th>
+              </tr>
+            </thead>
+            <tbody>
+              {estadisticas.zeros && estadisticas.zeros.length > 0 ? (
+                estadisticas.zeros.map((user) => (
+                  <tr key={user.id_usuario}>
+                    <td className="posicao-z4">{user.posicao}º</td>
+                    <td>{user.nome}</td>
+                    <td className="acertos-cell z4-value">{user.acertos}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="sem-dados">Sem dados disponíveis</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default RankingGeralPage;
-

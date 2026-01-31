@@ -82,8 +82,18 @@ const PalpitePage = () => {
   const quadrosDeJogos = useMemo(() => {
     if (jogos.length === 0) return [];
     
+    console.log('[quadrosDeJogos] 🎯 Agrupando jogos. Total:', jogos.length);
+    
     const grupos = {};
     jogos.forEach(jogo => {
+      console.log('[quadrosDeJogos] 🎮 Processando jogo:', {
+        id: jogo.id || jogo.partida_id,
+        mandante: jogo.time_mandante,
+        visitante: jogo.time_visitante,
+        data: jogo.data,
+        status: jogo.status
+      });
+      
       // Garante interpretação em America/Manaus, evitando deslocamento de fuso
       const raw = jogo.data ?? jogo.data_formatada;
       let dt;
@@ -94,6 +104,13 @@ const PalpitePage = () => {
       }
       const dtJs = dt.toJSDate();
       const chave = `${dt.toFormat('dd/LL/yyyy')}_${dt.toFormat('HH:mm')}`;
+      
+      console.log('[quadrosDeJogos] 📅 Data processada:', {
+        raw,
+        dtJs: dtJs.toISOString(),
+        chave
+      });
+      
       if (!grupos[chave]) {
         grupos[chave] = {
           dataHora: dtJs,
@@ -105,7 +122,10 @@ const PalpitePage = () => {
     });
 
     // Ordena por data/hora
-    return Object.values(grupos).sort((a, b) => a.dataHora - b.dataHora);
+    const resultado = Object.values(grupos).sort((a, b) => a.dataHora - b.dataHora);
+    console.log('[quadrosDeJogos] 📊 Quadros criados:', resultado.length);
+    
+    return resultado;
   }, [jogos]);
 
   // Identifica o último quadro (mais distante no futuro)
@@ -398,8 +418,18 @@ const PalpitePage = () => {
     let algumIniciado = false;
     let algumFinalizado = false;
 
+    console.log('[verificarStatusJogos] 🔍 Verificando quadro:', quadro.chave);
+    
     quadro.jogos.forEach(jogo => {
       const status = (jogo.status || '').toLowerCase();
+      
+      console.log('[verificarStatusJogos] 🎮 Jogo:', {
+        id: jogo.id || jogo.partida_id,
+        mandante: jogo.time_mandante,
+        visitante: jogo.time_visitante,
+        status: status,
+        data: jogo.data
+      });
       
       const agendado = ['agendado', 'agendada', 'programado', 'scheduled'].includes(status);
       const iniciado = ['andamento', 'ao vivo', 'live', 'em andamento', 'em_andamento'].includes(status);
@@ -410,7 +440,10 @@ const PalpitePage = () => {
       if (finalizado) algumFinalizado = true;
     });
 
-    return { todosAgendados, algumIniciado, algumFinalizado };
+    const resultado = { todosAgendados, algumIniciado, algumFinalizado };
+    console.log('[verificarStatusJogos] 📋 Resultado:', resultado);
+    
+    return resultado;
   }, []);
 
 
@@ -616,12 +649,28 @@ const PalpitePage = () => {
   };
 
   const enviarTodosOsPalpites = async () => {
+    console.log('[enviarTodosOsPalpites] 🚀 Iniciando envio de todos os palpites');
+    console.log('[enviarTodosOsPalpites] 📊 Total de jogos:', jogos.length);
+    
     const todosJogosEditaveis = jogos.filter(j => {
       const status = (j.status || '').toLowerCase();
-      return status === 'agendado' || status === 'programado' || status === 'agendada' || status === 'pre-jogo';
+      const editavel = status === 'agendado' || status === 'programado' || status === 'agendada' || status === 'pre-jogo';
+      
+      console.log('[enviarTodosOsPalpites] 🎮 Jogo:', {
+        id: j.id || j.partida_id,
+        mandante: j.time_mandante,
+        visitante: j.time_visitante,
+        status: status,
+        editavel: editavel
+      });
+      
+      return editavel;
     });
 
+    console.log('[enviarTodosOsPalpites] ✅ Jogos editáveis:', todosJogosEditaveis.length);
+
     if (todosJogosEditaveis.length === 0) {
+      console.log('[enviarTodosOsPalpites] ⚠️ Nenhum jogo editável encontrado');
       setMensagem('Todos os jogos já iniciaram ou foram encerrados.');
       setTipoMensagem('erro');
       return;
@@ -810,7 +859,10 @@ const PalpitePage = () => {
     if (quadrosDeJogos.length === 0) return false;
     
     const agora = new Date();
-    return quadrosDeJogos.every(quadro => {
+    console.log('[todosQuadrosEncerrados] 🕐 Hora atual:', agora.toISOString());
+    console.log('[todosQuadrosEncerrados] 📊 Quadros de jogos:', quadrosDeJogos.length);
+    
+    const resultado = quadrosDeJogos.every(quadro => {
       // Verificar se o horário passou
       const horarioPassed = quadro.dataHora <= agora;
       
@@ -818,8 +870,20 @@ const PalpitePage = () => {
       const statusJogos = verificarStatusJogos(quadro);
       const jogosNaoEditaveis = statusJogos.algumIniciado || statusJogos.algumFinalizado;
       
+      console.log('[todosQuadrosEncerrados] 🎲 Quadro:', {
+        chave: quadro.chave,
+        dataHora: quadro.dataHora.toISOString(),
+        horarioPassed,
+        statusJogos,
+        jogosNaoEditaveis,
+        encerrado: horarioPassed || jogosNaoEditaveis
+      });
+      
       return horarioPassed || jogosNaoEditaveis;
     });
+    
+    console.log('[todosQuadrosEncerrados] 🏁 Resultado final:', resultado);
+    return resultado;
   }, [quadrosDeJogos, verificarStatusJogos]);
 
   // Debug: log dos estados PIX

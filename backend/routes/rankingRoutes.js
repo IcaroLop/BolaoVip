@@ -5,7 +5,7 @@ const {
   verificarStatusRodada,
   gerarPagamentosEndpoint
 } = require('../controllers/rankingController');
-const { obterRankingRodadaAggregado, obterRankingGeralAggregado, processarRodadaJogoAJogo, obterResumoPosicoes } = require('../services/rankingPontosService');
+const { obterRankingRodadaAggregado, obterRankingGeralAggregado, processarRodadaJogoAJogo, obterResumoPosicoes, obterEstatisticasRanking } = require('../services/rankingPontosService');
 const autenticar = require('../middleware/authMiddleware');
 
 // Ranking da rodada (somando pontos jogo a jogo persistidos)
@@ -99,6 +99,25 @@ router.post('/rodada/:rodada/recalcular', autenticar, async (req, res) => {
   } catch (err) {
     console.error('❌ Erro no endpoint de recalcular ranking por partida:', err.message);
     res.status(500).json({ erro: 'Erro ao recalcular pontos da rodada' });
+  }
+});
+
+// Estatísticas completas de ranking - Top 4 (G4) e Z4
+// 1. Placar Exato | 2. Vitórias | 3. Gols | 4. W.O | 5. Zero Pontos
+router.get('/geral/estatisticas', async (req, res) => {
+  try {
+    const grupoId = req.query.grupoId || req.query.grupo_id;
+    const campeonatoId = req.query.campeonatoId || req.query.campeonato_id || null;
+    const rodadaFinal = Number(req.query.rodadaFinal || req.query.rodada_final || 1);
+
+    if (!grupoId) return res.status(400).json({ erro: 'grupoId é obrigatório' });
+    if (isNaN(rodadaFinal) || rodadaFinal <= 0) return res.status(400).json({ erro: 'rodadaFinal inválida' });
+
+    const stats = await obterEstatisticasRanking({ grupoId, campeonatoId, rodadaFinal });
+    res.json(stats);
+  } catch (err) {
+    console.error('❌ Erro no endpoint /ranking/geral/estatisticas:', err.message);
+    res.status(500).json({ erro: 'Erro ao obter estatísticas de ranking' });
   }
 });
 
