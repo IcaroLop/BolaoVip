@@ -187,8 +187,8 @@ const RankingGeralPage = () => {
       </div>
 
       {/* =============== G4 GRIDS =============== */}
-      <div className="grids-container g4-section">
-        <h2>📊 G4 - Top 4 Acertadores</h2>
+      <h2 style={{ marginTop: '2.5rem', color: '#00ff88', textShadow: '0 0 10px rgba(0, 255, 136, 0.3)' }}>📊 G4 - Top 4 Acertadores</h2>
+      <div className="g4-section">
         {console.log('[RankingGeral] Renderizando G4 grids - estadisticas:', estadisticas)}
 
         {/* GRID 1: Placar Exato */}
@@ -280,9 +280,8 @@ const RankingGeralPage = () => {
       </div>
 
       {/* =============== Z4 GRIDS =============== */}
-      <div className="grids-container z4-section">
-        <h2>📉 Z4 - Top 4 Com Mais Ocorrências</h2>
-
+      <h2 style={{ marginTop: '2.5rem', color: '#ff6b6b', textShadow: '0 0 10px rgba(255, 107, 107, 0.3)' }}>📉 Z4 - Top 4 Com Mais Ocorrências</h2>
+      <div className="z4-section">
         {/* GRID 4: W.O */}
         <div className="ranking-card grid-z4">
           <h3>🚫 Walk Over (W.O)</h3>

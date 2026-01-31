@@ -329,17 +329,18 @@ async function obterEstatisticasRanking({ grupoId, campeonatoId = null, rodadaFi
   `, [grupoFiltro, campeonatoFiltro, rodadaMax]);
 
   // ==================== 4. W.O (WALK OVER) ====================
-  // Contar: (10 jogos × rodadas) - quantidade de palpites por usuário
+  // Contar: (10 jogos × rodadas com placar) - quantidade de palpites por usuário
+  // Apenas rodadas que têm pelo menos UM jogo com placar entram no cálculo
   const [jogosCount] = await pool.query(`
     SELECT 
       COUNT(DISTINCT rodada) AS total_rodadas
     FROM jogos
     WHERE campeonato_id = ?
       AND rodada BETWEEN 1 AND ?
-    GROUP BY rodada
+      AND placar_mandante IS NOT NULL
   `, [campeonatoFiltro, rodadaMax]);
 
-  const totalRodadas = jogosCount.length > 0 ? Math.ceil(jogosCount.length) : 1;
+  const totalRodadas = jogosCount.length > 0 ? jogosCount[0].total_rodadas : 1;
   
   const [wo] = await pool.query(`
     SELECT 
