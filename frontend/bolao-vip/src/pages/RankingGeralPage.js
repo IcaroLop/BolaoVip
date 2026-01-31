@@ -29,6 +29,8 @@ const RankingGeralPage = () => {
 
         const grupoIdStr = storage.getItem('grupoId') || localStorage.getItem('grupoId');
         const grupoId = grupoIdStr ? Number(grupoIdStr) : null;
+        console.log('[RankingGeral] fetchRanking - grupoIdStr:', grupoIdStr, '| grupoId:', grupoId);
+        
         if (!grupoId) {
           setErro('Selecione um grupo no topo para ver o ranking geral.');
           setRanking([]);
@@ -62,6 +64,8 @@ const RankingGeralPage = () => {
         params.append('rodadaFinal', rodadaFinal);
         if (campeonatoId) params.append('campeonatoId', campeonatoId);
 
+        console.log('[RankingGeral] Chamando endpoints com params:', params.toString());
+
         // Buscar dados em paralelo
         const [res, resumoRes, statsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/ranking/geral?${params.toString()}`, authHeader),
@@ -71,6 +75,18 @@ const RankingGeralPage = () => {
             return { data: { placarExato: [], vitorias: [], gols: [], wo: [], zeros: [] } };
           })
         ]);
+
+        console.log('[RankingGeral] Respostas recebidas:', {
+          ranking: res.data?.length || 0,
+          resumo: resumoRes.data,
+          stats: {
+            placarExato: statsRes.data?.placarExato?.length || 0,
+            vitorias: statsRes.data?.vitorias?.length || 0,
+            gols: statsRes.data?.gols?.length || 0,
+            wo: statsRes.data?.wo?.length || 0,
+            zeros: statsRes.data?.zeros?.length || 0
+          }
+        });
 
         setRanking(res.data);
         setCampeoesResumo(resumoRes.data?.campeoes || []);
@@ -173,6 +189,7 @@ const RankingGeralPage = () => {
       {/* =============== G4 GRIDS =============== */}
       <div className="grids-container g4-section">
         <h2>📊 G4 - Top 4 Acertadores</h2>
+        {console.log('[RankingGeral] Renderizando G4 grids - estadisticas:', estadisticas)}
 
         {/* GRID 1: Placar Exato */}
         <div className="ranking-card grid-g4">
