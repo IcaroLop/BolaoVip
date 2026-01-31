@@ -120,11 +120,18 @@ class NotificacoesAgendadasService {
         );
 
         if (existe.length === 0) {
-          // Aplicar fix de +4h para compensar bug do driver mysql2 com timezone
+          // Calcular horário correto do alerta usando Luxon
+          // jogo.data vem como string YYYY-MM-DD HH:mm:ss no fuso horário de Manaus (conforme a conexão MySQL)
           const { DateTime } = require('luxon');
-          const dataEventoUTC = DateTime.fromJSDate(new Date(jogo.data), { zone: 'utc' }).plus({ hours: 4 });
-          const dataEvento = dataEventoUTC.toJSDate();
-          const dataDisparo = new Date(dataEvento.getTime() - minutos * 60 * 1000);
+          
+          // Interpretar como data/hora em Manaus (sem conversão, mantendo os valores exatos)
+          const dataJogo = DateTime.fromSQL(jogo.data, { zone: 'America/Manaus' });
+          
+          // Subtrair os minutos do alerta
+          const dataDisparo = dataJogo.minus({ minutes: minutos });
+          
+          // Converter para o formato esperado pelo MySQL (string em Manaus)
+          const dataDisparoFormatada = dataDisparo.toSQL();
 
           // ID único: jogo_id + minutos (ex: 33128 + 60 = 3312860)
           const notificationId = parseInt(`${jogo.jogo_id}${minutos}`.padEnd(10, '0'), 10);
@@ -140,7 +147,7 @@ class NotificacoesAgendadasService {
               jogo.campeonato_id,
               minutos,
               notificationId,
-              dataDisparo,
+              dataDisparoFormatada,
               `${jogo.time_mandante} vs ${jogo.time_visitante}`,
               `Jogo começa em ${minutos} minutos`
             ]

@@ -601,12 +601,13 @@ async function verificarRodadaFinalizada(rodada, campeonatoId = null, grupoId = 
  */
 async function gerarPagamentosRodada(rodada, campeonatoId = null, grupoId = null) {
   try {
-    console.log(`💳 Iniciando geração de pagamentos da rodada ${rodada}...`);
+    const cId = campeonatoId || 10; // Default campeonato_id = 10
+    console.log(`💳 Iniciando geração de pagamentos da rodada ${rodada} (campeonato ${cId})...`);
 
     // 1. Verificar se já foram gerados
     const [rodadas] = await pool.query(
-      `SELECT pagamentos_gerados FROM rodadas WHERE numero = ?`,
-      [rodada]
+      `SELECT pagamentos_gerados FROM rodadas WHERE numero = ? AND campeonato_id = ?`,
+      [rodada, cId]
     );
 
     if (rodadas.length === 0) {
@@ -645,8 +646,8 @@ async function gerarPagamentosRodada(rodada, campeonatoId = null, grupoId = null
     // 4. Marcar como gerado
     await pool.query(
       `UPDATE rodadas SET pagamentos_gerados = 1, pagamentos_gerados_em = NOW()
-       WHERE numero = ?`,
-      [rodada]
+       WHERE numero = ? AND campeonato_id = ?`,
+      [rodada, cId]
     );
 
     console.log(`✅ Pagamentos da rodada ${rodada} gerados com sucesso`);
@@ -670,7 +671,7 @@ async function gerarPagamentosRodada(rodada, campeonatoId = null, grupoId = null
 async function verificarStatusRodada(req, res) {
   try {
     const rodada = Number(req.params.rodada);
-    const campeonatoId = req.query.campeonatoId || null;
+    const campeonatoId = req.query.campeonatoId || 10;
     const grupoId = req.query.grupoId || null;
 
     if (isNaN(rodada) || rodada <= 0) {
@@ -679,8 +680,8 @@ async function verificarStatusRodada(req, res) {
 
     const statusRodada = await verificarRodadaFinalizada(rodada, campeonatoId, grupoId);
     const [rodadas] = await pool.execute(
-      `SELECT pagamentos_gerados, pagamentos_gerados_em FROM rodadas WHERE numero = ?`,
-      [rodada]
+      `SELECT pagamentos_gerados, pagamentos_gerados_em FROM rodadas WHERE numero = ? AND campeonato_id = ?`,
+      [rodada, campeonatoId]
     );
 
     const pagamentosGerados = rodadas.length > 0 && rodadas[0].pagamentos_gerados;
