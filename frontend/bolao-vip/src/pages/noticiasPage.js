@@ -13,6 +13,13 @@ const NoticiasPage = () => {
   const [pullProgress, setPullProgress] = useState(0);
 
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState(null);
+  
+  // Estados para os cards de ranking
+  const [rankingG4, setRankingG4] = useState([]);
+  const [rankingZ4, setRankingZ4] = useState([]);
+  const [maiorLanterna, setMaiorLanterna] = useState(null);
+  const [tabAtiva, setTabAtiva] = useState('g4'); // 'g4', 'z4', 'lanterna'
+  const [carregandoRanking, setCarregandoRanking] = useState(false);
 
   const navigate = useNavigate();
 
@@ -39,6 +46,60 @@ const NoticiasPage = () => {
   }, []);
 
   const authHeader = useMemo(() => (token ? { headers: { Authorization: `Bearer ${token}` } } : {}), [token]);
+
+  const carregarRanking = async () => {
+    if (carregandoRanking) return;
+    setCarregandoRanking(true);
+
+    try {
+      const grupoId = localStorage.getItem('grupoId') || sessionStorage.getItem('grupoId');
+      if (!grupoId) {
+        console.warn('[NoticiasPage] Nenhum grupo selecionado');
+        setCarregandoRanking(false);
+        return;
+      }
+
+      // Buscar rodada vigente
+      let rodadaFinal = 1;
+      try {
+        const rvRes = await axios.get(`${API}/resultados/rodada-vigente?grupoId=${grupoId}`, authHeader);
+        rodadaFinal = rvRes.data?.rodada ?? rvRes.data?.rodada_vigente ?? 1;
+      } catch (err) {
+        console.error('[NoticiasPage] Erro ao obter rodada vigente:', err);
+      }
+
+      // Buscar ranking geral
+      const params = new URLSearchParams();
+      params.append('grupoId', grupoId);
+      params.append('rodadaFinal', rodadaFinal);
+      params.append('campeonatoId', 10);
+
+      const res = await axios.get(`${API}/ranking/geral?${params.toString()}`, authHeader);
+      const ranking = res.data || [];
+
+      // G4 - Top 4
+      const top4 = ranking.slice(0, 4);
+      setRankingG4(top4);
+
+      // Z4 - Bottom 4
+      const bottom4 = ranking.slice(-4).reverse();
+      setRankingZ4(bottom4);
+
+      // Maior Lanterna - Último colocado
+      const ultimo = ranking[ranking.length - 1];
+      const penultimo = ranking[ranking.length - 2];
+      if (ultimo) {
+        setMaiorLanterna({
+          ...ultimo,
+          diferencaPenultimo: penultimo ? (penultimo.pontos_totais - ultimo.pontos_totais).toFixed(2) : 0
+        });
+      }
+    } catch (err) {
+      console.error('[NoticiasPage] Erro ao carregar ranking:', err);
+    } finally {
+      setCarregandoRanking(false);
+    }
+  };
 
   const carregarNoticias = async () => {
     if (carregando) return;
@@ -77,6 +138,9 @@ const NoticiasPage = () => {
       
       setNoticias(noticiasFiltradas);
       setUltimaAtualizacao(new Date());
+      
+      // Atualizar ranking também
+      await carregarRanking();
     } catch (err) {
       console.error('[NoticiasPage] Erro ao atualizar notícias:', err);
     } finally {
@@ -109,7 +173,8 @@ const NoticiasPage = () => {
 
   // navegarCarrossel removido por não ser utilizado
 
-
+Ranking();
+    carregar
   useEffect(() => {
     carregarNoticias();
     carregarAoVivo();
@@ -189,8 +254,12 @@ const NoticiasPage = () => {
     const fonteUpper = fonte.toUpperCase();
     if (fonteUpper === 'GE') return '#00FF88';
     if (fonteUpper === 'ESPN') return '#FFD700';
-    if (fonteUpper === 'UOL') return '#FF6B35';
-    return '#4BA4FF';
+  const getMedalha = (posicao) => {
+    if (posicao === 1) return '🥇';
+    if (posicao === 2) return '🥈';
+    if (posicao === 3) return '🥉';
+    if (posicao === 4) return '🏆';
+    return '📍';
   };
 
   return (
@@ -200,6 +269,100 @@ const NoticiasPage = () => {
         <div className="pull-to-refresh-indicator" style={{ opacity: pullProgress }}>
           <div className="pull-spinner" style={{ transform: `rotate(${pullProgress * 360}deg)` }}>
             🔄
+          </div>
+          <p>{pullProgress >= 1 ? 'Solte para atualizar' : 'Deslize para atualizar'}</p>
+        </div>
+      )}
+
+      {/* Cards de Ranking com Tabs */}
+      <div className="ranking-destaque-section">
+        <h2 className="ranking-destaque-titulo">📊 Destaques do Ranking</h2>
+        
+        {/* Tabs */}
+        <div className="ranking-tabs">
+          <button 
+            className={`ranking-tab ${tabAtiva === 'g4' ? 'active' : ''}`}
+            onClick={() => setTabAtiva('g4')}
+          >
+            🏆 G4
+          </button>
+          <button 
+            className={`ranking-tab ${tabAtiva === 'z4' ? 'active' : ''}`}
+            onClick={() => setTabAtiva('z4')}
+          >
+            ⚠️ Z4
+          </button>
+          <button 
+            className={`ranking-tab ${tabAtiva === 'lanterna' ? 'active' : ''}`}
+            onClick={() => setTabAtiva('lanterna')}
+          >
+            💡 Lanterna
+          </button>
+        </div>
+
+        {/* Conteúdo dos Tabs */}
+        {carregandoRanking ? (
+          <div className="ranking-card loading">
+            <p>Carregando ranking...</p>
+          </div>
+        ) : (
+          <>
+            {/* G4 Card */}
+            {tabAtiva === 'g4' && (
+              <div className="ranking-card g4-card shake-animation">
+                <h3 className="ranking-card-titulo">🏆 Zona de Glória</h3>
+                <div className="ranking-grid">
+                  {rankingG4.map((apostador, idx) => (
+                    <div key={apostador.id_usuario} className="ranking-item g4-item">
+                      <div className="ranking-item-header">
+                        <span className="medalha">{getMedalha(idx + 1)}</span>
+                        <span className="posicao">{idx + 1}º</span>
+                      </div>
+                      <p className="nome">{apostador.nome_apostador}</p>
+                      <p className="pontos">{Number(apostador.pontos_totais).toFixed(2)} pts</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Z4 Card */}
+            {tabAtiva === 'z4' && (
+              <div className="ranking-card z4-card shake-animation">
+                <h3 className="ranking-card-titulo">⚠️ Zona de Perigo</h3>
+                <div className="ranking-grid">
+                  {rankingZ4.map((apostador, idx) => (
+                    <div key={apostador.id_usuario} className="ranking-item z4-item">
+                      <div className="ranking-item-header">
+                        <span className="alerta">⚠️</span>
+                        <span className="posicao">{apostador.posicao}º</span>
+                      </div>
+                      <p className="nome">{apostador.nome_apostador}</p>
+                      <p className="pontos">{Number(apostador.pontos_totais).toFixed(2)} pts</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Lanterna Card */}
+            {tabAtiva === 'lanterna' && maiorLanterna && (
+              <div className="ranking-card lanterna-card shake-animation">
+                <h3 className="ranking-card-titulo">💡 Maior Lanterna</h3>
+                <div className="lanterna-destaque">
+                  <div className="lanterna-icon">💡</div>
+                  <h4 className="lanterna-nome">{maiorLanterna.nome_apostador}</h4>
+                  <p className="lanterna-posicao">Última Posição - {maiorLanterna.posicao}º</p>
+                  <p className="lanterna-pontos">{Number(maiorLanterna.pontos_totais).toFixed(2)} pontos</p>
+                  <p className="lanterna-diferenca">
+                    {maiorLanterna.diferencaPenultimo} pts atrás do penúltimo
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>    🔄
           </div>
           <p>{pullProgress >= 1 ? 'Solte para atualizar' : 'Deslize para atualizar'}</p>
         </div>

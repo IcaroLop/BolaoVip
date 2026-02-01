@@ -6,6 +6,288 @@
   gap: 1.2rem;
 }
 
+/* ============================================
+   RANKING DESTAQUE CARDS - NOVO
+   ============================================ */
+
+.ranking-destaque-section {
+  background: var(--card-strong);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  margin-bottom: 1.5rem;
+}
+
+.ranking-destaque-titulo {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Tabs */
+.ranking-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  justify-content: center;
+}
+
+.ranking-tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: var(--card);
+  border: 2px solid var(--border-subtle);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.ranking-tab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ranking-tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border-color: var(--accent);
+  color: #000;
+  font-weight: 700;
+}
+
+/* Cards de Ranking */
+.ranking-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 1.5rem;
+  min-height: 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ranking-card.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.ranking-card-titulo {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+
+/* G4 Card */
+.g4-card {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(0, 255, 136, 0.15) 100%);
+  border: 2px solid #FFD700;
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
+}
+
+.g4-card .ranking-card-titulo {
+  color: #FFD700;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+/* Z4 Card */
+.z4-card {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 8, 68, 0.15) 100%);
+  border: 2px solid #FF6B35;
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.3);
+}
+
+.z4-card .ranking-card-titulo {
+  color: #FF6B35;
+  text-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+}
+
+/* Lanterna Card */
+.lanterna-card {
+  background: linear-gradient(135deg, rgba(157, 80, 187, 0.15) 0%, rgba(255, 215, 0, 0.15) 100%);
+  border: 2px solid #9D50BB;
+  box-shadow: 0 8px 24px rgba(157, 80, 187, 0.3);
+}
+
+.lanterna-card .ranking-card-titulo {
+  color: #FFD700;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+/* Grid 2x2 */
+.ranking-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.ranking-item {
+  background: var(--card-strong);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  transition: transform 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.ranking-item:hover {
+  transform: scale(1.05);
+}
+
+.g4-item {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(0, 255, 136, 0.1));
+}
+
+.z4-item {
+  border-color: rgba(255, 107, 53, 0.3);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 8, 68, 0.1));
+}
+
+.ranking-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.medalha {
+  font-size: 1.8rem;
+}
+
+.alerta {
+  font-size: 1.5rem;
+  animation: pulse 2s infinite;
+}
+
+.posicao {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ranking-item .nome {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-item .pontos {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Lanterna Destaque */
+.lanterna-destaque {
+  text-align: center;
+  padding: 1rem;
+}
+
+.lanterna-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: glow 2s infinite;
+}
+
+.lanterna-nome {
+  margin: 0.75rem 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.lanterna-posicao {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.lanterna-pontos {
+  margin: 0.75rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFD700;
+}
+
+.lanterna-diferenca {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Animação Shake */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake-animation {
+  animation: shake 0.6s ease-in-out;
+}
+
+/* Animação Pulse para alerta */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Animação Glow para lanterna */
+@keyframes glow {
+  0%, 100% { 
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5),
+                 0 0 20px rgba(255, 215, 0, 0.3);
+  }
+  50% { 
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
+                 0 0 30px rgba(255, 215, 0, 0.5),
+                 0 0 40px rgba(255, 215, 0, 0.3);
+  }
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+  .ranking-grid {
+    gap: 0.75rem;
+  }
+  
+  .ranking-item {
+    padding: 0.75rem;
+  }
+  
+  .ranking-item .nome {
+    font-size: 0.85rem;
+  }
+  
+  .medalha {
+    font-size: 1.5rem;
+  }
+  
+  .lanterna-icon {
+    font-size: 3rem;
+  }
+}
+
+/* ============================================
+   FIM RANKING DESTAQUE CARDS
+   ============================================ */
+
 /* Indicador de Pull-to-Refresh */
 .pull-to-refresh-indicator {
   position: fixed;
