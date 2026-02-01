@@ -191,7 +191,7 @@ class NotificacoesAgendadasService {
         WHERE (j.status = 'agendado' OR j.status IS NULL)
           AND j.data >= NOW()
         GROUP BY j.rodada, j.campeonato_id
-        ORDER BY j.data ASC
+        ORDER BY MIN(j.data) ASC
       `);
 
       if (rodadas.length === 0) {
