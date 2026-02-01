@@ -173,10 +173,9 @@ const NoticiasPage = () => {
 
   // navegarCarrossel removido por não ser utilizado
 
-Ranking();
-    carregar
   useEffect(() => {
     carregarNoticias();
+    carregarRanking();
     carregarAoVivo();
     
     // Implementar pull-to-refresh
@@ -254,6 +253,10 @@ Ranking();
     const fonteUpper = fonte.toUpperCase();
     if (fonteUpper === 'GE') return '#00FF88';
     if (fonteUpper === 'ESPN') return '#FFD700';
+    if (fonteUpper === 'UOL') return '#FF6B35';
+    return '#4BA4FF';
+  };
+
   const getMedalha = (posicao) => {
     if (posicao === 1) return '🥇';
     if (posicao === 2) return '🥈';
@@ -362,11 +365,7 @@ Ranking();
             )}
           </>
         )}
-      </div>    🔄
-          </div>
-          <p>{pullProgress >= 1 ? 'Solte para atualizar' : 'Deslize para atualizar'}</p>
-        </div>
-      )}
+      </div>
 
       {carregando && noticias.length === 0 ? (
         <p className="carregando">Carregando notícias...</p>
