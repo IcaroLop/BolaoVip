@@ -180,13 +180,33 @@ class NotificationService {
 
   /**
    * Handler quando notificação é clicada pelo usuário
-   * Navega para a página de palpites da rodada
+   * Navega para a página de palpites da rodada ou redireciona conforme dados_adicionais
    */
   handleNotificationClick(notification) {
     console.log('[NotificationService] 🔔 Usuário clicou em notificação:', notification);
 
     const rodada = notification.notification.extra?.rodada;
+    const dadosAdicionais = notification.notification.extra?.dados_adicionais;
 
+    // Se há redireciona nos dados_adicionais (ex: notificação 24h antes), usar esse
+    if (dadosAdicionais && typeof dadosAdicionais === 'string') {
+      try {
+        const dados = JSON.parse(dadosAdicionais);
+        if (dados.redireciona) {
+          console.log('[NotificationService] ➡️ Redirecionando para:', dados.redireciona);
+          window.dispatchEvent(
+            new CustomEvent('notificacaoClicada', {
+              detail: { redireciona: dados.redireciona },
+            })
+          );
+          return;
+        }
+      } catch (e) {
+        console.warn('[NotificationService] Erro ao parsear dados_adicionais:', e);
+      }
+    }
+
+    // Fallback: se tem rodada, redireciona para palpites
     if (rodada) {
       // Disparar evento global para redirecionar
       window.dispatchEvent(

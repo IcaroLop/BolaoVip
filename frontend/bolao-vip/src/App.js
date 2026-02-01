@@ -44,9 +44,18 @@ function AppContent() {
 
     // Listener para quando usuário clica em notificação
     const handleNotificationClick = (event) => {
-      const { rodada } = event.detail;
-      console.log('[App] 📲 Redirecionando para palpites da rodada:', rodada);
-      navigate(`/palpites?rodada=${rodada}`);
+      const { rodada, redireciona } = event.detail;
+      
+      // Se há redireciona (ex: notificação 24h), usar esse campo
+      if (redireciona) {
+        console.log('[App] 📲 Redirecionando via dados_adicionais para:', redireciona);
+        navigate(redireciona);
+      } 
+      // Fallback: se tem rodada, redireciona para palpites com rodada
+      else if (rodada) {
+        console.log('[App] 📲 Redirecionando para palpites da rodada:', rodada);
+        navigate(`/palpites?rodada=${rodada}`);
+      }
     };
 
     // Listeners para FCM
