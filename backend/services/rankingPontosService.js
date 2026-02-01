@@ -150,13 +150,10 @@ async function obterRankingRodadaAggregado({ grupoId, campeonatoId = null, rodad
 async function obterResumoPosicoes({ grupoId, campeonatoId = null, rodadaFinal }) {
   const grupoFiltro = Number(grupoId);
   const rodadaMax = Number(rodadaFinal);
+  const campeonatoFiltro = campeonatoId ? Number(campeonatoId) : 10; // padrão 10
 
-  const where = ['r.grupo_id = ?', 'r.rodada BETWEEN 1 AND ?'];
-  const params = [grupoFiltro, rodadaMax];
-  if (campeonatoId) {
-    where.push('r.campeonato_id = ?');
-    params.push(Number(campeonatoId));
-  }
+  const where = ['r.grupo_id = ?', 'r.campeonato_id = ?', 'r.rodada BETWEEN 1 AND ?'];
+  const params = [grupoFiltro, campeonatoFiltro, rodadaMax];
 
   const [rows] = await pool.query(`
     SELECT r.rodada,
@@ -229,14 +226,10 @@ async function obterResumoPosicoes({ grupoId, campeonatoId = null, rodadaFinal }
 async function obterRankingGeralAggregado({ grupoId, campeonatoId = null, rodadaFinal, limit = 20, offset = 0 }) {
   const grupoFiltro = Number(grupoId);
   const rodadaMax = Number(rodadaFinal);
+  const campeonatoFiltro = campeonatoId ? Number(campeonatoId) : 10; // padrão 10 (Brasileirão)
 
-  const where = ['r.grupo_id = ?', 'r.rodada BETWEEN 1 AND ?'];
-  const params = [grupoFiltro, rodadaMax];
-
-  if (campeonatoId) {
-    where.push('r.campeonato_id = ?');
-    params.push(Number(campeonatoId));
-  }
+  const where = ['r.grupo_id = ?', 'r.campeonato_id = ?', 'r.rodada BETWEEN 1 AND ?'];
+  const params = [grupoFiltro, campeonatoFiltro, rodadaMax];
 
   params.push(Number(limit), Number(offset));
 
