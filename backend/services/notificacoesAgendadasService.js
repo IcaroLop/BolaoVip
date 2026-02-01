@@ -227,7 +227,8 @@ class NotificacoesAgendadasService {
             }
             
             const dataDisparo24h = dataPrimeiroJogo.minus({ hours: 24 });
-            const dataDisparoFormatada = dataDisparo24h.toSQL();
+            // Formatar sem o offset de timezone (MySQL DATETIME não aceita offset)
+            const dataDisparoFormatada = dataDisparo24h.toSQL({ includeOffset: false });
 
             // ID único: jogo_id + 1440 (ex: 33128 + 1440 = 3311440)
             const notificationId = parseInt(`${rodada.primeiro_jogo_id}1440`.padEnd(10, '0'), 10);
