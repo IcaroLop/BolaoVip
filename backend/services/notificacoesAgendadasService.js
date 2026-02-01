@@ -96,6 +96,9 @@ class NotificacoesAgendadasService {
       }
 
       console.log(`[NotificacoesAgendadasService] ✅ Agendamento concluído para ${jogos.length} jogos`);
+      
+      // ✅ NOVO: Agendar também notificações 24h antes de cada rodada
+      await this.agendarNotificacao24hAntes();
     } catch (err) {
       console.error('[NotificacoesAgendadasService] Erro ao agendar notificações de jogos:', err.message);
     }
@@ -138,8 +141,8 @@ class NotificacoesAgendadasService {
 
           await conexao.query(
             `INSERT INTO notificacoes_enviadas_jogos 
-             (jogo_id, partida_id, rodada, campeonato_id, tempo_alerta, notification_id, data_agendada, status, titulo, mensagem)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'agendada', ?, ?)`,
+             (jogo_id, partida_id, rodada, campeonato_id, tempo_alerta, notification_id, data_agendada, status, titulo, mensagem, dados_adicionais)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'agendada', ?, ?, ?)`,
             [
               jogo.jogo_id,
               jogo.partida_id,
@@ -149,7 +152,8 @@ class NotificacoesAgendadasService {
               notificationId,
               dataDisparoFormatada,
               `${jogo.time_mandante} vs ${jogo.time_visitante}`,
-              `Jogo começa em ${minutos} minutos`
+              `Jogo começa em ${minutos} minutos`,
+              JSON.stringify({ tipo: 'proximoJogo' })
             ]
           );
 
@@ -166,6 +170,85 @@ class NotificacoesAgendadasService {
       );
     } finally {
       conexao.release();
+    }
+  }
+
+  /**
+   * ✅ NOVO: Agenda notificação 24h antes do primeiro jogo da rodada
+   * Apenas uma notificação por rodada, no primeiro jogo
+   */
+  async agendarNotificacao24hAntes() {
+    try {
+      // Buscar todas as rodadas com jogos futuros
+      const [rodadas] = await pool.query(`
+        SELECT DISTINCT 
+          j.rodada,
+          j.campeonato_id,
+          MIN(j.data) as primeiro_jogo,
+          MIN(j.id) as primeiro_jogo_id,
+          MIN(j.partida_id) as primeiro_partida_id
+        FROM jogos j
+        WHERE (j.status = 'agendado' OR j.status IS NULL)
+          AND j.data >= NOW()
+        GROUP BY j.rodada, j.campeonato_id
+        ORDER BY j.data ASC
+      `);
+
+      if (rodadas.length === 0) {
+        return;
+      }
+
+      console.log(`[NotificacoesAgendadasService] 📋 Verificando ${rodadas.length} rodadas para notificação 24h...`);
+
+      const conexao = await pool.getConnection();
+      const { DateTime } = require('luxon');
+
+      for (const rodada of rodadas) {
+        try {
+          // Verificar se já existe notificação 24h para esta rodada
+          const [existe] = await conexao.query(
+            `SELECT id FROM notificacoes_enviadas_jogos 
+             WHERE partida_id = ? AND tempo_alerta = 1440 AND status IN ('agendada', 'enviada')`,
+            [rodada.primeiro_partida_id]
+          );
+
+          if (existe.length === 0) {
+            // Calcular 24h antes do primeiro jogo
+            const dataPrimeiroJogo = DateTime.fromSQL(rodada.primeiro_jogo, { zone: 'America/Manaus' });
+            const dataDisparo24h = dataPrimeiroJogo.minus({ hours: 24 });
+            const dataDisparoFormatada = dataDisparo24h.toSQL();
+
+            // ID único: jogo_id + 1440 (ex: 33128 + 1440 = 3311440)
+            const notificationId = parseInt(`${rodada.primeiro_jogo_id}1440`.padEnd(10, '0'), 10);
+
+            await conexao.query(
+              `INSERT INTO notificacoes_enviadas_jogos 
+               (jogo_id, partida_id, rodada, campeonato_id, tempo_alerta, notification_id, data_agendada, status, titulo, mensagem, dados_adicionais)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 'agendada', ?, ?, ?)`,
+              [
+                rodada.primeiro_jogo_id,
+                rodada.primeiro_partida_id,
+                rodada.rodada,
+                rodada.campeonato_id,
+                1440, // 24 horas em minutos
+                notificationId,
+                dataDisparoFormatada,
+                `⏰ Rodada ${rodada.rodada} começando!`,
+                `Faltam 24h para o início dos jogos. Confira e envie seus palpites!`,
+                JSON.stringify({ tipo: 'palpites24h', redireciona: '/palpites' })
+              ]
+            );
+
+            console.log(`  ✅ Notificação 24h agendada para Rodada ${rodada.rodada} (Campeonato ${rodada.campeonato_id})`);
+          }
+        } catch (err) {
+          console.error(`  ❌ Erro ao agendar 24h para rodada ${rodada.rodada}:`, err.message);
+        }
+      }
+
+      conexao.release();
+    } catch (err) {
+      console.error('[NotificacoesAgendadasService] Erro ao agendar notificações 24h:', err.message);
     }
   }
 
@@ -253,6 +336,7 @@ class NotificacoesAgendadasService {
           n.notification_id,
           n.titulo,
           n.mensagem,
+          n.dados_adicionais,
           'jogo' as tipo
          FROM notificacoes_enviadas_jogos n
          WHERE n.status = 'agendada'
@@ -286,12 +370,23 @@ class NotificacoesAgendadasService {
             // Registrar como enviada no banco de agendamento
             await this.registrarNotificacaoJogoEnviada(notif.id);
 
+            // Parse dados_adicionais para enviar com a notificação
+            let dadosAdicionais = {};
+            try {
+              if (notif.dados_adicionais) {
+                dadosAdicionais = JSON.parse(notif.dados_adicionais);
+              }
+            } catch (e) {
+              // Se não conseguir fazer parse, usa valores padrão
+            }
+
             // Enviar via Push Notifications (FCM)
             await this.enviarPushNotificacaoJogo(
               notif.titulo,
               notif.mensagem,
               notif.jogo_id,
-              notif.tempo_alerta
+              notif.tempo_alerta,
+              dadosAdicionais
             );
 
             // FALLBACK: Enviar notificação para todos os usuários (para aparecer no APP via polling)
@@ -350,7 +445,7 @@ class NotificacoesAgendadasService {
   /**
    * Envia Push Notification (FCM) para TODOS os usuários com tokens registrados
    */
-  async enviarPushNotificacaoJogo(titulo, mensagem, jogo_id, tempo_alerta) {
+  async enviarPushNotificacaoJogo(titulo, mensagem, jogo_id, tempo_alerta, dadosExtras = {}) {
     try {
       const conexao = await pool.getConnection();
       try {
@@ -374,9 +469,10 @@ class NotificacoesAgendadasService {
           titulo: titulo,
           mensagem: mensagem,
           dadosExtras: {
-            tipo: 'alerta_jogo',
+            tipo: dadosExtras.tipo || 'alerta_jogo',
             jogo_id: String(jogo_id),
-            tempo_alerta: String(tempo_alerta)
+            tempo_alerta: String(tempo_alerta),
+            redireciona: dadosExtras.redireciona || null
           }
         };
 
