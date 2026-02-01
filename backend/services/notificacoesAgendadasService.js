@@ -398,7 +398,8 @@ class NotificacoesAgendadasService {
               notif.mensagem,
               notif.jogo_id,
               notif.tempo_alerta,
-              dadosAdicionais
+              dadosAdicionais,
+              notif.campeonato_id
             );
 
             // FALLBACK: Enviar notificação para todos os usuários (para aparecer no APP via polling)
@@ -457,10 +458,22 @@ class NotificacoesAgendadasService {
   /**
    * Envia Push Notification (FCM) para TODOS os usuários com tokens registrados
    */
-  async enviarPushNotificacaoJogo(titulo, mensagem, jogo_id, tempo_alerta, dadosExtras = {}) {
+  async enviarPushNotificacaoJogo(titulo, mensagem, jogo_id, tempo_alerta, dadosExtras = {}, campeonatoId = null) {
     try {
       const conexao = await pool.getConnection();
       try {
+        // Buscar nome do campeonato se campeonatoId for fornecido
+        let nomeCampeonato = null;
+        if (campeonatoId) {
+          const [campeontResult] = await conexao.query(
+            `SELECT nome FROM campeonatos WHERE campeonato_id = ?`,
+            [campeonatoId]
+          );
+          if (campeontResult.length > 0) {
+            nomeCampeonato = campeontResult[0].nome;
+          }
+        }
+
         // Buscar todos os usuários com tokens FCM ativos
         const [usuarios] = await conexao.query(
           `SELECT DISTINCT usuario_id 
@@ -484,6 +497,7 @@ class NotificacoesAgendadasService {
             tipo: dadosExtras.tipo || 'alerta_jogo',
             jogo_id: String(jogo_id),
             tempo_alerta: String(tempo_alerta),
+            campeonato: nomeCampeonato,
             redireciona: dadosExtras.redireciona || null
           }
         };
