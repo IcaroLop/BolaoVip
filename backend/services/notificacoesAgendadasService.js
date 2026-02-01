@@ -214,7 +214,18 @@ class NotificacoesAgendadasService {
 
           if (existe.length === 0) {
             // Calcular 24h antes do primeiro jogo
-            const dataPrimeiroJogo = DateTime.fromSQL(rodada.primeiro_jogo, { zone: 'America/Manaus' });
+            // Garantir que primeiro_jogo é uma string
+            const dataPrimeiroJogoStr = rodada.primeiro_jogo instanceof Date 
+              ? rodada.primeiro_jogo.toISOString().slice(0, 19).replace('T', ' ')
+              : String(rodada.primeiro_jogo);
+            
+            const dataPrimeiroJogo = DateTime.fromSQL(dataPrimeiroJogoStr, { zone: 'America/Manaus' });
+            
+            if (!dataPrimeiroJogo.isValid) {
+              console.warn(`  ⚠️ Data inválida para rodada ${rodada.rodada}: ${dataPrimeiroJogoStr}`);
+              continue;
+            }
+            
             const dataDisparo24h = dataPrimeiroJogo.minus({ hours: 24 });
             const dataDisparoFormatada = dataDisparo24h.toSQL();
 
