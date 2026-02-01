@@ -571,13 +571,17 @@ const RankingPage = () => {
       <h2 className="ranking-title" style={{ marginTop: '2rem' }}>📊 Ranking Geral</h2>
 
       <ul className="ranking-list">
-        {rankingGeral.map((item, index) => (
-          <li key={item.id_usuario} className="ranking-item">
-            <span>{pageGeral * PAGE_SIZE + index + 1}º</span>
-            <strong>{item.nome}</strong>
-            <span>{Number(item.pontos || 0).toFixed(2)} pts</span>
-          </li>
-        ))}
+        {rankingGeral.map((item, index) => {
+          const nome = item.nome_apostador || item.nome || '—';
+          const pontos = Number(item.pontos_totais ?? item.pontos ?? 0);
+          return (
+            <li key={item.id_usuario ?? `${nome}-${index}`} className="ranking-item">
+              <span>{pageGeral * PAGE_SIZE + index + 1}º</span>
+              <strong>{nome}</strong>
+              <span>{pontos.toFixed(2)} pts</span>
+            </li>
+          );
+        })}
       </ul>
 
       {/* Paginação Ranking Geral */}
