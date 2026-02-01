@@ -56,11 +56,12 @@ router.get('/geral', async (req, res) => {
     if (isNaN(rodadaFinal) || rodadaFinal <= 0) return res.status(400).json({ erro: 'rodadaFinal inválida' });
 
     const rankingAgg = await obterRankingGeralAggregado({ grupoId, campeonatoId, rodadaFinal, limit, offset });
-    // Adaptar para formato esperado no frontend: { id_usuario, nome, pontos }
-    const ranking = rankingAgg.map(r => ({
+    // Adaptar para formato esperado no frontend
+    const ranking = rankingAgg.map((r, idx) => ({
       id_usuario: r.id_usuario,
-      nome: r.nome_apostador,
-      pontos: r.pontos_totais
+      nome_apostador: r.nome_apostador,
+      pontos_totais: r.pontos_totais,
+      posicao: offset + idx + 1
     }));
     res.json(ranking);
   } catch (err) {

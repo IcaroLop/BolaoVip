@@ -59,11 +59,14 @@ const NoticiasPage = () => {
         return;
       }
 
+      console.log('[NoticiasPage] carregarRanking - grupoId:', grupoId);
+
       // Buscar rodada vigente
       let rodadaFinal = 1;
       try {
         const rvRes = await axios.get(`${API}/resultados/rodada-vigente?grupoId=${grupoId}`, authHeader);
         rodadaFinal = rvRes.data?.rodada ?? rvRes.data?.rodada_vigente ?? 1;
+        console.log('[NoticiasPage] rodadaFinal:', rodadaFinal);
       } catch (err) {
         console.error('[NoticiasPage] Erro ao obter rodada vigente:', err);
       }
@@ -74,16 +77,23 @@ const NoticiasPage = () => {
       params.append('rodadaFinal', rodadaFinal);
       params.append('campeonatoId', 10);
 
+      console.log('[NoticiasPage] Chamando /ranking/geral com params:', params.toString());
+      
       const res = await axios.get(`${API}/ranking/geral?${params.toString()}`, authHeader);
       const ranking = res.data || [];
+      
+      console.log('[NoticiasPage] Ranking recebido:', ranking.length, 'apostadores');
+      console.log('[NoticiasPage] Primeiro apostador:', ranking[0]);
 
       // G4 - Top 4
       const top4 = ranking.slice(0, 4);
       setRankingG4(top4);
+      console.log('[NoticiasPage] G4 setado:', top4);
 
       // Z4 - Bottom 4
       const bottom4 = ranking.slice(-4).reverse();
       setRankingZ4(bottom4);
+      console.log('[NoticiasPage] Z4 setado:', bottom4);
 
       // Maior Lanterna - Último colocado
       const ultimo = ranking[ranking.length - 1];
@@ -91,8 +101,10 @@ const NoticiasPage = () => {
       if (ultimo) {
         setMaiorLanterna({
           ...ultimo,
-          diferencaPenultimo: penultimo ? (penultimo.pontos_totais - ultimo.pontos_totais).toFixed(2) : 0
+          diferencaPenultimo: penultimo ? (penultimo.pontos_totais - ultimo.pontos_totais).toFixed(2) : 0,
+          posicao: ranking.length
         });
+        console.log('[NoticiasPage] Lanterna setada:', ultimo.nome_apostador);
       }
     } catch (err) {
       console.error('[NoticiasPage] Erro ao carregar ranking:', err);
