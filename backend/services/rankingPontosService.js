@@ -98,41 +98,38 @@ async function processarRodadaJogoAJogo(rodada, campeonatoId = null, grupoId = n
 
 /**
  * Agrega por rodada com paginação
+ * Busca dados de ranking_pontos_partida e agrupa por usuário
  */
 async function obterRankingRodadaAggregado({ grupoId, campeonatoId = null, rodada, limit = 20, offset = 0 }) {
   const rodadaNum = Number(rodada);
   const grupoFiltro = grupoId ? Number(grupoId) : null;
+  const campeonatoFiltro = campeonatoId ? Number(campeonatoId) : 10;
 
-  const where = ['rd.numero = ?'];
+  const where = ['r.rodada = ?'];
   const params = [rodadaNum];
 
-  if (campeonatoId) {
-    where.push('r.campeonato_id = ?');
-    params.push(Number(campeonatoId));
-  }
+  where.push('r.campeonato_id = ?');
+  params.push(campeonatoFiltro);
 
-  // Compatibilidade: se um grupo foi selecionado, aceitar registros do grupo ou gerais (NULL).
-  // Isso cobre rodadas antigas (grupo_id=2) e novas (grupo_id=NULL).
+  // Se grupo foi especificado, filtrar por esse grupo
   if (grupoFiltro && grupoFiltro > 0) {
-    where.push('(r.grupo_id = ? OR r.grupo_id IS NULL)');
+    where.push('r.grupo_id = ?');
     params.push(grupoFiltro);
-  } else {
-    // Sem grupo selecionado, retornar registros gerais e do grupo 2 (compatibilidade).
-    where.push('(r.grupo_id IS NULL OR r.grupo_id = 2)');
   }
 
   params.push(Number(limit), Number(offset));
 
   const [rows] = await pool.query(`
-    SELECT r.id_usuario AS usuario_id,
+    SELECT r.usuario_id,
            u.nome AS nome_apostador,
-           r.pontos_totais,
-           r.posicao
-    FROM ranking_rodada r
-    JOIN usuarios u ON u.id = r.id_usuario
-    JOIN rodadas rd ON r.rodada = rd.id
+           SUM(r.pontos) AS pontos_totais,
+           SUM(r.acerto_exato) AS acertos_exatos,
+           SUM(r.vencedor_correto) AS vencedores_corretos
+    FROM ranking_pontos_partida r
+    JOIN usuarios u ON u.id = r.usuario_id
     WHERE ${where.join(' AND ')}
-    ORDER BY r.posicao ASC
+    GROUP BY r.usuario_id, u.nome
+    ORDER BY pontos_totais DESC, acertos_exatos DESC, vencedores_corretos DESC
     LIMIT ? OFFSET ?
   `, params);
 
@@ -142,8 +139,8 @@ async function obterRankingRodadaAggregado({ grupoId, campeonatoId = null, rodad
     id_usuario: row.usuario_id,
     nome_apostador: row.nome_apostador,
     pontos_totais: Number(row.pontos_totais),
-    acertos_exatos: 0,
-    vencedores_corretos: 0
+    acertos_exatos: Number(row.acertos_exatos || 0),
+    vencedores_corretos: Number(row.vencedores_corretos || 0)
   }));
 }
 
