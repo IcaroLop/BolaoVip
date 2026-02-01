@@ -129,13 +129,17 @@ const RankingGeralPage = () => {
           </tr>
         </thead>
         <tbody>
-          {ranking.map((user, index) => (
-            <tr key={user.id_usuario}>
-              <td>{index + 1}º</td>
-              <td>{user.nome}</td>
-              <td>{user.pontos.toFixed(1)}</td>
-            </tr>
-          ))}
+          {ranking.map((user, index) => {
+            const nome = user.nome_apostador || user.nome || '—';
+            const pontos = Number(user.pontos_totais ?? user.pontos ?? 0);
+            return (
+              <tr key={user.id_usuario ?? `${nome}-${index}`}>
+                <td>{index + 1}º</td>
+                <td>{nome}</td>
+                <td>{pontos.toFixed(1)}</td>
+              </tr>
+            );
+          })}
         </tbody>
         </table>
       </div>
