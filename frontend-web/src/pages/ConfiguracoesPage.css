@@ -1,0 +1,705 @@
+.cfg-container {
+  padding: 2rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: var(--text, #f5f7fb);
+}
+
+.cfg-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cfg-hero h1 {
+  margin: 0.25rem 0;
+  font-size: 2rem;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  color: #cde0d2;
+}
+
+.muted {
+  color: #9fb0bd;
+  margin-top: 0.35rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hero-actions .ghost {
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e7efe9;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.hero-actions .ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.cfg-alert {
+  margin-bottom: 1rem;
+  padding: 1rem 1.2rem;
+  border-radius: 10px;
+  background: rgba(61, 242, 157, 0.12);
+  border: 1px solid rgba(61, 242, 157, 0.35);
+  color: #d9ffe7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Grid de agendador */
+.table-like.agendador-grid {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(17, 24, 39, 0.6);
+}
+
+.table-like.agendador-grid .row {
+  display: grid;
+  grid-template-columns: 160px 1.5fr 70px 110px 80px;
+  align-items: center;
+  column-gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(31, 41, 55, 0.4);
+  color: #dfe7f0;
+  font-size: 0.8rem;
+}
+
+.table-like.agendador-grid .row:last-child {
+  border-bottom: none;
+}
+
+.table-like.agendador-grid .row.header {
+  font-weight: 600;
+  background: rgba(17, 24, 39, 0.8);
+  color: #e5f3ff;
+  padding: 8px 10px;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+  font-size: 0.75rem;
+}
+
+.table-like.agendador-grid .row .cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.panel {
+  background: rgba(6, 12, 20, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 1.1rem 1.2rem;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.panel h3 {
+  margin-top: 0;
+}
+
+.cfg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.cfg-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: #dfe7f0;
+}
+
+.cfg-form input,
+.cfg-form select {
+  border-radius: 10px;
+  border: 1px solid rgba(61, 242, 157, 0.28);
+  padding: 0.65rem 0.75rem;
+  background: radial-gradient(circle at 20% 20%, rgba(61, 242, 157, 0.16), rgba(8, 16, 24, 0.95));
+  color: #f4f7fb;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #3df29d 50%), linear-gradient(135deg, #3df29d 50%, transparent 50%), linear-gradient(90deg, rgba(61, 242, 157, 0.35), rgba(61, 242, 157, 0.05));
+  background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%, 0 0;
+  background-size: 6px 6px, 6px 6px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.cfg-form select:focus,
+.cfg-form input:focus {
+  outline: none;
+  border-color: rgba(61, 242, 157, 0.6);
+  box-shadow: 0 12px 28px rgba(61, 242, 157, 0.2);
+}
+
+.cfg-form select option {
+  background: #0b1624;
+  color: #f4f7fb;
+}
+.compact-select, .compact-input {
+  border-radius: 10px;
+  border: 1px solid rgba(61, 242, 157, 0.28);
+  padding: 0.45rem 0.6rem;
+  background: radial-gradient(circle at 20% 20%, rgba(61, 242, 157, 0.16), rgba(8, 16, 24, 0.95));
+  color: #f4f7fb;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.compact-select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #3df29d 50%), linear-gradient(135deg, #3df29d 50%, transparent 50%), linear-gradient(90deg, rgba(61, 242, 157, 0.35), rgba(61, 242, 157, 0.05));
+  background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%, 0 0;
+  background-size: 6px 6px, 6px 6px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.compact-select:focus, .compact-input:focus {
+  outline: none;
+  border-color: rgba(61, 242, 157, 0.6);
+  box-shadow: 0 12px 28px rgba(61, 242, 157, 0.2);
+}
+
+.compact-select option {
+  background: #0b1624;
+  color: #f4f7fb;
+}
+
+.cfg-form select option:checked {
+  background: rgba(61, 242, 157, 0.25);
+  color: #0a1a12;
+}
+
+.cfg-form button {
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #3df29d, #1cbf78);
+  color: #0a1a12;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.cfg-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cfg-form button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(61, 242, 157, 0.3);
+}
+
+.grupo-lista {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.grupo-card {
+  padding: 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.grupo-card:hover {
+  border-color: rgba(61, 242, 157, 0.35);
+}
+
+.grupo-card.ativo {
+  border-color: rgba(61, 242, 157, 0.55);
+  background: rgba(61, 242, 157, 0.08);
+}
+
+.grupo-titulo {
+  font-weight: 800;
+  margin-bottom: 0.15rem;
+}
+
+.grupo-meta {
+  color: #b8c8d8;
+  font-size: 0.95rem;
+}
+
+.grupo-chip {
+  display: inline-block;
+  margin-top: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.membros-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.membro-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  gap: 0.5rem;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.membro-row:hover {
+  border-color: rgba(61, 242, 157, 0.3);
+  background: rgba(61, 242, 157, 0.05);
+}
+
+.membro-row::after {
+  content: '';
+  position: absolute;
+  bottom: 0.6rem;
+  right: 0.8rem;
+  width: 16px;
+  height: 16px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%233df29d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0l-7-7m7 7l7-7"/></svg>');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.membro-row:hover::after {
+  opacity: 1;
+}
+
+/* Botão edit para membro */
+.btn-edit-membro {
+  background: none;
+  border: 1px solid rgba(61, 242, 157, 0.4);
+  color: #3df29d;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-top: auto;
+}
+
+.btn-edit-membro:hover {
+  background-color: rgba(61, 242, 157, 0.1);
+  border-color: #3df29d;
+}
+
+.membro-nome {
+  font-weight: 700;
+}
+
+.membro-meta {
+  color: #a9bbcb;
+  font-size: 0.9rem;
+}
+
+.badge {
+  padding: 0.35rem 0.65rem;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.badge-admin {
+  background: rgba(61, 242, 157, 0.18);
+  color: #1ce584;
+}
+
+.badge-membro {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8f1f7;
+}
+
+.perfis-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(61, 242, 157, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.checkbox-label:hover {
+  background: rgba(61, 242, 157, 0.1);
+  border-color: rgba(61, 242, 157, 0.5);
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin-top: 0.25rem;
+  cursor: pointer;
+  accent-color: #3df29d;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.checkbox-label span {
+  flex: 1;
+}
+
+.checkbox-label strong {
+  color: #fff;
+  display: block;
+}
+
+.checkbox-label .descricao {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+  margin-top: 0.25rem;
+}
+
+.membro-perfis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.badge-small {
+  display: inline-block;
+  background: rgba(61, 242, 157, 0.2);
+  color: #3df29d;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Container para cada membro (suporta modo normal e modo edição) */
+.membro-container {
+  margin-bottom: 1rem;
+}
+
+/* Botão de editar perfis */
+.btn-edit {
+  background: none;
+  border: none;
+  color: #3df29d;
+  padding: 0 0.3rem;
+  margin: 0 0 0 0.5rem;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+  opacity: 0.7;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn-edit:hover {
+  opacity: 1;
+}
+
+/* Formulário inline de edição */
+.membro-edit-form {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(61, 242, 157, 0.4);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.membro-edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.membro-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.membro-edit-actions button {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.membro-edit-actions button:first-child {
+  border: none;
+  background: linear-gradient(135deg, #3df29d, #1cbf78);
+  color: #0a1a12;
+}
+
+.membro-edit-actions button:first-child:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.membro-edit-actions button:first-child:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(61, 242, 157, 0.3);
+}
+
+.btn-secondary {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f5f7fb;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Abas de navegação */
+.cfg-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.tab-btn {
+  padding: 0.7rem 1.2rem;
+  border: none;
+  background: transparent;
+  color: #9fb0bd;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  position: relative;
+  top: 1px;
+}
+
+.tab-btn:hover {
+  color: #e7efe9;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-btn.active {
+  color: #3df29d;
+  border-bottom-color: #3df29d;
+  font-weight: 600;
+}
+
+/* Estilos da aba API Futebol */
+.api-info-box {
+  background: rgba(61, 242, 157, 0.08);
+  border: 1px solid rgba(61, 242, 157, 0.25);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.api-info-box p {
+  margin: 0.4rem 0;
+}
+
+.api-info-box .highlight {
+  color: #3df29d;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.api-info-box .small {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.btn-import {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3df29d, #1cbf78);
+  color: #0a1a12;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 20px rgba(61, 242, 157, 0.2);
+  margin-bottom: 1rem;
+}
+
+.btn-import:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(61, 242, 157, 0.35);
+}
+
+.btn-import:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.warning-box {
+  background: rgba(255, 193, 7, 0.12);
+  border: 1px solid rgba(255, 193, 7, 0.4);
+  border-radius: 12px;
+  padding: 1rem;
+  color: #ffe5a8;
+}
+
+.info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.info-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.info-list li:last-child {
+  border-bottom: none;
+}
+
+.info-list code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.88rem;
+  color: #3df29d;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+.fases-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.fases-badges .badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  background: rgba(61, 242, 157, 0.15);
+  border: 1px solid rgba(61, 242, 157, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #cde0d2;
+}
+
+@media (max-width: 768px) {
+  .cfg-hero {
+    flex-direction: column;
+  }
+
+  .cfg-tabs {
+    flex-direction: column;
+  }
+
+  .tab-btn {
+    text-align: left;
+    border-left: 2px solid transparent;
+    border-bottom: none;
+  }
+
+  .tab-btn.active {
+    border-left-color: #3df29d;
+    border-bottom-color: transparent;
+  }
+}
+
+/* Ajustes para telas muito estreitas (ex: <375px) no filtro do Agendador */
+@media (max-width: 400px) {
+  .agendador-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .agendador-filtro-dia {
+    width: 100%;
+    margin-left: 0 !important;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .agendador-filtro-dia input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .agendador-filtro-dia button {
+    width: 100%;
+  }
+}

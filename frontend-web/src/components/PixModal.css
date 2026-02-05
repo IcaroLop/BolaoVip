@@ -1,0 +1,129 @@
+.pix-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.pix-modal {
+  background-color: #161B22;
+  color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 450px;
+  text-align: center;
+}
+
+.pix-qr {
+  width: 200px;
+  height: 200px;
+  border: 2px solid #00FF88;
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 8px;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+  margin: 1.5rem auto;
+}
+
+.pix-input {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background-color: #fff;
+  color: #000;
+}
+
+.pix-btn-copy {
+  background-color: #00FF88;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.pix-btn-close {
+  background-color: #444;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+  .pix-modal {
+    width: 95%;
+    padding: 1.5rem 1rem;
+  }
+
+  .pix-qr {
+    width: 180px;
+    height: 180px;
+  }
+
+  .pix-input {
+    font-size: 16px; /* Evita zoom em iOS */
+  }
+
+  .pix-btn-copy,
+  .pix-btn-close {
+    min-height: 44px;
+    width: 100%;
+    margin-top: 0.75rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .pix-overlay {
+    padding: 0.5rem;
+  }
+
+  .pix-qr {
+    width: 140px;
+    height: 140px;
+    padding: 6px;
+    margin: 1rem auto;
+  }
+
+  .pix-modal {
+    padding: 1rem;
+    width: 95%;
+    max-width: 95vw;
+  }
+
+  .pix-input {
+    padding: 6px;
+    font-size: 12px;
+    margin: 8px 0;
+  }
+
+  .pix-btn-copy,
+  .pix-btn-close {
+    min-height: 40px;
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .pix-titulo {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .pix-label {
+    font-size: 0.85rem;
+  }
+}

@@ -1,0 +1,81 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: center;
+  gap: 2rem;
+  padding: clamp(1rem, 5vw, 2.5rem);
+}
+
+.auth-hero {
+  max-width: 520px;
+}
+
+.auth-hero h1 {
+  margin: 0.4rem 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  color: var(--primary);
+  text-shadow: 0 0 28px rgba(61, 242, 157, 0.35);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--card-strong);
+}
+
+.auth-card h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--text);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin: 1rem 0;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.auth-msg {
+  margin: 0.75rem 0;
+  text-align: center;
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.auth-link {
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.auth-link span {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .auth-page {
+    grid-template-columns: 1fr;
+    padding: 1rem 0.85rem 2rem;
+  }
+
+  .auth-hero {
+    text-align: center;
+    max-width: 100%;
+  }
+
+  .auth-card {
+    margin: 0 auto;
+  }
+}

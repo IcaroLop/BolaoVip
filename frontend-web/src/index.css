@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Tema Esportivo Moderno ---------- */
+:root {
+  --bg-900: #050b14;
+  --bg-800: #0a1420;
+  --bg-700: #101c2c;
+  --card: rgba(17, 29, 46, 0.85);
+  --card-strong: rgba(20, 35, 55, 0.95);
+  --text: #e7edf5;
+  --muted: #98a6b8;
+  --primary: #3df29d;
+  --primary-strong: #2fd085;
+  --secondary: #4ba4ff;
+  --danger: #ff6b6b;
+  --warning: #ffd166;
+  --shadow: 0 12px 60px rgba(0, 0, 0, 0.35);
+  --radius: 14px;
+  --border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 10% 20%, rgba(61, 242, 157, 0.08), transparent 22%),
+    radial-gradient(circle at 80% 0%, rgba(75, 164, 255, 0.12), transparent 30%),
+    linear-gradient(135deg, var(--bg-900), var(--bg-700));
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--primary);
+}
+
+main {
+  width: 100%;
+}
+
+/* ---------- Elements ---------- */
+button, .btn {
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #041013;
+  box-shadow: 0 10px 30px rgba(61, 242, 157, 0.35);
+}
+
+button:hover, .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 35px rgba(61, 242, 157, 0.4);
+}
+
+button:disabled, .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  box-shadow: none;
+  border: var(--border);
+}
+
+.btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--primary);
+}
+
+input, select, textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: var(--border);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: rgba(61, 242, 157, 0.6);
+  box-shadow: 0 0 0 3px rgba(61, 242, 157, 0.12);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ---------- Cards e containers ---------- */
+.page-shell {
+  width: min(1180px, 96vw);
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 1.75rem);
+}
+
+.glass-card {
+  background: var(--card);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  backdrop-filter: blur(10px);
+}
+
+.section-title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  color: var(--primary);
+  letter-spacing: 0.5px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: var(--border);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+/* ---------- Responsividade ---------- */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  .page-shell {
+    width: 100%;
+    padding: 0.75rem;
+  }
+
+  h1 { font-size: 1.45rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.05rem; }
+
+  button, .btn {
+    width: 100%;
+  }
+
+  table {
+    font-size: 0.9rem;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table th,
+  table td {
+    padding: 0.6rem;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .page-shell {
+    width: 92vw;
+    padding: 1.25rem;
+  }
+}

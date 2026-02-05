@@ -1,0 +1,281 @@
+/* Reusa estilos base e adiciona estilos para a tabela de extrato */
+@import './DepositoModal.css';
+
+/* Resumo */
+.resumo-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 16px 20px;
+  background-color: rgba(10, 20, 32, 0.5);
+  border-bottom: 1px solid rgba(61, 242, 157, 0.15);
+}
+
+.resumo-item {
+  text-align: center;
+  padding: 12px;
+  background: rgba(10, 20, 32, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(61, 242, 157, 0.3);
+}
+
+.resumo-item .label {
+  display: block;
+  font-size: 12px;
+  color: #98a6b8;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.resumo-item .valor {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.resumo-item .valor.positivo {
+  color: #3df29d;
+}
+
+.resumo-item .valor.negativo {
+  color: #ff6b6b;
+}
+
+/* Filtro */
+.filtro-container {
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(61, 242, 157, 0.15);
+}
+
+.filtro-container select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(61, 242, 157, 0.3);
+  border-radius: 6px;
+  font-size: 13px;
+  background-color: rgba(10, 20, 32, 0.8);
+  color: #e7edf5;
+  cursor: pointer;
+}
+
+.filtro-container select:focus {
+  outline: none;
+  border-color: #3df29d;
+  box-shadow: 0 0 0 3px rgba(61, 242, 157, 0.2);
+}
+
+/* Tabela de Extrato */
+.extrato-table {
+  overflow-x: auto;
+  padding: 16px 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.extrato-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.extrato-table thead {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(135deg, rgba(61, 242, 157, 0.15) 0%, rgba(75, 164, 255, 0.1) 100%);
+  color: #3df29d;
+}
+
+.extrato-table th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.extrato-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(61, 242, 157, 0.1);
+  vertical-align: middle;
+  color: #e7edf5;
+}
+
+.extrato-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.extrato-table tbody tr:hover {
+  background-color: rgba(61, 242, 157, 0.05);
+}
+
+.extrato-table tbody tr.status-pendente {
+  opacity: 0.7;
+}
+
+.extrato-table td.data {
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  color: #98a6b8;
+  white-space: nowrap;
+}
+
+.extrato-table td.tipo {
+  font-weight: 500;
+}
+
+.tipo-badge {
+  display: inline-block;
+  background-color: rgba(75, 164, 255, 0.2);
+  color: #4ba4ff;
+  border: 1px solid rgba(75, 164, 255, 0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.extrato-table td.valor {
+  font-weight: 600;
+  font-family: 'Monaco', 'Courier New', monospace;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.extrato-table td.valor.positivo {
+  color: #3df29d;
+}
+
+.extrato-table td.valor.negativo {
+  color: #ff6b6b;
+}
+
+.extrato-table td.saldo-novo {
+  font-weight: 500;
+  font-family: 'Monaco', 'Courier New', monospace;
+  text-align: right;
+  white-space: nowrap;
+  color: #4ba4ff;
+}
+
+.extrato-table td.status {
+  text-align: center;
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: rgba(75, 164, 255, 0.2);
+  border: 1px solid rgba(75, 164, 255, 0.3);
+}
+
+/* Estado vazio */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #98a6b8;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Loading */
+.loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: #98a6b8;
+  font-size: 14px;
+}
+
+/* Responsivo */
+@media (max-width: 640px) {
+  .resumo-container {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 12px 16px;
+  }
+
+  .resumo-item {
+    padding: 10px;
+  }
+
+  .resumo-item .label {
+    font-size: 11px;
+  }
+
+  .resumo-item .valor {
+    font-size: 14px;
+  }
+
+  .extrato-table {
+    padding: 12px 16px;
+    max-height: 300px;
+  }
+
+  .extrato-table table {
+    font-size: 12px;
+  }
+
+  .extrato-table th,
+  .extrato-table td {
+    padding: 10px 6px;
+  }
+
+  .extrato-table th {
+    font-size: 11px;
+  }
+
+  .tipo-badge,
+  .status-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
+/* Ultra-narrow screens: ensure columns don't get swallowed */
+@media (max-width: 375px) {
+  .extrato-table {
+    padding: 10px 12px;
+    max-height: 280px;
+  }
+
+  .extrato-table table {
+    table-layout: fixed;
+    font-size: 11px;
+  }
+
+  .extrato-table th,
+  .extrato-table td {
+    padding: 8px 6px;
+  }
+
+  /* Make date/time wrap into two lines */
+  .extrato-table td.data {
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  /* Allow value to wrap into two lines (e.g., sign/currency + amount) */
+  .extrato-table td.valor,
+  .extrato-table td.saldo-novo {
+    white-space: normal;
+    line-height: 1.15;
+  }
+
+  .tipo-badge,
+  .status-badge {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+
+  .extrato-table th {
+    font-size: 10px;
+  }
+}

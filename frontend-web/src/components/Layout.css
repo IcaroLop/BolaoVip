@@ -1,0 +1,22 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  color: var(--text);
+}
+
+main {
+  flex: 1;
+  padding: clamp(0.75rem, 3vw, 1.5rem);
+  overflow-x: hidden;
+  background: radial-gradient(circle at 20% 30%, rgba(61, 242, 157, 0.08), transparent 25%),
+    radial-gradient(circle at 80% 0%, rgba(75, 164, 255, 0.15), transparent 30%),
+    linear-gradient(180deg, rgba(5, 11, 20, 0.5), rgba(5, 11, 20, 0.85));
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+  main {
+    padding: 0.65rem;
+  }
+}

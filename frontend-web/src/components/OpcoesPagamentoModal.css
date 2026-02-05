@@ -1,0 +1,389 @@
+/* Modal de Opções de Pagamento */
+.opcoes-pagamento-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.opcoes-pagamento-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.opcoes-pagamento-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.opcoes-pagamento-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.opcoes-pagamento-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 32px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.opcoes-pagamento-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(90deg);
+}
+
+.opcoes-pagamento-body {
+  padding: 24px;
+}
+
+.opcoes-pagamento-info {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item.destaque {
+  background: rgba(255, 193, 7, 0.1);
+  margin: 12px -12px -12px -12px;
+  padding: 16px 12px;
+  border-radius: 0 0 8px 8px;
+  border-bottom: none;
+}
+
+.info-label {
+  color: #aaa;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.info-valor {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.info-valor.saldo {
+  color: #4CAF50;
+}
+
+.info-valor.palpite {
+  color: #2196F3;
+}
+
+.info-valor.diferenca {
+  color: #FFC107;
+}
+
+.opcoes-pagamento-divider {
+  text-align: center;
+  margin: 24px 0;
+  color: #aaa;
+  font-size: 14px;
+  position: relative;
+}
+
+.opcoes-pagamento-divider::before,
+.opcoes-pagamento-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.opcoes-pagamento-divider::before {
+  left: 0;
+}
+
+.opcoes-pagamento-divider::after {
+  right: 0;
+}
+
+.opcoes-pagamento-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.opcao-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #fff;
+  text-align: left;
+}
+
+.opcao-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.opcao-btn:active {
+  transform: translateY(0);
+}
+
+.opcao-integral:hover {
+  border-color: #2196F3;
+  background: rgba(33, 150, 243, 0.1);
+}
+
+.opcao-parcial:hover {
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.opcao-icon {
+  font-size: 40px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.opcao-content {
+  flex: 1;
+}
+
+.opcao-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.opcao-content p {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: #ccc;
+}
+
+.opcao-detail {
+  font-size: 14px;
+  color: #888;
+}
+
+.opcoes-pagamento-footer {
+  background: rgba(255, 193, 7, 0.1);
+  border-left: 4px solid #FFC107;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.opcoes-aviso {
+  margin: 0;
+  font-size: 13px;
+  color: #ddd;
+  line-height: 1.6;
+}
+
+.opcoes-aviso strong {
+  color: #FFC107;
+}
+
+/* Responsividade */
+@media (max-width: 640px) {
+  .opcoes-pagamento-modal {
+    max-width: 95vw;
+    max-height: 95vh;
+    border-radius: 16px;
+  }
+
+  .opcoes-pagamento-header {
+    padding: 20px;
+  }
+
+  .opcoes-pagamento-header h2 {
+    font-size: 20px;
+  }
+
+  .opcoes-pagamento-body {
+    padding: 20px;
+  }
+
+  .opcao-btn {
+    padding: 16px;
+  }
+
+  .opcao-icon {
+    font-size: 32px;
+    min-width: 48px;
+  }
+
+  .opcao-content h3 {
+    font-size: 16px;
+  }
+
+  .opcao-content p {
+    font-size: 14px;
+  }
+
+  .info-valor {
+    font-size: 18px;
+  }
+}
+
+/* Estilos para Saldo Negativo */
+.info-valor.negativo {
+  color: #FF5252;
+  font-weight: 700;
+}
+
+.info-valor.debito {
+  color: #FF6B6B;
+  font-weight: 700;
+}
+
+.info-valor.total-pix {
+  color: #FFB74D;
+  font-weight: 700;
+}
+
+.info-item.negativo-info {
+  background: rgba(255, 82, 82, 0.1);
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid rgba(255, 82, 82, 0.3);
+}
+
+.info-detalhe {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 82, 82, 0.2);
+  width: 100%;
+}
+
+.opcoes-aviso.negativo-aviso {
+  background: rgba(255, 82, 82, 0.1);
+  border: 1px solid rgba(255, 82, 82, 0.3);
+  padding: 12px;
+  border-radius: 8px;
+  color: #FFB74D;
+}
+
+@media (max-width: 425px) {
+  .opcoes-pagamento-overlay {
+    padding: 10px;
+  }
+
+  .opcoes-pagamento-modal {
+    border-radius: 12px;
+  }
+
+  .opcoes-pagamento-header,
+  .opcoes-pagamento-body {
+    padding: 16px;
+  }
+
+  .opcoes-pagamento-header h2 {
+    font-size: 18px;
+  }
+
+  .opcao-btn {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px 12px;
+  }
+
+  .opcao-icon {
+    margin-bottom: 8px;
+  }
+
+  .opcao-content h3 {
+    font-size: 15px;
+  }
+
+  .opcao-content p {
+    font-size: 13px;
+  }
+
+  .opcoes-aviso {
+    font-size: 12px;
+  }
+}
+
+/* Scroll customizado */
+.opcoes-pagamento-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.opcoes-pagamento-modal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.opcoes-pagamento-modal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.opcoes-pagamento-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

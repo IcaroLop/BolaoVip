@@ -1,0 +1,247 @@
+/* src/pages/RankingGeralPage.css */
+.ranking-geral-container {
+  padding: 2rem;
+  background-color: #0d1117;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.ranking-geral-container h2 {
+  text-align: center;
+  width: 100%;
+}
+
+.ranking-card {
+  width: 100%;
+  max-width: 720px;
+  margin: 1.5rem auto 0;
+  background-color: #111722;
+  border: 1px solid #1f2733;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  padding: 1rem 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ranking-card h3 {
+  margin: 0 0 0.75rem 0;
+  text-align: center;
+  color: #00ff88;
+}
+
+.ranking-tabela {
+  width: 100%;
+  max-width: 660px;
+  border-collapse: collapse;
+  background-color: #161b22;
+  margin: 0 auto;
+}
+
+.ranking-tabela th,
+.ranking-tabela td {
+  padding: 0.75rem;
+  border: 1px solid #30363d;
+  text-align: center;
+}
+
+.ranking-tabela th {
+  background-color: #21262d;
+  color: #00ff88;
+}
+
+.icons-cell {
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+
+.acertos-cell {
+  font-weight: bold;
+  color: #00ff88;
+}
+
+.acertos-cell.z4-value {
+  color: #ff6b6b;
+}
+
+.sem-dados {
+  color: #888;
+  font-style: italic;
+}
+
+/* ==================== G4/Z4 GRIDS ==================== */
+.grids-container {
+  width: 100%;
+  margin-top: 2.5rem;
+}
+
+.grids-container h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.g4-section,
+.z4-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.grid-g4,
+.grid-z4 {
+  background-color: #111722;
+  border: 2px solid #1f2733;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.grid-g4:hover {
+  border-color: #00ff88;
+  box-shadow: 0 5px 20px rgba(0, 255, 136, 0.2);
+  transform: translateY(-2px);
+}
+
+.grid-z4:hover {
+  border-color: #ff6b6b;
+  box-shadow: 0 5px 20px rgba(255, 107, 107, 0.2);
+  transform: translateY(-2px);
+}
+
+.grid-g4 h3 {
+  color: #00ff88;
+  border-bottom: 2px solid #00ff88;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.grid-z4 h3 {
+  color: #ff6b6b;
+  border-bottom: 2px solid #ff6b6b;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.grid-g4 .ranking-tabela th {
+  background-color: rgba(0, 255, 136, 0.1);
+  color: #00ff88;
+}
+
+.grid-z4 .ranking-tabela th {
+  background-color: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+}
+
+.posicao-g4 {
+  font-weight: bold;
+  color: #00ff88;
+}
+
+.posicao-z4 {
+  font-weight: bold;
+  color: #ff6b6b;
+}
+
+.erro {
+  color: #ff7373;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+  .ranking-geral-container {
+    padding: 0.5rem;
+  }
+
+  .ranking-card {
+    max-width: 100%;
+    padding: 0.75rem;
+  }
+
+  .ranking-tabela {
+    max-width: 100%;
+    font-size: 0.85rem;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ranking-tabela th,
+  .ranking-tabela td {
+    padding: 0.5rem 0.3rem;
+    white-space: nowrap;
+  }
+
+  .g4-section,
+  .z4-section {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .grid-g4,
+  .grid-z4 {
+    padding: 0.75rem;
+  }
+
+  .grids-container h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 375px) {
+  .ranking-geral-container {
+    padding: 0.4rem;
+  }
+
+  .ranking-card {
+    padding: 0.6rem;
+    margin: 1rem auto 0;
+    align-items: center;
+  }
+
+  .ranking-tabela {
+    max-width: 100%;
+    width: 100%;
+    margin: 0 auto;
+    display: table;
+  }
+
+  .ranking-tabela th,
+  .ranking-tabela td {
+    text-align: center;
+    padding: 0.4rem 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .grid-g4,
+  .grid-z4 {
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .grid-g4 h3,
+  .grid-z4 h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .grids-container h2 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+}

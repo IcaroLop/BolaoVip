@@ -1,0 +1,265 @@
+/* GlobalResponsive.css - Ajustes de fonte para telas pequenas */
+
+/* (Removido) 425px section — focando apenas < 375px */
+
+/* ======================================
+   STATUS SEMPRE ABAIXO DO VALOR (todas as telas)
+   ====================================== */
+/* Oculta coluna STATUS e exibe status abaixo do Valor (6ª coluna) em qualquer largura */
+.ranking-table th:nth-child(7),
+.ranking-table td:nth-child(7) {
+  display: none !important;
+}
+
+.ranking-table td:nth-child(6) {
+  position: relative;
+  white-space: normal;
+}
+
+.ranking-table td:nth-child(6)::after {
+  content: attr(data-status);
+  display: block;
+  font-size: 0.60rem; /* redução adicional para telas >375px */
+  color: #00ff88; /* cor padrão (pago) */
+  font-weight: 600;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* Cores por status (todas as telas) */
+.ranking-table td:nth-child(6)[data-status*="pendente" i]::after {
+  color: #ffa500; /* laranja para pendente */
+}
+
+.ranking-table td:nth-child(6)[data-status*="pago" i]::after {
+  color: #00ff88; /* verde para pago */
+}
+
+/* ======================================
+   ULTRA-NARROW (320px - 375px)
+   ====================================== */
+@media (max-width: 375px) {
+  .ranking-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* Reduz fonte de TODAS as colunas uniformemente */
+  .ranking-table,
+  .ranking-table th,
+  .ranking-table td {
+    font-size: 0.65rem;
+  }
+
+  .classificacao-table,
+  .classificacao-table th,
+  .classificacao-table td {
+    font-size: 0.65rem;
+  }
+
+  /* Padding MÍNIMO */
+  .ranking-table th,
+  .ranking-table td {
+    padding: 0.2rem 0.1rem;
+  }
+
+  .classificacao-table th,
+  .classificacao-table td {
+    padding: 0.2rem 0.1rem;
+  }
+
+  /* ESTREITA colunas ao máximo */
+  .nome-coluna {
+    min-width: 40px;
+    max-width: 50px;
+  }
+
+  /* Abrevia cabeçalho da coluna Posição */
+  .ranking-table thead th:nth-child(1) {
+    font-size: 0; /* oculta texto original */
+    position: relative;
+  }
+  .ranking-table thead th:nth-child(1)::after {
+    content: 'Pos.';
+    font-size: 0.65rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  /* Oculta coluna 'Premiação' (4ª coluna) */
+  .ranking-table th:nth-child(4),
+  .ranking-table td:nth-child(4) {
+    display: none !important;
+  }
+
+  /* Aumenta a legibilidade do Nome (apenas <375px) */
+  .nome-coluna .nome-link {
+    font-size: 0.75rem;
+    line-height: 1.1;
+    font-weight: 600;
+  }
+
+  /* Centraliza a tabela em telas ~360px */
+  .ranking-table {
+    width: min(95vw, 360px);
+    margin: 0 auto !important;
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  /* Ajuste de fonte do status em telas muito estreitas */
+  .ranking-table td:nth-child(6)::after {
+    font-size: 0.58rem;
+  }
+
+
+/* ----- Aplique status abaixo do valor e oculte coluna STATUS até 425px ----- */
+@media (max-width: 425px) {
+  /* Centraliza container e tabela também até 425px */
+  .ranking-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .ranking-table {
+    width: min(95vw, 400px);
+    margin: 0 auto !important;
+    position: relative;
+  }
+  /* Ajuste de fonte do status para telas pequenas */
+  .ranking-table td:nth-child(6)::after {
+    font-size: 0.56rem;
+  }
+}
+  .nome-coluna .nome-link {
+    font-size: 0.52rem;
+    padding: 1px 2px;
+    line-height: 1;
+  }
+
+  /* Reduz escudos MUITO */
+  .ranking-table .escudo,
+  .classificacao-table .escudo {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  /* REMOVE emojis/imagens da coluna 1 (1º e 2º lugar) */
+  .ranking-table tbody tr:nth-child(1) td:nth-child(1) .emoji,
+  .ranking-table tbody tr:nth-child(2) td:nth-child(1) .emoji {
+    display: none;
+  }
+
+  /* Reduz emojis muito */
+  .emoji {
+    font-size: 0.6rem;
+    margin-left: 0;
+  }
+
+  /* ESCONDE coluna STATUS e mostra sigla abaixo do valor */
+  .ranking-table th:nth-child(7),
+  .ranking-table td:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Garante que colunas 5 e 6 (Ação e Valor) ficam visíveis */
+  .ranking-table th:nth-child(5),
+  .ranking-table td:nth-child(5),
+  .ranking-table th:nth-child(6),
+  .ranking-table td:nth-child(6) {
+    display: table-cell !important;
+    visibility: visible !important;
+  }
+
+  /* Adiciona sigla do status abaixo do valor na coluna 6 */
+  .ranking-table td:nth-child(6)::after {
+    content: attr(data-status);
+    display: block;
+    font-size: 0.48rem;
+    color: #00ff88;
+    font-weight: 600;
+    margin-top: 0.5px;
+    white-space: nowrap;
+  }
+}
+
+/* ======================================
+   EXTREMO (< 320px)
+   ====================================== */
+@media (max-width: 320px) {
+  .ranking-table,
+  .ranking-table th,
+  .ranking-table td {
+    font-size: 0.52rem;
+  }
+
+  .classificacao-table,
+  .classificacao-table th,
+  .classificacao-table td {
+    font-size: 0.52rem;
+  }
+
+  .ranking-table th,
+  .ranking-table td {
+    padding: 0.08rem 0.04rem;
+  }
+
+  .classificacao-table th,
+  .classificacao-table td {
+    padding: 0.08rem 0.04rem;
+  }
+
+  /* ESTREITA MUITO */
+  .nome-coluna {
+    min-width: 35px;
+    max-width: 45px;
+  }
+
+  .nome-coluna .nome-link {
+    font-size: 0.5rem;
+    padding: 1px 1px;
+    line-height: 0.9;
+  }
+
+  .ranking-table .escudo,
+  .classificacao-table .escudo {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  /* REMOVE emojis de todos os lugares em < 320px */
+  .ranking-table tbody tr:nth-child(1) td:nth-child(1) .emoji,
+  .ranking-table tbody tr:nth-child(2) td:nth-child(1) .emoji,
+  .ranking-table tbody tr:nth-child(3) td:nth-child(1) .emoji,
+  .ranking-table tbody tr:nth-child(4) td:nth-child(1) .emoji,
+  .ranking-table tbody tr:nth-child(5) td:nth-child(1) .emoji,
+  .ranking-table tbody tr:nth-child(6) td:nth-child(1) .emoji {
+    display: none;
+  }
+
+  /* ESCONDE coluna STATUS em <320px também */
+  .ranking-table th:nth-child(7),
+  .ranking-table td:nth-child(7) {
+    display: none !important;
+  }
+
+  /* Garante que colunas 5 e 6 (Ação e Valor) ficam visíveis */
+  .ranking-table th:nth-child(5),
+  .ranking-table td:nth-child(5),
+  .ranking-table th:nth-child(6),
+  .ranking-table td:nth-child(6) {
+    display: table-cell !important;
+    visibility: visible !important;
+  }
+
+  /* Adiciona sigla do status abaixo do valor na coluna 6 */
+  .ranking-table td:nth-child(6)::after {
+    content: attr(data-status);
+    display: block;
+    font-size: 0.45rem;
+    color: #00ff88;
+    font-weight: 600;
+    margin-top: 0.25px;
+    white-space: nowrap;
+  }
+}

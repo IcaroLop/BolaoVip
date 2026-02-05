@@ -1,0 +1,237 @@
+/* ConfirmacaoModal.css - Modal de Confirmação (Tema BolaoVIP) */
+
+.confirmacao-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-in-out;
+  padding: 1rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confirmacao-modal {
+  background: linear-gradient(135deg, rgba(11, 22, 36, 0.95) 0%, rgba(15, 31, 47, 0.95) 100%);
+  border: 1px solid rgba(61, 242, 157, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(61, 242, 157, 0.15);
+  max-width: 450px;
+  width: 100%;
+  animation: slideUp 0.3s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.confirmacao-modal.confirmacao-perigo {
+  border-color: rgba(255, 68, 68, 0.4);
+}
+
+.confirmacao-modal.confirmacao-sucesso {
+  border-color: rgba(0, 204, 119, 0.4);
+}
+
+.confirmacao-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(61, 242, 157, 0.2);
+}
+
+.confirmacao-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.confirmacao-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #888;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.confirmacao-close:hover:not(:disabled) {
+  color: #ff4444;
+  transform: scale(1.1);
+}
+
+.confirmacao-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.confirmacao-body {
+  padding: 1.5rem;
+  color: #ccc;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.confirmacao-body p {
+  margin: 0;
+}
+
+.confirmacao-footer {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid rgba(61, 242, 157, 0.2);
+  justify-content: flex-end;
+}
+
+.confirmacao-btn-cancelar,
+.confirmacao-btn-confirmar {
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.confirmacao-btn-cancelar {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.confirmacao-btn-cancelar:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.confirmacao-btn-cancelar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.confirmacao-btn-confirmar {
+  background: linear-gradient(135deg, #3df29d, #2ec77f);
+  color: #041013;
+  font-weight: 700;
+}
+
+.confirmacao-btn-confirmar:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(61, 242, 157, 0.4);
+  background: linear-gradient(135deg, #4dffad, #3df29d);
+}
+
+.confirmacao-btn-confirmar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.confirmacao-btn-perigo {
+  background: linear-gradient(135deg, #ff5555, #dd3333);
+  color: white;
+}
+
+.confirmacao-btn-perigo:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(255, 68, 68, 0.4);
+  transform: translateY(-2px);
+}
+
+.confirmacao-btn-sucesso {
+  background: linear-gradient(135deg, #00cc77, #00aa66);
+  color: white;
+}
+
+.confirmacao-btn-sucesso:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(0, 204, 119, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Responsivo para telas pequenas */
+@media (max-width: 480px) {
+  .confirmacao-overlay {
+    padding: 0.5rem;
+  }
+
+  .confirmacao-modal {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .confirmacao-header {
+    padding: 1rem 1.2rem;
+  }
+
+  .confirmacao-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .confirmacao-body {
+    padding: 1.2rem;
+    font-size: 0.9rem;
+  }
+
+  .confirmacao-footer {
+    padding: 1.2rem;
+    flex-direction: column-reverse;
+    gap: 0.8rem;
+  }
+
+  .confirmacao-btn-cancelar,
+  .confirmacao-btn-confirmar {
+    width: 100%;
+    min-width: auto;
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .confirmacao-header h2 {
+    font-size: 1rem;
+  }
+
+  .confirmacao-body {
+    padding: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .confirmacao-btn-cancelar,
+  .confirmacao-btn-confirmar {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+

@@ -1,0 +1,61 @@
+.rodada-nav-bar {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0 auto 0.75rem auto;
+  height: 36px;
+  box-sizing: border-box;
+}
+
+.rodada-nav-btn {
+  position: absolute;
+  top: 0;
+  padding: 0;
+  background: transparent !important;
+  color: #1faa8a !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  font-size: 1.35rem;
+  width: auto;
+  height: 36px;
+  min-width: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.rodada-nav-prev { left: 0; }
+.rodada-nav-next { right: 0; }
+
+.rodada-nav-btn:hover,
+.rodada-nav-btn:active,
+.rodada-nav-btn:focus,
+.rodada-nav-btn:focus-visible {
+  transform: none;
+  color: #1faa8a !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.rodada-nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: #7aaea0;
+}
+
+@media (max-width: 375px) {
+  .rodada-nav-bar {
+    padding: 0;
+    height: 32px;
+  }
+  .rodada-nav-btn {
+    font-size: 1.2rem;
+    height: 32px;
+  }
+}

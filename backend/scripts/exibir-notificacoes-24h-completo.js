@@ -111,13 +111,6 @@ const { DateTime } = require('luxon');
   });
   
   // 5. Total geral
-  const [total] = await conn.query(`
-    SELECT COUNT(*) as total_24h FROM notificacoes_enviadas_jogos WHERE tempo_alerta = 1440
-  `);
-  
-  console.log('='.repeat(80));
-  console.log(`📈 TOTAL DE NOTIFICAÇÕES 24h: ${total[0].total_24h}`);
-  console.log('='.repeat(80) + '\n');
   
   conn.end();
 })().catch(err => {

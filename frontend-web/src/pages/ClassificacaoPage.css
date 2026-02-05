@@ -1,0 +1,145 @@
+.classificacao-container {
+  background-color: #0D1117;
+  color: white;
+  padding: 0; /* retirado padding */
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  width: 100%; /* garante uso total */
+}
+
+.classificacao-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.title {
+  color: #00FF88;
+  margin-bottom: 1rem;
+}
+
+.classificacao-table th,
+.classificacao-table td {
+  padding: 0.4rem;
+  border-bottom: 1px solid #333;
+  white-space: nowrap;
+}
+
+/* Estreita as colunas numéricas */
+.classificacao-table th:nth-child(3),
+.classificacao-table th:nth-child(4),
+.classificacao-table th:nth-child(5),
+.classificacao-table th:nth-child(6),
+.classificacao-table th:nth-child(7),
+.classificacao-table th:nth-child(8),
+.classificacao-table th:nth-child(9),
+.classificacao-table td:nth-child(3),
+.classificacao-table td:nth-child(4),
+.classificacao-table td:nth-child(5),
+.classificacao-table td:nth-child(6),
+.classificacao-table td:nth-child(7),
+.classificacao-table td:nth-child(8),
+.classificacao-table td:nth-child(9) {
+  width: 40px; /* reduzido */
+  font-size: 0.8rem; /* menor fonte para números */
+  text-align: center;
+}
+
+/* Time (nome + escudo) mantém espaço maior */
+.time-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nome-time {
+  font-size: 0.9rem;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.classificacao-table thead {
+  background-color: #161B22;
+}
+
+.escudo {
+  width: 25px; /* reduzido no mobile */
+  height: 25px;
+  object-fit: contain;
+  background-color: #fff;
+  border-radius: 50%;
+}
+
+.leader {
+  background-color: rgba(0, 255, 136, 0.15);
+}
+
+.z4 {
+  background-color: rgba(255, 0, 0, 0.15);
+}
+
+.classificacao-table tr:hover {
+  background-color: #1c2128;
+}
+
+.emoji {
+  margin-left: 4px;
+  font-size: 1rem;
+}
+
+/* 🌟 Responsividade para telas pequenas */
+@media (max-width: 768px) {
+  .classificacao-container {
+    padding: 0.5rem;
+  }
+
+  .title {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .classificacao-table {
+    font-size: 0.75rem;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .classificacao-table th,
+  .classificacao-table td {
+    padding: 0.3rem;
+    white-space: nowrap;
+  }
+
+  .escudo {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .nome-time {
+    max-width: 100px;
+    font-size: 0.7rem;
+  }
+}
+
+/* Ultra-narrow mobile (320px-375px) - Ajustes complementares */
+@media (max-width: 375px) {
+  .classificacao-container {
+    padding: 0.3rem;
+  }
+
+  .title {
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .emoji {
+    margin-left: 1px;
+    font-size: 0.8rem;
+  }
+}
+
+
